@@ -1,0 +1,682 @@
+[
+  {
+    "name": "AI agents play SimCity through a REST API",
+    "url": "https://hallucinatingsplines.com",
+    "description": "Show HN: AI agents play SimCity through a REST API",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "AI agents play SimCity through a REST API"
+  },
+  {
+    "name": "Clelp – A searchable directory of 1,700 AI skills, rated by AI agents",
+    "url": "https://clelp.ai",
+    "description": "Show HN: Clelp – A searchable directory of 1,700 AI skills, rated by AI agents",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Clelp – A searchable directory of 1,700 AI skills, rated by AI agents"
+  },
+  {
+    "name": "OpenMessage – Google Messages Client for macOS with MCP Server",
+    "url": "https://openmessage.ai",
+    "description": "Show HN: OpenMessage – Google Messages Client for macOS with MCP Server",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "OpenMessage – Google Messages Client for macOS with MCP Server"
+  },
+  {
+    "name": "Self-hosted WhatsApp archive viewer with chat analytics",
+    "url": "https://github.com/sabrieker/whatsapp-archive",
+    "description": "Show HN: Self-hosted WhatsApp archive viewer with chat analytics",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Self-hosted WhatsApp archive viewer with chat analytics"
+  },
+  {
+    "name": "ChatKeepsake – Turn iMessage Conversations into Printable Keepsakes",
+    "url": "https://chatkeepsake.com/",
+    "description": "Show HN: ChatKeepsake – Turn iMessage Conversations into Printable Keepsakes",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "ChatKeepsake – Turn iMessage Conversations into Printable Keepsakes"
+  },
+  {
+    "name": "Open source setup to self-host OpenClaw instances on any host",
+    "url": "https://github.com/Agent-3-7/openclaw-host-kit",
+    "description": "Show HN: Open source setup to self-host OpenClaw instances on any host",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Open source setup to self-host OpenClaw instances on any host"
+  },
+  {
+    "name": "AI Seedance 2 – Solving the \"jump-cut\" problem in AI video",
+    "url": "https://www.aiseedance2.app",
+    "description": "Show HN: AI Seedance 2 – Solving the \"jump-cut\" problem in AI video",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "AI Seedance 2 – Solving the \"jump-cut\" problem in AI video"
+  },
+  {
+    "name": "Verify Your Kubernetes",
+    "url": "https://github.com/avkcode/verifier",
+    "description": "Show HN: Verify Your Kubernetes",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Verify Your Kubernetes"
+  },
+  {
+    "name": "Nemp Memory for OpenClaw, shared memory for multi-agent workflows",
+    "url": "https://github.com/SukinShetty/Nemp-memory",
+    "description": "Show HN: Nemp Memory for OpenClaw, shared memory for multi-agent workflows",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Nemp Memory for OpenClaw, shared memory for multi-agent workflows"
+  },
+  {
+    "name": "Rowbot – Chat with a SQLite Database",
+    "url": "https://rowbot.notation.dev/",
+    "description": "Show HN: Rowbot – Chat with a SQLite Database",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Rowbot – Chat with a SQLite Database"
+  },
+  {
+    "name": "Lawgmented – AI contract review and redrafts in Word",
+    "url": "https://lawgmented.com/",
+    "description": "Show HN: Lawgmented – AI contract review and redrafts in Word",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Lawgmented – AI contract review and redrafts in Word"
+  },
+  {
+    "name": "We added AGENTS.md to 120 challenges so AI teaches instead of codes",
+    "url": "https://www.frontendmentor.io/articles/agents-md-files-in-every-challenge",
+    "description": "Show HN: We added AGENTS.md to 120 challenges so AI teaches instead of codes",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "We added AGENTS.md to 120 challenges so AI teaches instead of codes"
+  },
+  {
+    "name": "Docx to PDF in the Browser Using Pandoc and Typst (WASM)",
+    "url": "https://toolkuai.com/word-to-pdf",
+    "description": "Show HN: Docx to PDF in the Browser Using Pandoc and Typst (WASM)",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Docx to PDF in the Browser Using Pandoc and Typst (WASM)"
+  },
+  {
+    "name": "The Office Lines – Search 60k+ Quotes from the Office (US)",
+    "url": "https://theofficelines.com/",
+    "description": "Show HN: The Office Lines – Search 60k+ Quotes from the Office (US)",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "The Office Lines – Search 60k+ Quotes from the Office (US)"
+  },
+  {
+    "name": "My \"Grandma\" prompt dropped a production DB. So I built a Kill Switch",
+    "url": "https://news.ycombinator.com/item?id=46945952",
+    "description": "Show HN: My \"Grandma\" prompt dropped a production DB. So I built a Kill Switch",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "My \"Grandma\" prompt dropped a production DB. So I built a Kill Switch"
+  },
+  {
+    "name": "OpenBoot – Set up your macOS dev environment in one command",
+    "url": "https://github.com/openbootdotdev/openboot",
+    "description": "Show HN: OpenBoot – Set up your macOS dev environment in one command",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "OpenBoot – Set up your macOS dev environment in one command"
+  },
+  {
+    "name": "Tangs.dev – Upload → Save to Drive → Share with Friends",
+    "url": "https://tangs.dev",
+    "description": "Show HN: Tangs.dev – Upload → Save to Drive → Share with Friends",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Tangs.dev – Upload → Save to Drive → Share with Friends"
+  },
+  {
+    "name": "Telemetry Studio – Add cycling data overlays to your ride videos",
+    "url": "https://telemetrystudio.com/",
+    "description": "Show HN: Telemetry Studio – Add cycling data overlays to your ride videos",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Telemetry Studio – Add cycling data overlays to your ride videos"
+  },
+  {
+    "name": "Free startup ideas with validation notes attached",
+    "url": "https://justbuildthis.com/",
+    "description": "Show HN: Free startup ideas with validation notes attached",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Free startup ideas with validation notes attached"
+  },
+  {
+    "name": "Claude SaaS Starter – Next.js Boilerplate for Claude Streaming",
+    "url": "https://news.ycombinator.com/item?id=46945544",
+    "description": "Show HN: Claude SaaS Starter – Next.js Boilerplate for Claude Streaming",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Claude SaaS Starter – Next.js Boilerplate for Claude Streaming"
+  },
+  {
+    "name": "Finding stragglers in multi-GPU PyTorch (DDP) training",
+    "url": "https://github.com/traceopt-ai/traceml",
+    "description": "Show HN: Finding stragglers in multi-GPU PyTorch (DDP) training",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Finding stragglers in multi-GPU PyTorch (DDP) training"
+  },
+  {
+    "name": "A Satellite View for Python Code",
+    "url": "https://ast-visualizer.com/",
+    "description": "Show HN: A Satellite View for Python Code",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "A Satellite View for Python Code"
+  },
+  {
+    "name": "PlaceboGPT – 7,666-parameter medical AI with one answer for everything",
+    "url": "https://www.pharmatools.ai/placebogpt",
+    "description": "Show HN: PlaceboGPT – 7,666-parameter medical AI with one answer for everything",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "PlaceboGPT – 7,666-parameter medical AI with one answer for everything"
+  },
+  {
+    "name": "Orange ORM 5.0.0",
+    "url": "https://github.com/alfateam/orange-orm",
+    "description": "Show HN: Orange ORM 5.0.0",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Orange ORM 5.0.0"
+  },
+  {
+    "name": "Is Harmony Music even legal?",
+    "url": "https://github.com/anandnet/Harmony-Music",
+    "description": "Show HN: Is Harmony Music even legal?",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Is Harmony Music even legal?"
+  },
+  {
+    "name": "Self-healing data pipeline for F1 telemetry (Python and Type Inference)",
+    "url": "https://news.ycombinator.com/item?id=46945158",
+    "description": "Show HN: Self-healing data pipeline for F1 telemetry (Python and Type Inference)",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Self-healing data pipeline for F1 telemetry (Python and Type Inference)"
+  },
+  {
+    "name": "Pentests cost $10K, I built an open-source one for $0.12",
+    "url": "https://github.com/FrancescoStabile/numasec",
+    "description": "Show HN: Pentests cost $10K, I built an open-source one for $0.12",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Pentests cost $10K, I built an open-source one for $0.12"
+  },
+  {
+    "name": "Speaklone – Native voice cloning for Mac, runs on-device",
+    "url": "https://speaklone.com",
+    "description": "Show HN: Speaklone – Native voice cloning for Mac, runs on-device",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Speaklone – Native voice cloning for Mac, runs on-device"
+  },
+  {
+    "name": "Simulation Studio Inside ArchtSoft",
+    "url": "https://archtsoft.com",
+    "description": "Show HN: Simulation Studio Inside ArchtSoft",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Simulation Studio Inside ArchtSoft"
+  },
+  {
+    "name": "Browser Terminal Use – A Local-to-Cloud Execution Bridge for LLM Agents",
+    "url": "https://github.com/chaokunyang/browser-terminal-use",
+    "description": "Show HN: Browser Terminal Use – A Local-to-Cloud Execution Bridge for LLM Agents",
+    "source": "Hacker News",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Browser Terminal Use – A Local-to-Cloud Execution Bridge for LLM Agents"
+  },
+  {
+    "name": "Uber",
+    "url": "https://techcrunch.com/2026/02/09/uber-to-buy-delivery-arm-of-turkeys-getir/",
+    "description": "Uber to buy delivery arm of Turkey’s Getir",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Uber to buy delivery arm of Turkey’s Getir"
+  },
+  {
+    "name": "Call",
+    "url": "https://techcrunch.com/2026/02/09/call-for-speakers-techcrunch-founder-summit-2026/",
+    "description": "Call for speakers: TechCrunch Founder Summit 2026",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Call for speakers: TechCrunch Founder Summit 2026"
+  },
+  {
+    "name": "The",
+    "url": "https://techcrunch.com/2026/02/09/the-battle-begins-startup-battlefield-200-nominations-are-open/",
+    "description": "The battle begins: 2026 Startup Battlefield 200 nominations are open",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "The battle begins: 2026 Startup Battlefield 200 nominations are open"
+  },
+  {
+    "name": "Gather AI",
+    "url": "https://techcrunch.com/2026/02/09/gather-ai-maker-of-curious-warehouse-drones-lands-40m-led-by-keith-blocks-firm/",
+    "description": "Gather AI, maker of ‘curious’ warehouse drones, lands $40M led by Keith Block’s firm",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Gather AI, maker of ‘curious’ warehouse drones, lands $40M led by Keith Block’s firm"
+  },
+  {
+    "name": "India",
+    "url": "https://techcrunch.com/2026/02/07/india-has-changed-its-startup-rules-for-deep-tech/",
+    "description": "India has changed its startup rules for deep tech",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "India has changed its startup rules for deep tech"
+  },
+  {
+    "name": "Reddit",
+    "url": "https://techcrunch.com/2026/02/06/reddit-says-its-looking-for-more-acquisitions-in-adtech-and-elsewhere/",
+    "description": "Reddit says it’s looking for more acquisitions in adtech and elsewhere",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Reddit says it’s looking for more acquisitions in adtech and elsewhere"
+  },
+  {
+    "name": "a16z",
+    "url": "https://techcrunch.com/2026/02/05/a16z-vc-wants-founders-to-stop-stressing-over-insane-arr-numbers/",
+    "description": "a16z VC wants founders to stop stressing over insane ARR numbers",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "a16z VC wants founders to stop stressing over insane ARR numbers"
+  },
+  {
+    "name": "Fundamental",
+    "url": "https://techcrunch.com/2026/02/05/fundamental-raises-255-million-series-a-with-a-new-take-on-big-data-analysis/",
+    "description": "Fundamental raises $255M Series A with a new take on big data analysis",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Fundamental raises $255M Series A with a new take on big data analysis"
+  },
+  {
+    "name": "Stripe",
+    "url": "https://techcrunch.com/2026/02/04/stripe-alumni-raise-e30m-series-a-for-duna-backed-by-stripe-and-adyen-execs/",
+    "description": "Stripe alumni raise €30M Series A for Duna, backed by Stripe and Adyen execs",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Stripe alumni raise €30M Series A for Duna, backed by Stripe and Adyen execs"
+  },
+  {
+    "name": "Meet",
+    "url": "https://techcrunch.com/2026/02/04/meet-gizmo-a-tiktok-for-interactive-vibe-coded-mini-apps/",
+    "description": "Meet Gizmo: A TikTok for interactive, vibe-coded mini apps",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Meet Gizmo: A TikTok for interactive, vibe-coded mini apps"
+  },
+  {
+    "name": "AI",
+    "url": "https://techcrunch.com/2026/02/04/ai-sre-resolve-ai-confirms-125m-raise-unicorn-valuation/",
+    "description": "AI SRE Resolve AI confirms $125M raise, unicorn valuation",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "AI SRE Resolve AI confirms $125M raise, unicorn valuation"
+  },
+  {
+    "name": "Lunar Energy",
+    "url": "https://techcrunch.com/2026/02/04/lunar-energy-raises-232m-to-deploy-home-batteries-that-prop-up-the-grid/",
+    "description": "Lunar Energy raises $232M to deploy home batteries that prop up the grid",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Lunar Energy raises $232M to deploy home batteries that prop up the grid"
+  },
+  {
+    "name": "ElevenLabs",
+    "url": "https://techcrunch.com/2026/02/04/elevenlabs-raises-500m-from-sequioia-at-a-11-billion-valuation/",
+    "description": "ElevenLabs raises $500M from Sequoia at an $11 billion valuation",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "ElevenLabs raises $500M from Sequoia at an $11 billion valuation"
+  },
+  {
+    "name": "Accel",
+    "url": "https://techcrunch.com/2026/02/04/accel-doubles-down-on-fibr-ai-as-agents-turn-static-websites-into-one-to-one-experiences/",
+    "description": "Accel doubles down on Fibr AI as agents turn static websites into one-to-one experiences",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Accel doubles down on Fibr AI as agents turn static websites into one-to-one experiences"
+  },
+  {
+    "name": "Exclusive:",
+    "url": "https://techcrunch.com/2026/02/04/exclusive-positron-raises-230m-series-b-to-take-on-nvidias-ai-chips/",
+    "description": "Exclusive: Positron raises $230M Series B to take on Nvidia’s AI chips",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Exclusive: Positron raises $230M Series B to take on Nvidia’s AI chips"
+  },
+  {
+    "name": "Epstein-linked",
+    "url": "https://techcrunch.com/2026/02/03/epstein-linked-longevity-guru-peter-attia-leaves-david-protein-and-his-own-startup-wont-comment/",
+    "description": "Epstein-linked longevity guru Peter Attia leaves David Protein, and his own startup ‘won’t comment’",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Epstein-linked longevity guru Peter Attia leaves David Protein, and his own startup ‘won’t comment’"
+  },
+  {
+    "name": "India’s",
+    "url": "https://techcrunch.com/2026/02/03/indias-varaha-bags-20m-to-scale-carbon-removal-from-the-global-south/",
+    "description": "India’s Varaha bags $20M to scale carbon removal from the Global South",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "India’s Varaha bags $20M to scale carbon removal from the Global South"
+  },
+  {
+    "name": "The",
+    "url": "https://techcrunch.com/2026/02/03/minnesota-tech-community-founders-investors-ice-response/",
+    "description": "The Minneapolis tech community holds strong during ‘tense and difficult time’",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "The Minneapolis tech community holds strong during ‘tense and difficult time’"
+  },
+  {
+    "name": "YC",
+    "url": "https://techcrunch.com/2026/02/03/yc-startups-can-now-recieve-investment-in-stablecoin/",
+    "description": "YC startups can now receive investment in stablecoin",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "YC startups can now receive investment in stablecoin"
+  },
+  {
+    "name": "2026",
+    "url": "https://techcrunch.com/2026/02/03/looking-ahead-to-2026-whats-next-for-startup-battlefield-200/",
+    "description": "2026 plans: What’s next for Startup Battlefield 200",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "2026 plans: What’s next for Startup Battlefield 200"
+  },
+  {
+    "name": "Skyryse",
+    "url": "https://techcrunch.com/2026/02/03/skyryse-lands-another-300m-to-make-flying-even-helicopters-simple-and-safe/",
+    "description": "Skyryse lands another $300M to make flying, even helicopters, simple and safe",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Skyryse lands another $300M to make flying, even helicopters, simple and safe"
+  },
+  {
+    "name": "Gradient’s",
+    "url": "https://techcrunch.com/2026/02/03/gradients-heat-pumps-get-new-smarts-to-enable-old-building-retrofits/",
+    "description": "Gradient’s heat pumps get new smarts to enable old-building retrofits",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Gradient’s heat pumps get new smarts to enable old-building retrofits"
+  },
+  {
+    "name": "Fitbit",
+    "url": "https://techcrunch.com/2026/02/03/fitbit-founders-launch-ai-platform-to-help-families-monitor-their-health/",
+    "description": "Fitbit founders launch AI platform to help families monitor their health",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Fitbit founders launch AI platform to help families monitor their health"
+  },
+  {
+    "name": "Peak",
+    "url": "https://techcrunch.com/2026/02/03/peak-xv-says-internal-disagreement-led-to-partner-exits-as-it-doubles-down-on-ai/",
+    "description": "Peak XV says internal disagreement led to partner exits as it doubles down on AI",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Peak XV says internal disagreement led to partner exits as it doubles down on AI"
+  },
+  {
+    "name": "Two",
+    "url": "https://techcrunch.com/2026/02/02/two-stanford-students-launch-2m-startup-accelerator-for-students-nationwide/",
+    "description": "Two Stanford students launch $2M startup accelerator for students nationwide",
+    "source": "TechCrunch",
+    "location": null,
+    "launch_date": "2026-02-09",
+    "founder_names": [],
+    "landing_page_text": "Two Stanford students launch $2M startup accelerator for students nationwide"
+  },
+  {
+    "name": "KeygraphHQ /shannon",
+    "url": "https://github.com/KeygraphHQ/shannon",
+    "description": "Fully autonomous AI hacker to find actual exploits in your web apps. Shannon has achieved a 96.15% success rate on the hint-free, source-aware XBOW Benchmark.",
+    "source": "GitHub Trending",
+    "location": null,
+    "launch_date": null,
+    "founder_names": [],
+    "landing_page_text": "Fully autonomous AI hacker to find actual exploits in your web apps. Shannon has achieved a 96.15% success rate on the hint-free, source-aware XBOW Benchmark. (Language: TypeScript)"
+  },
+  {
+    "name": "virattt /dexter",
+    "url": "https://github.com/virattt/dexter",
+    "description": "An autonomous agent for deep financial research",
+    "source": "GitHub Trending",
+    "location": null,
+    "launch_date": null,
+    "founder_names": [],
+    "landing_page_text": "An autonomous agent for deep financial research (Language: TypeScript)"
+  },
+  {
+    "name": "pydantic /monty",
+    "url": "https://github.com/pydantic/monty",
+    "description": "A minimal, secure Python interpreter written in Rust for use by AI",
+    "source": "GitHub Trending",
+    "location": null,
+    "launch_date": null,
+    "founder_names": [],
+    "landing_page_text": "A minimal, secure Python interpreter written in Rust for use by AI (Language: Rust)"
+  },
+  {
+    "name": "hsliuping /TradingAgents-CN",
+    "url": "https://github.com/hsliuping/TradingAgents-CN",
+    "description": "基于多智能体LLM的中文金融交易框架 - TradingAgents中文增强版",
+    "source": "GitHub Trending",
+    "location": null,
+    "launch_date": null,
+    "founder_names": [],
+    "landing_page_text": "基于多智能体LLM的中文金融交易框架 - TradingAgents中文增强版 (Language: Python)"
+  },
+  {
+    "name": "iOfficeAI /AionUi",
+    "url": "https://github.com/iOfficeAI/AionUi",
+    "description": "Free, local, open-source 24/7 Cowork and OpenClaw for Gemini CLI, Claude Code, Codex, OpenCode, Qwen Code, Goose CLI, Auggie, and more | 🌟 Star if you like it!",
+    "source": "GitHub Trending",
+    "location": null,
+    "launch_date": null,
+    "founder_names": [],
+    "landing_page_text": "Free, local, open-source 24/7 Cowork and OpenClaw for Gemini CLI, Claude Code, Codex, OpenCode, Qwen Code, Goose CLI, Auggie, and more | 🌟 Star if you like it! (Language: TypeScript)"
+  },
+  {
+    "name": "public-apis /public-apis",
+    "url": "https://github.com/public-apis/public-apis",
+    "description": "A collective list of free APIs",
+    "source": "GitHub Trending",
+    "location": null,
+    "launch_date": null,
+    "founder_names": [],
+    "landing_page_text": "A collective list of free APIs (Language: Python)"
+  },
+  {
+    "name": "github /gh-aw",
+    "url": "https://github.com/github/gh-aw",
+    "description": "GitHub Agentic Workflows",
+    "source": "GitHub Trending",
+    "location": null,
+    "launch_date": null,
+    "founder_names": [],
+    "landing_page_text": "GitHub Agentic Workflows (Language: Go)"
+  },
+  {
+    "name": "Shubhamsaboo /awesome-llm-apps",
+    "url": "https://github.com/Shubhamsaboo/awesome-llm-apps",
+    "description": "Collection of awesome LLM apps with AI Agents and RAG using OpenAI, Anthropic, Gemini and opensource models.",
+    "source": "GitHub Trending",
+    "location": null,
+    "launch_date": null,
+    "founder_names": [],
+    "landing_page_text": "Collection of awesome LLM apps with AI Agents and RAG using OpenAI, Anthropic, Gemini and opensource models. (Language: Python)"
+  },
+  {
+    "name": "gitbutlerapp /gitbutler",
+    "url": "https://github.com/gitbutlerapp/gitbutler",
+    "description": "The GitButler version control client, backed by Git, powered by Tauri/Rust/Svelte",
+    "source": "GitHub Trending",
+    "location": null,
+    "launch_date": null,
+    "founder_names": [],
+    "landing_page_text": "The GitButler version control client, backed by Git, powered by Tauri/Rust/Svelte (Language: Rust)"
+  },
+  {
+    "name": "microsoft /litebox",
+    "url": "https://github.com/microsoft/litebox",
+    "description": "A security-focused library OS supporting kernel- and user-mode execution",
+    "source": "GitHub Trending",
+    "location": null,
+    "launch_date": null,
+    "founder_names": [],
+    "landing_page_text": "A security-focused library OS supporting kernel- and user-mode execution (Language: Rust)"
+  },
+  {
+    "name": "openai /skills",
+    "url": "https://github.com/openai/skills",
+    "description": "Skills Catalog for Codex",
+    "source": "GitHub Trending",
+    "location": null,
+    "launch_date": null,
+    "founder_names": [],
+    "landing_page_text": "Skills Catalog for Codex (Language: Python)"
+  },
+  {
+    "name": "EveryInc /compound-engineering-plugin",
+    "url": "https://github.com/EveryInc/compound-engineering-plugin",
+    "description": "Official Claude Code compound engineering plugin",
+    "source": "GitHub Trending",
+    "location": null,
+    "launch_date": null,
+    "founder_names": [],
+    "landing_page_text": "Official Claude Code compound engineering plugin (Language: TypeScript)"
+  },
+  {
+    "name": "DrewThomasson /ebook2audiobook",
+    "url": "https://github.com/DrewThomasson/ebook2audiobook",
+    "description": "Generate audiobooks from e-books, voice cloning & 1158+ languages!",
+    "source": "GitHub Trending",
+    "location": null,
+    "launch_date": null,
+    "founder_names": [],
+    "landing_page_text": "Generate audiobooks from e-books, voice cloning & 1158+ languages! (Language: Python)"
+  }
+]
