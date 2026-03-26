@@ -1,0 +1,188 @@
+startup_name,description,website,founding_date,location,funding_stage,funding_amount,investors,team_size,founders,linkedin,twitter,contact_email,source,is_ai_related,ai_confidence_score,scraped_date
+DoorDash,Restaurant delivery.,http://doordash.com,,"San Francisco, CA, USA",Summer 2013,,Y Combinator,8600.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Airbnb,Book accommodations around the world.,http://airbnb.com,,"San Francisco, CA, USA",Winter 2009,,Y Combinator,6132.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Coinbase,"Buy, sell, and manage cryptocurrencies.",https://www.coinbase.com,,"San Francisco, CA, USA; Remote",Summer 2012,,Y Combinator,6112.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Groww,"Making financial services simple, transparent and delightful. ",https://groww.in,,"Bengaluru, KA, India",Winter 2018,,Y Combinator,1050.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Oklo,"Emission free, always on power from advanced fission power plants.",http://oklo.com,,"Santa Clara, CA, USA; Sunnyvale, CA, USA",Summer 2014,,Y Combinator,50.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Instacart,Marketplace for grocery delivery and pickup,https://www.instacart.com,,"San Francisco, CA, USA",Summer 2012,,Y Combinator,3000.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+EquipmentShare,Cloud solutions for the construction industry.,https://www.equipmentshare.com,,"Columbia, MO, USA",Winter 2015,,Y Combinator,5400.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Meesho,Democratizing internet commerce for everyone in India,http://www.meesho.com,,"Bengaluru, KA, India",Summer 2016,,Y Combinator,1450.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Dropbox,Backup and share files in the cloud.,http://dropbox.com,,"San Francisco, CA, USA",Summer 2007,,Y Combinator,4000.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Rigetti Computing,Quantum coherent supercomputing.,http://rigetti.com,,"Berkeley, CA, USA",Summer 2014,,Y Combinator,51.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+GitLab,A complete DevOps platform delivered as a single application.,http://gitlab.com/,,"San Francisco, CA, USA; Remote",Winter 2015,,Y Combinator,2000.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+BillionToOne,The genetic testing platform detecting and measuring disease.,https://www.billiontoone.com,,"Menlo Park, CA, USA",Summer 2017,,Y Combinator,300.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Matterport,Turn physical objects and environments into 3D models in seconds.,http://matterport.com,,"Sunnyvale, CA, USA",Winter 2012,,Y Combinator,201.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Amplitude,Digital Analytics Platform,https://amplitude.com,,"San Francisco, CA, USA",Winter 2012,,Y Combinator,750.0,,,,,Y Combinator,True,0.2,2026-02-06 17:41:33
+PagerDuty,Real-time visibility into critical apps and services all in one place.,http://pagerduty.com,,"San Francisco, CA, USA",Summer 2010,,Y Combinator,950.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Ginkgo Bioworks,Our mission is to make biology easier to engineer.,http://ginkgobioworks.com,,"Boston, MA, USA",Summer 2014,,Y Combinator,641.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Weave,Customer communication and payments platform.,http://getweave.com,,"Lehi, UT, USA",Winter 2014,,Y Combinator,600.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Pardes Biosciences,We break viruses,http://www.pardesbio.com,,"San Francisco, CA, USA; Remote",Summer 2020,,Y Combinator,2.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Embark Trucks,Self-driving semi trucks.,http://embarktrucks.com,,"San Francisco, CA, USA",Winter 2016,,Y Combinator,300.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Lucira Health,Next generation infectious disease test kits,https://www.lucirahealth.com/,,"Emeryville, CA, USA",Winter 2015,,Y Combinator,43.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Momentus,The space infrastructure services company,https://momentus.space,,"Santa Clara, CA, USA",Summer 2018,,Y Combinator,125.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Segment,"Software and APIs to collect, clean, and control customer data.",http://segment.com,,"San Francisco, CA, USA",Summer 2011,,Y Combinator,550.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Algolia,A developer-friendly and enterprise-grade search API.,http://www.algolia.com,,"San Francisco, CA, USA; Paris, Île-de-France, France",Winter 2014,,Y Combinator,810.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Truebill,Live your best financial life,https://www.truebill.com,,"Silver Spring, MD, USA",Winter 2016,,Y Combinator,225.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Twitch,A global community creating the future of live entertainment.,http://twitch.com,,"San Francisco, CA, USA",Winter 2007,,Y Combinator,2000.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+PlanGrid,Mobile applications for the construction industry.,http://plangrid.com,,"San Francisco, CA, USA",Winter 2012,,Y Combinator,355.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Bellabeat,Tech-powered women's wellness.,http://bellabeat.com,,"San Francisco, CA, USA",Winter 2014,,Y Combinator,134.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Cruise,Self-driving cars.,http://getcruise.com,,"San Francisco, CA, USA",Winter 2014,,Y Combinator,3000.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Benchling,Unlocking the power of biotech with modern software for modern science,http://benchling.com,,"San Francisco, CA, USA",Summer 2012,,Y Combinator,750.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Casetext,We make the world's laws free and understandable. ,http://casetext.com,,"San Francisco, CA, USA; Remote",Summer 2013,,Y Combinator,50.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Bird,The world’s largest omnichannel communications platform,http://bird.com,,"Amsterdam, NH, Netherlands",Summer 2016,,Y Combinator,500.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Brex,"Business accounts, corporate cards, and spend management software.",https://www.brex.com,,"San Francisco, CA, USA",Winter 2017,,Y Combinator,1000.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+The Athletic,Subscription sports media.,https://theathletic.com,,"San Francisco, CA, USA",Summer 2016,,Y Combinator,600.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Codecademy,The leading online learning platform for technical skills.,http://codecademy.com,,"New York, NY, USA",Summer 2011,,Y Combinator,225.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Checkr,People infrastructure for the future of work,http://www.checkr.com,,"San Francisco, CA, USA",Summer 2014,,Y Combinator,800.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Lever,Talent Acquisition Suite that combines ATS + Talent CRM,https://www.lever.co/,,"San Francisco, CA, USA",Summer 2012,,Y Combinator,225.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Clipboard,Connects workplaces with professionals nearby.,https://www.clipboardhealth.com/careers,,"San Francisco, CA, USA; Remote",Winter 2017,,Y Combinator,800.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Heap,Captures user interactions with no code to generate analytics.,https://heap.io/,,"San Francisco, CA, USA",Winter 2013,,Y Combinator,388.0,,,,,Y Combinator,True,0.2,2026-02-06 17:41:33
+Sendwave,"Instant, no fee international remittances.",https://www.sendwave.com,,"Boston, MA, USA; Remote",Winter 2012,,Y Combinator,350.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Deel,The all-in-one HR and payroll platform for global teams,https://www.deel.com/,,"San Francisco, CA, USA; Remote",Winter 2019,,Y Combinator,5000.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Clever,The platform that powers technology in the classroom.,https://clever.com,,"San Francisco, CA, USA",Summer 2012,,Y Combinator,210.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Caper,Plug-and-play cashier-less retail powered by computer vision and AI,https://www.caper.ai/,,,Winter 2016,,Y Combinator,15.0,,,,,Y Combinator,True,0.4,2026-02-06 17:41:33
+Reddit,The frontpage of the internet.,http://reddit.com,,"San Francisco, CA, USA",Summer 2005,,Y Combinator,2000.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Fivestars,Customer loyalty and payments platform for small businesses.,http://fivestars.com,,"San Francisco, CA, USA",Winter 2011,,Y Combinator,201.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Machine Zone,Pioneers of mobile social gaming.,https://www.mz.com,,"Palo Alto, CA, USA",Winter 2008,,Y Combinator,501.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Faire,The global online platform empowering independent retail.,https://www.faire.com/,,"San Francisco, CA, USA",Winter 2017,,Y Combinator,900.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Fivetran,The leader in automated data movement,http://fivetran.com,,"Oakland, CA, USA",Winter 2013,,Y Combinator,1200.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Optimizely,The first all-in-one operating system for marketing,http://optimizely.com,,"San Francisco, CA, USA",Winter 2010,,Y Combinator,1500.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Flexport,Platform for global logistics.,https://www.flexport.com/careers/jobs/,,"San Francisco, CA, USA",Winter 2014,,Y Combinator,3000.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+WePay,Payments for platform businesses.,http://wepay.com,,"Redwood City, CA, USA",Summer 2009,,Y Combinator,400.0,,,,,Y Combinator,False,0.0,2026-02-06 17:41:33
+Pando Bioscience,Gen-AI Designed Enzymes for Pharmaceutical Innovation,https://pando.bio/,,"Boston, MA, USA",Winter 2023,,Y Combinator,5.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Metal,Metal is an AI-driven operating system for fundraising,http://www.metal.so,,"Los Angeles, CA, USA",Winter 2023,,Y Combinator,21.0,,,,,Y Combinator,True,0.4,2026-02-06 17:44:08
+Vaero,AI for Human Writing,https://vaero.ai,,"San Francisco, CA, USA",Winter 2023,,Y Combinator,1.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Yuma AI,The AI Support Agent for Ecommerce,https://yuma.ai,,"Boston, MA, USA",Winter 2023,,Y Combinator,26.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Pierre,"Pierre is a new, opinionated, git platform.",https://pierre.co,,"San Francisco, CA, USA",Winter 2023,,Y Combinator,10.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Automat,AI enabled RPA using ChatGPT and computer vision,https://www.runautomat.com/,,"San Francisco, CA, USA",Winter 2023,,Y Combinator,,,,,,Y Combinator,True,0.4,2026-02-06 17:44:08
+SpecCheck,Unifying how the optical industry does business.,https://www.speccheckrx.com/,,"Los Angeles, CA, USA; Remote",Winter 2023,,Y Combinator,5.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Speedy Labs,Maximize profits with AI-powered rebate management.,https://speedylabs.ai/,,Remote,Winter 2023,,Y Combinator,8.0,,,,,Y Combinator,True,0.4,2026-02-06 17:44:08
+Finta,Magically simplify accounting and taxes,https://www.finta.com/,,"San Francisco, CA, USA",Winter 2023,,Y Combinator,2.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+LiteLLM,Call every LLM API like it's OpenAI [100+ LLMs],https://www.litellm.ai/,,,Winter 2023,,Y Combinator,2.0,,,,,Y Combinator,True,0.35,2026-02-06 17:44:08
+Theya,The world's simplest Bitcoin self-custody solution,https://www.theya.us/,,"San Francisco, CA, USA",Winter 2023,,Y Combinator,3.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Fetchr,The Personal Shopper  in Your Pocket,https://www.fetchr.so,,"San Francisco, CA, USA",Winter 2023,,Y Combinator,4.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Warp,AI-native Employee Management Platform for High-Growth Companies,https://www.joinwarp.com/,,"New York, NY, USA",Winter 2023,,Y Combinator,30.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Adri AI,Vanta for AI,https://www.getadri.ai/,,"San Francisco, CA, USA",Winter 2023,,Y Combinator,2.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Vendora,All-in-One Software for the $1T Grocery Industry,https://www.vendora.io/,,"New York, NY, USA",Winter 2023,,Y Combinator,4.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Streamstraight,The best way to stream LLM thinking traces to your frontend,https://www.streamstraight.com,,"San Francisco, CA, USA",Winter 2023,,Y Combinator,1.0,,,,,Y Combinator,True,0.35,2026-02-06 17:44:08
+Type,The AI-first document editor.,https://type.ai,,"New York, NY, USA",Winter 2023,,Y Combinator,3.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Social Radar,"Social Radar is the best way to search for posts, people, and…",https://socialradar.app,,"San Francisco, CA, USA",Winter 2023,,Y Combinator,3.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Persana AI,Sales Agents with 100+ data sources to close more deals,https://www.persana.ai/,,"San Francisco, CA, USA",Winter 2023,,Y Combinator,2.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Kyber,"Instantly draft, review, and send complex regulatory notices.",https://askkyber.com,,"New York, NY, USA",Winter 2023,,Y Combinator,5.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Flex,Stripe for HSA/FSA payments,https://www.withflex.com/shop,,Remote,Summer 2023,,Y Combinator,8.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Martin,AI Personal Assistant like Jarvis,https://www.trymartin.com/,,"San Francisco, CA, USA",Summer 2023,,Y Combinator,2.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Healthtech 1,Automating repetitive processes in healthcare,https://www.healthtech1.uk/,,"London, England, United Kingdom",Summer 2023,,Y Combinator,28.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Feanix Biotechnologies,Farm Genetics Made Easy - Using DNA and Software,https://www.feanixbio.com/,,,Summer 2023,,Y Combinator,5.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Orbio Earth,Tracking methane emissions with satellites,https://www.orbio.earth/,,Remote,Summer 2023,,Y Combinator,6.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Coba,Dual Currency Accounts For LatAm,https://www.coba.ai,,"Monterrey, N.L., Mexico; Austin, TX, USA",Summer 2023,,Y Combinator,9.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Taylor AI,Unified Platform for Text Enrichment,https://trytaylor.ai,,"San Francisco, CA, USA",Summer 2023,,Y Combinator,2.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Tempo,"Visual Editor for React, powered by AI",https://www.tempo.new,,"Toronto, ON, Canada",Summer 2023,,Y Combinator,8.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Oversteer,The most reliable browser agent for any web task,https://oversteer.dev,,"Irvine, CA, USA; Remote",Summer 2023,,Y Combinator,1.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Cognitio Labs,"AI for Contract Audits, Negotiation & Payment Compliance",https://www.flairhealth.com,,"San Francisco, CA, USA",Summer 2023,,Y Combinator,,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Olio Labs,Combination therapeutics for the world's toughest diseases,https://oliolabs.co/,,Remote,Summer 2023,,Y Combinator,5.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+truemetrics,We show couriers where to park and enter a building.,https://www.truemetrics.io/,,"Berlin, Berlin, Germany",Summer 2023,,Y Combinator,5.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Glide,"Crypto Deposits, Wallet Funding, and Pay-with-crypto Infra",https://buildwithglide.com,,"New York, NY, USA; Remote",Summer 2023,,Y Combinator,2.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Wattson Health,AI Voice and SMS Agents for Healthcare,https://www.wattsonhealth.com,,,Summer 2023,,Y Combinator,3.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Constructable,Building the next Procore,https://www.constructable.ai/,,"Santa Barbara, CA, USA",Summer 2023,,Y Combinator,6.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Morph,Models that improve coding agents,https://morphllm.com,,"San Francisco, CA, USA",Summer 2023,,Y Combinator,5.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Nowadays,AI co-pilot for corporate retreat and event planning,http://nowadays.ai/,,"San Francisco, CA, USA",Summer 2023,,Y Combinator,5.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Waldium,The publishing layer for the AI-native web,https://www.waldium.com/,,"San Francisco, CA, USA",Summer 2023,,Y Combinator,3.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Twine,AI text message receptionist for SMBs,http://www.usetwine.com,,"San Francisco, CA, USA",Summer 2023,,Y Combinator,3.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Mocha,Build and publish web apps in minutes. No coding required.,https://getmocha.com,,"San Francisco, CA, USA",Summer 2023,,Y Combinator,7.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Indemni,Cargo Theft and Fraud Prevention Platform,http://www.indemni.com,,"San Francisco, CA, USA",Winter 2024,,Y Combinator,7.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+ParcelBio,Next-generation mRNA medicines,https://parcelbio.com/,,,Winter 2024,,Y Combinator,5.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+K-Scale Labs,Open-source humanoid robots,https://kscale.dev/,,"Palo Alto, CA, USA",Winter 2024,,Y Combinator,10.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Marr Labs,AI-voice agents that are indistinguishable from humans.,https://www.marrlabs.com/,,"San Francisco, CA, USA",Winter 2024,,Y Combinator,9.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Forge Rewards,Starbucks app for restaurants,https://www.joinforge.app/,,"San Francisco, CA, USA",Winter 2024,,Y Combinator,2.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Dropback,The front office software suite for college sports,https://www.dropback.com,,Remote,Winter 2024,,Y Combinator,2.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+RetailReady,An AI-powered supply chain compliance engine,https://www.retailreadyai.com/,,,Winter 2024,,Y Combinator,10.0,,,,,Y Combinator,True,0.4,2026-02-06 17:44:08
+Same,Build products without coding,https://same.new,,"San Francisco, CA, USA",Winter 2024,,Y Combinator,5.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+NowHouse,NowHouse helps stock brokerages settle trades instantly.,https://www.nowhouse.io,,,Winter 2024,,Y Combinator,0.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+GetCrux,AI Creative Strategist,http://getcrux.ai/,,"San Francisco, CA, USA",Winter 2024,,Y Combinator,9.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Reprompt,AI Agents for Location,https://repromptai.com,,,Winter 2024,,Y Combinator,3.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+InspectMind AI,AI agent for construction drawings review,https://www.inspectmind.ai,,"San Francisco, CA, USA",Winter 2024,,Y Combinator,3.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Yarn,Make sales and marketing videos with AI.,https://www.yarn.so,,"New York, NY, USA",Winter 2024,,Y Combinator,6.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Blacksmith,The fastest way to run your GitHub Actions,https://blacksmith.sh/,,,Winter 2024,,Y Combinator,3.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+CrowdVolt,The integration layer for live events infrastructure ,https://crowdvolt.com/,,"New York, NY, USA",Winter 2024,,Y Combinator,8.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+kater.ai,Deliver complete data analysis from a single question,https://www.kater.ai,,"San Francisco, CA, USA; Remote",Winter 2024,,Y Combinator,3.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Mathos,Ultimate AI Math Problem Solver to Revolutionize Personalized Learning,https://info.mathos.ai/,,"Santa Clara, CA, USA",Winter 2024,,Y Combinator,5.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Tower,Legal due diligence platform powered by AI,https://withtower.com,,"San Francisco, CA, USA",Winter 2024,,Y Combinator,2.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Quivr,AI-powered auto-resolutions and reply suggestions for customer…,https://www.quivr.app/,,"Paris, Île-de-France, France",Winter 2024,,Y Combinator,5.0,,,,,Y Combinator,True,0.4,2026-02-06 17:44:08
+Dragoneye,Custom video detection models in less than 5 minutes,https://dragoneye.ai/,,"New York, NY, USA",Winter 2024,,Y Combinator,2.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Outerport,"Turn diagrams, technical documents, and CAD into structured data",https://outerport.com,,"San Francisco, CA, USA",Summer 2024,,Y Combinator,4.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+DreamRP,Tech and platforms for human creators and the entertainment industry,https://www.dreamrp.com/,,"San Francisco, CA, USA",Summer 2024,,Y Combinator,2.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Conductor,Run a team of coding agents on your Mac,https://conductor.build,,"San Francisco, CA, USA",Summer 2024,,Y Combinator,4.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Syntra,AI chart review for speciality medical clinics.,https://www.syntra.com,,"San Francisco, CA, USA",Summer 2024,,Y Combinator,9.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+PathPilot,AI platform helping fintech/bank teams scale efficiently,https://www.getpathpilot.com/,,"San Jose, CA, USA",Summer 2024,,Y Combinator,3.0,,,,,Y Combinator,True,0.4,2026-02-06 17:44:08
+Bits to Atoms,Match job seekers to roles at deep technology startups.,https://bitstoatoms.com/,,,Summer 2024,,Y Combinator,3.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Midship,AI for SOX testing,https://midship.ai/,,,Summer 2024,,Y Combinator,3.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+SimCare,AI avatars to scale healthcare training.,https://simcare.ai,,"San Francisco, CA, USA",Summer 2024,,Y Combinator,7.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Merlin AI,AI powered ERP for Construction,https://www.merlinai.co,,"Los Angeles, CA, USA",Summer 2024,,Y Combinator,28.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Freestyle,We run and deploy code your AI wrote,https://www.freestyle.sh,,"San Francisco, CA, USA",Summer 2024,,Y Combinator,5.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Arva AI,"AI Agents to scale AML, KYB and KYC operations",https://www.arva.ai,,,Summer 2024,,Y Combinator,14.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Affil.ai,AI Affiliate Network For Financial Companies,https://affil.ai/,,"San Francisco, CA, USA",Summer 2024,,Y Combinator,4.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+OrgOrg,Organizational productivity suite for companies,https://orgorg.com,,"Los Altos, CA, USA; Remote",Summer 2024,,Y Combinator,2.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Patched,Agentic workflows for Enterprise IT and Ops teams,https://patched.codes,,,Summer 2024,,Y Combinator,4.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Village Labs,Helping America's businesses become employee owned,https://villagelabs.app/,,"New York, NY, USA",Summer 2024,,Y Combinator,2.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Mica AI,Replace the humans fixing bad data,https://usemica.com/,,"San Francisco, CA, USA",Summer 2024,,Y Combinator,3.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Formula Insight,"Help Institutional Investors manage, track & query their Excel models",https://www.formulainsight.io/,,"New York, NY, USA",Summer 2024,,Y Combinator,2.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+Overlap,Multimodal AI agents for video,https://www.overlap.ai,,"San Francisco, CA, USA",Summer 2024,,Y Combinator,6.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Capitol AI,"Model-agnostic AI for enterprises: governed, embedded, decision-grade.",https://www.capitol.ai/,,"Washington, DC, USA",Summer 2024,,Y Combinator,11.0,,,,,Y Combinator,True,0.2,2026-02-06 17:44:08
+Void,The open source Cursor alternative,https://useglass.ai,,"San Francisco, CA, USA",Summer 2024,,Y Combinator,2.0,,,,,Y Combinator,False,0.0,2026-02-06 17:44:08
+StartX Logo,,https://web.startx.com,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:41:25
+1Bstories Logo,,,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:41:25
+1Climate Logo 01 zoomed,,https://1climate.app/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:41:25
+1upLogo,,,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+2rblogo 2x,,http://www.2redbeans.com/en/chinese-dating/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:41:25
+Copy of 3YOURMIND Logo,,http://3yourmind.com/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:41:25
+stringio,,http://www.6dot.com/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:41:25
+open uri20141220 5883 1l6h72x?1548977993,,http://accevia.wordpress.com/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:41:25
+AccuraGen,,http://www.accuragen.com/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+open uri20141220 5883 enida2?1548977998,,http://www.adhusky.com/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:41:25
+1Bstories,,,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+1Climate Logo 01,,https://1climate.app/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:42:49
+2rblogo,,http://www.2redbeans.com/en/chinese-dating/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+3YOURMIND,,http://3yourmind.com/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+Advent Logo FA col vert,,http://adventaccess.com,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:42:49
+AerialIntel Logo Text Color %281%29 %281%29,,http://www.aerialintel.com/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:42:49
+aether,,https://www.aetherbiomedical.com,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+afresh,,http://afreshtechnologies.com/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+Agathos %28main logo trans%29,,https://www.agathos.io,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:42:49
+AgriWebb,,http://www.agriwebb.com/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+Logo 1 %282%29,,,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:42:49
+AiFi,,http://www.aifi.com,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+AKOYA Bio   R   Logo   Standard,,http://www.akoyabio.com,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:42:49
+Alariss%28AI%29,,https://www.alariss.com/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:42:49
+alation logo 2015 01 5 w,,https://alation.com/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:42:49
+Alchemy WorkInTech,,https://www.alchemynano.com,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+DTL,,https://alchemy.com,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+Sentinel final logo RGB,,http://www.alertive.com,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:42:49
+1Climate,,https://1climate.app/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+Advent FA,,http://adventaccess.com,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+AerialIntel,,http://www.aerialintel.com/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+Agathos,,https://www.agathos.io,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+Logo 1,,,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+AKOYA Bio R,,http://www.akoyabio.com,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+Alariss,,https://www.alariss.com/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+alation 01 5,,https://alation.com/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+Sentinel RGB,,http://www.alertive.com,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+Alesca Life,,https://www.alescalife.com/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+ALICE,,http://alicetechnologies.com/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+AC large,,https://www.alignedcarbon.com/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+Logo 04,,http://www.alixia.com,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+Allday stacked,,https://sprayalldayenergy.com/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+Ambient,,http://ambient.ai/,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+amigocloud,,https://www.amigocloud.com/homepage/index,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+Ampervue,,http://www.ampervue.com,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+LOGO 1MB,,,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+anchorzero,,,,Stanford/Bay Area,,,StartX,,,,,,StartX,False,0.0,2026-02-06 20:43:35
+Vom,,https://skydeck.berkeley.edu/companies/vom/,,Berkeley/Bay Area,,,Berkeley SkyDeck,,,,,,Berkeley SkyDeck,False,0.0,2026-02-07 14:46:58
+VoiceBit,,https://skydeck.berkeley.edu/companies/voicebit/,,Berkeley/Bay Area,,,Berkeley SkyDeck,,,,,,Berkeley SkyDeck,False,0.0,2026-02-07 14:46:58
+SplitSecure,,https://skydeck.berkeley.edu/companies/splitsecure/,,Berkeley/Bay Area,,,Berkeley SkyDeck,,,,,,Berkeley SkyDeck,False,0.0,2026-02-07 14:46:58
+Scam AI,,https://skydeck.berkeley.edu/companies/scam-ai/,,Berkeley/Bay Area,,,Berkeley SkyDeck,,,,,,Berkeley SkyDeck,True,0.2,2026-02-07 14:46:58
+Satsurance,,https://skydeck.berkeley.edu/companies/satsurance/,,Berkeley/Bay Area,,,Berkeley SkyDeck,,,,,,Berkeley SkyDeck,False,0.0,2026-02-07 14:46:58
+Rescope,,https://skydeck.berkeley.edu/companies/rescope/,,Berkeley/Bay Area,,,Berkeley SkyDeck,,,,,,Berkeley SkyDeck,False,0.0,2026-02-07 14:46:58
+ReIGNITE Therapeutics Inc,,https://skydeck.berkeley.edu/companies/reignite-therapeutics-inc/,,Berkeley/Bay Area,,,Berkeley SkyDeck,,,,,,Berkeley SkyDeck,False,0.0,2026-02-07 14:46:58
+PYRAMYD,,https://skydeck.berkeley.edu/companies/pyramyd/,,Berkeley/Bay Area,,,Berkeley SkyDeck,,,,,,Berkeley SkyDeck,False,0.0,2026-02-07 14:46:58
+Ludwig Computing,,https://skydeck.berkeley.edu/companies/ludwig-computing/,,Berkeley/Bay Area,,,Berkeley SkyDeck,,,,,,Berkeley SkyDeck,False,0.0,2026-02-07 14:46:58
+Hominy AI,,https://skydeck.berkeley.edu/companies/hominy-ai/,,Berkeley/Bay Area,,,Berkeley SkyDeck,,,,,,Berkeley SkyDeck,True,0.2,2026-02-07 14:46:58

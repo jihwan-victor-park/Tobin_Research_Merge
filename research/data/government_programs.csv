@@ -1,0 +1,45 @@
+country,program_name,agency,funding_min,funding_max,currency,equity_required,duration_months,focus_areas,website,api_available,application_status_2026,notes
+USA,SBIR Phase I,Multiple Federal Agencies,0,305000,USD,No,6-18,All tech sectors,https://www.sbir.gov/,Yes,Some programs paused,Non-dilutive; NSF temporarily paused
+USA,SBIR Phase II,Multiple Federal Agencies,0,2095748,USD,No,24,All tech sectors,https://www.sbir.gov/,Yes,Some programs paused,Non-dilutive; NSF temporarily paused
+USA,NSF SBIR/STTR,National Science Foundation,0,305000,USD,No,6-18,Deep tech,https://seedfund.nsf.gov/,Yes,Temporarily paused,America's Seed Fund
+Canada,NRC IRAP,National Research Council,0,10000000,CAD,No,Varies,Technology innovation,https://nrc.canada.ca/en/support-technology-innovation,No,Active,60-80% cost coverage
+Canada,NRC IRAP Clean Tech,National Research Council,0,10000000,CAD,No,Varies,Clean technology,https://nrc.canada.ca/en/support-technology-innovation,No,Active,Accelerates cleantech development
+EU,EIC Accelerator Open,European Innovation Council,0,10000000,EUR,Optional,Varies,All tech,https://eic.ec.europa.eu/,No,Active,€384M budget 2026
+EU,EIC Accelerator Challenges,European Innovation Council,0,2500000,EUR,No,Varies,Strategic tech,https://eic.ec.europa.eu/,No,Active,€220M budget 2026
+EU,EIC Pathfinder,European Innovation Council,0,4000000,EUR,No,Varies,Research teams,https://eic.ec.europa.eu/,No,Active,€362M budget 2026
+EU,Horizon Europe AI,European Commission,0,221000000,EUR,No,Varies,AI & digital tech,https://eismea.ec.europa.eu/,No,Active,Deadline April 15 2026
+EU,EIT InnoEnergy,European Institute of Innovation,0,2000000,EUR,Co-investment,Varies,Sustainable energy,https://www.innoenergy.com/,No,Active,500+ industry partners
+UK,Innovate UK Growth Catalyst,Innovate UK,0,900000,GBP,Some,Varies,Late-stage innovation,https://www.ukri.org/councils/innovate-uk/,No,Active,Grant + private investment
+UK,CyberASAP Programme,DSIT,Varies,Varies,GBP,No,48,Cyber security,https://www.ncsc.gov.uk/,No,Active,£10M over 4 years
+UK,Smart Grants - Quantum,Innovate UK,0,3000000,GBP,No,Varies,Quantum tech,https://apply-for-innovation-funding.service.gov.uk/,No,Active,Competition-based
+UK,Smart Grants - AgriTech,Innovate UK,0,5000000,GBP,No,Varies,Agriculture,https://apply-for-innovation-funding.service.gov.uk/,No,Active,On-farm trials
+UK,Digital Inclusion Fund,UK Government,25000,500000,GBP,No,Varies,Digital inclusion,https://www.gov.uk/,No,Active,£9.5M total budget
+Germany,EXIST Programme,German Government,0,38000,EUR,No,Varies,University spinouts,https://www.exist.de/,No,Active,€3K/month + €30K materials + €5K coaching
+France,BPI France Tech Grant,BPI France,0,30000,EUR,No,Varies,Early-stage startups,https://www.bpifrance.com/,No,Active,Equity-free
+France,French Tech Seed Fund,BPI France,0,400000,EUR,Co-investment,Varies,Deep tech,https://www.bpifrance.com/,No,Active,€400M total fund
+Singapore,Startup SG Founder,Enterprise Singapore,20000,50000,SGD,Matching required,Varies,Early-stage,https://www.enterprisesg.gov.sg/,No,Active,Mentorship + grant
+Singapore,Startup SG Tech,Enterprise Singapore,400000,800000,SGD,Matching required,Varies,Tech commercialization,https://www.enterprisesg.gov.sg/,No,Active,Capital matching
+Singapore,Startup SG Equity,Enterprise Singapore,Varies,Varies,SGD,Co-investment,Varies,Early & growth stage,https://www.enterprisesg.gov.sg/,No,Active,S$1B fund 2026
+Singapore,Enterprise Development Grant,Enterprise Singapore,Varies,100000,SGD,No,Varies,General business,https://www.enterprisesg.gov.sg/,No,Active,Up to 50% support (70% for sustainability)
+South Korea,Deep Tech Package,Korean Government,Varies,Varies,KRW,Some,Varies,AI robotics biohealth,https://www.k-startup.go.kr/,No,Active,₩3.46T total budget
+South Korea,AX Sprint AI Track,Korean Government,Varies,10000000000,KRW,No,Varies,AI transformation,https://www.k-startup.go.kr/,No,Active,₩140B budget
+South Korea,K-Startup Grand Challenge,Korean Government,Varies,Varies,KRW,No,Varies,International startups,https://www.k-startup.go.kr/,No,Active,60% secure follow-on funding
+Japan,Tokyo Startup Support,Tokyo Metropolitan Government,Varies,Varies,JPY,No,Varies,General startup support,https://www.metro.tokyo.lg.jp/,No,Active,Start2 Asia Accelerator
+Israel,Revolutionary Startup Fund,Israel Innovation Authority,Varies,300000000,USD,Co-investment,Varies,Seed pre-seed Series A,https://innovationisrael.org.il/en/,No,Active,>500M shekels annually
+Israel,Yozma 2.0,Israel Innovation Authority,Varies,450000000,USD,Co-investment,Varies,VC funds,https://innovationisrael.org.il/en/,No,Active,$450M in VC investments
+Israel,Startup for High-Tech,Israel Innovation Authority,Varies,Varies,ILS,No,Varies,Regional development,https://innovationisrael.org.il/en/,No,Active,15 projects approved 2025-26
+Israel,IIA R&D Grants,Israel Innovation Authority,Varies,Varies,ILS,No,Varies,R&D projects,https://innovationisrael.org.il/en/,No,Active,$500M+ annually 20-50% cost coverage
+Chile,Startup Chile,Chilean Government,15000,90000,USD,No,6,All sectors,https://www.startupchile.org/,No,Active,Equity-free government grant
+India,Startup India Fund of Funds 2.0,DPIIT,0,10000000000,INR,Co-investment,Varies,Deep tech innovation mfg,https://www.startupindia.gov.in/,No,Active,₹10000 crore fund approved Feb 2026
+India,Startup India Recognition,DPIIT,0,0,INR,No,Varies,All sectors,https://www.startupindia.gov.in/,No,Active,Tax benefits IPR fast-tracking compliance
+Brazil,BNDES Angel Fund,BNDES,Varies,Varies,BRL,Co-investment,Varies,Innovative startups,https://www.bndes.gov.br/,No,Active,Angel co-investment fund
+Brazil,BNDES AI & Data Center Fund,BNDES,500000000,1000000000,BRL,Varies,Varies,AI data centers,https://www.bndes.gov.br/,No,Launching 2026,Expected early 2026
+UAE,Mohammed Bin Rashid Innovation Fund,UAE Government,Varies,Varies,AED,No,Varies,Innovation entrepreneurship,https://www.moet.gov.ae/,No,Active,Innovation Accelerator + Guarantee Scheme
+UAE,Dubai SME Fund,Dubai Government,0,1000000,AED,No,60,Dubai-based Emirati entrepreneurs,https://dubaisme.gov.ae/,No,Active,Interest-free loans 5-year repayment
+UAE,Abu Dhabi Investment Office,ADIO,Varies,Varies,AED,Varies,Varies,All sectors,https://www.investinabudhabi.gov.ae/,No,Active,Financial incentives for startups
+Saudi Arabia,Monsha'at Programs,Saudi SME Authority,Varies,Varies,SAR,Varies,Varies,SMEs and startups,https://www.monshaat.gov.sa/,No,Active,Multiple funding & development programs
+Saudi Arabia,Saudi Venture Capital,SVC,Varies,Varies,SAR,Co-investment,Varies,Startups and SMEs,https://svc.com.sa/,No,Active,Government-backed VC
+Saudi Arabia,KAUST Innovation Fund,KAUST,Varies,Varies,SAR,Varies,Varies,Early-stage deep tech,https://innovation.kaust.edu.sa/,No,Active,100+ companies supported
+Saudi Arabia,Badir Program,TAQNIA/Monsha'at,Varies,Varies,SAR,Varies,Varies,Tech startups,https://badir.com.sa/,No,Active,Incubators/accelerators network
+Australia,Advance Queensland,Queensland Government,0,250000,AUD,No,Varies,All sectors,https://advance.qld.gov.au/,No,Active,8100+ startups funded
+Australia,ARENA,Australian Renewable Energy Agency,Varies,Varies,AUD,No,Varies,Renewable energy,https://arena.gov.au/,No,Active,Cleantech energy focus

@@ -1,0 +1,135 @@
+╔══════════════════════════════════════════════════════════════╗
+║              ENRICHMENT CHEAT SHEET                          ║
+║           Quick Commands - Copy & Paste                      ║
+╚══════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 BASIC COMMANDS
+
+# Interactive mode (easiest)
+python scripts/enrich_name_only_companies.py --interactive
+
+# From CSV file
+python scripts/universal_enrichment.py --csv data/my_companies.csv
+
+# Test with 10 companies first
+python scripts/universal_enrichment.py --csv data/companies.csv --limit 10
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📁 CSV FORMAT
+
+Minimum (just names):
+    name
+    Anthropic
+    OpenAI
+
+Recommended (with source):
+    name,source,batch
+    Anthropic,Y Combinator,S21
+    OpenAI,Independent,
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 COMMON USE CASES
+
+# Enrich specific accelerator
+python scripts/universal_enrichment.py \
+    --csv data/companies.csv \
+    --filter-source "Y Combinator"
+
+# Enrich specific batch
+python scripts/universal_enrichment.py \
+    --csv data/companies.csv \
+    --filter-batch "W24"
+
+# Save to separate file (don't modify main DB)
+python scripts/universal_enrichment.py \
+    --csv data/companies.csv \
+    --output data/results.csv \
+    --no-db
+
+# Run in background
+nohup python scripts/universal_enrichment.py \
+    --csv data/companies.csv \
+    --no-db > log.txt 2>&1 &
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⏱️  TIME ESTIMATES
+
+10 companies  = ~2 minutes
+50 companies  = ~7 minutes
+100 companies = ~15 minutes
+500 companies = ~75 minutes
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔍 MONITORING
+
+# Watch live progress
+tail -f enrichment.log
+
+# Count completed
+grep -c "Enriching:" enrichment.log
+
+# Check output file
+wc -l data/output.csv
+
+# Find running process
+ps aux | grep universal_enrichment
+
+# Stop process
+kill <PID>
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🛠️  TROUBLESHOOTING
+
+# Rate limiting? Increase delay
+python scripts/universal_enrichment.py \
+    --csv data/companies.csv \
+    --delay 5
+
+# Database error? Skip database
+python scripts/universal_enrichment.py \
+    --csv data/companies.csv \
+    --output data/results.csv \
+    --no-db
+
+# View all options
+python scripts/universal_enrichment.py --help
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 ANALYZE RESULTS
+
+# Quick stats
+python -c "
+import pandas as pd
+df = pd.read_csv('data/results.csv')
+print(f'Total: {len(df)}')
+print(f'Websites: {df[\"website\"].notna().sum()}')
+print(f'AI: {df[\"is_ai_related\"].sum()}')
+print(f'Stealth: {df[\"is_stealth_mode\"].sum()}')
+"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📚 DOCUMENTATION
+
+Full guide:    ENRICHMENT_QUICKSTART.md
+Complete docs: docs/NAME_ONLY_ENRICHMENT_GUIDE.md
+Scripts guide: scripts/README.md
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ QUICK START
+
+1. cd ai_startup_scraper
+2. Create CSV: data/my_companies.csv
+3. Run: python scripts/universal_enrichment.py --csv data/my_companies.csv
+4. Check: data/ai_startups.csv
+
+That's it! 🚀

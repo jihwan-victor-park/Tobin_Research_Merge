@@ -1,0 +1,29 @@
+university,short_name,domain,state,has_program,program_name,program_url,portfolio_url,discovery_method,confidence,notes,checked_date
+Auburn University,auburn,auburn.edu,AL,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+Boston University,bu,bu.edu,MA,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+Clemson University,clemson,clemson.edu,SC,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+Cornell University,cornell,cornell.edu,NY,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+Dartmouth College,dartmouth,dartmouth.edu,NH,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+Drexel University,drexel,drexel.edu,PA,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+Iowa State University,iastate,iastate.edu,IA,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+Johns Hopkins University,jhu,jhu.edu,MD,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+Montana State University,montana,montana.edu,MT,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+Oregon State University,oregonstate,oregonstate.edu,OR,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+Princeton University,princeton,princeton.edu,NJ,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+Rensselaer Polytechnic Institute,rpi,rpi.edu,NY,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+Santa Clara University,scu,scu.edu,CA,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+Stevens Institute of Technology,stevens,stevens.edu,NJ,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+Syracuse University,syracuse,syracuse.edu,NY,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+Tufts University,tufts,tufts.edu,MA,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+University of Alabama,ua,ua.edu,AL,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+University of California Riverside,ucr,ucr.edu,CA,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+University of Florida,ufl,ufl.edu,FL,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+University of Idaho,uidaho,uidaho.edu,ID,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+University of Kentucky,uky,uky.edu,KY,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+University of Massachusetts Amherst,umass,umass.edu,MA,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+University of Notre Dame,nd,nd.edu,IN,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+University of Rhode Island,uri,uri.edu,RI,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+University of Tennessee,utk,utk.edu,TN,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+University of Virginia,uva,virginia.edu,VA,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+Virginia Tech,vt,vt.edu,VA,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
+Worcester Polytechnic Institute,wpi,wpi.edu,MA,NO,,,,url_pattern_failed,LOW,"Checked 10 URL patterns, none found. May require manual Google search.",2026-02-24
