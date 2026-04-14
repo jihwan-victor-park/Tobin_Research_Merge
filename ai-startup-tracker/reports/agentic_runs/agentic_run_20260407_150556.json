@@ -1,0 +1,146 @@
+{
+  "run_id": "agentic_run_20260407_150556",
+  "input_url": "https://toolify.ai",
+  "started_at": "2026-04-07T15:05:56.347337Z",
+  "finished_at": "2026-04-07T15:06:21.914888Z",
+  "plan": {
+    "data_available": [],
+    "strategy": "single_page_extract",
+    "subpage_hints": [],
+    "pagination_hints": [],
+    "quality_expectation_min_records": 1
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "strategy": "single_page_extract",
+      "fetched_urls": [
+        "https://toolify.ai"
+      ],
+      "validation": {
+        "is_good": true,
+        "reason": "31 records, 100% valid names, 0% duplicates",
+        "completeness_score": 1.0,
+        "valid_name_ratio": 1.0,
+        "duplicate_ratio": 0.0,
+        "record_count": 31
+      }
+    }
+  ],
+  "final_validation": {
+    "is_good": true,
+    "reason": "31 records, 100% valid names, 0% duplicates",
+    "completeness_score": 1.0,
+    "valid_name_ratio": 1.0,
+    "duplicate_ratio": 0.0,
+    "record_count": 31
+  },
+  "total_records_before_clean": 31,
+  "total_records_after_clean": 6,
+  "saved_to_db": true,
+  "db_new_companies": 3,
+  "db_updated_companies": 3,
+  "site_domain": "toolify.ai",
+  "instruction_loaded": false,
+  "instruction_path": "/Users/jihwanpark/Tobin_Research/ai-startup-tracker/data/scrape_instructions/toolify.ai.yaml",
+  "instruction_saved": true,
+  "instruction_saved_path": "/Users/jihwanpark/Tobin_Research/ai-startup-tracker/data/scrape_instructions/toolify.ai.yaml",
+  "extracted_preview": [
+    {
+      "name": "ThumbnailCreator.com",
+      "normalized_name": "thumbnailcreator com",
+      "domain": "thumbnailcreator.com",
+      "description": "AI tool for creating stunning YouTube thumbnails quickly.",
+      "website_url": "https://thumbnailcreator.com",
+      "profile_url": "https://toolify.ai",
+      "industry": "Content Creation",
+      "country": "USA",
+      "city": null,
+      "is_ai_startup": true,
+      "ai_category": "Vision",
+      "program": null,
+      "batch": null,
+      "confidence": 0.85
+    },
+    {
+      "name": "Raccoon AI",
+      "normalized_name": "raccoon",
+      "domain": "toolify.ai",
+      "description": "Collaborative AI agent and workspace for getting real work done with autonomous capabilities.",
+      "website_url": null,
+      "profile_url": "https://toolify.ai",
+      "industry": "SaaS",
+      "country": "USA",
+      "city": null,
+      "is_ai_startup": true,
+      "ai_category": "Agents",
+      "program": null,
+      "batch": null,
+      "confidence": 0.9
+    },
+    {
+      "name": "Miro",
+      "normalized_name": "miro",
+      "domain": "miro.com",
+      "description": "AI innovation workspace for collaboration and visual thinking.",
+      "website_url": "https://miro.com",
+      "profile_url": "https://toolify.ai",
+      "industry": "SaaS",
+      "country": "USA",
+      "city": "San Francisco",
+      "is_ai_startup": true,
+      "ai_category": "Other",
+      "program": null,
+      "batch": null,
+      "confidence": 0.85
+    },
+    {
+      "name": "ace.me",
+      "normalized_name": "ace me",
+      "domain": "ace.me",
+      "description": "Website, email address and cloud storage platform.",
+      "website_url": "https://ace.me",
+      "profile_url": "https://toolify.ai",
+      "industry": "SaaS",
+      "country": "USA",
+      "city": null,
+      "is_ai_startup": false,
+      "ai_category": null,
+      "program": null,
+      "batch": null,
+      "confidence": 0.6
+    },
+    {
+      "name": "AdsCreator.com",
+      "normalized_name": "adscreator com",
+      "domain": "adscreator.com",
+      "description": "AI ad creation tool that generates professional AI ads from website URLs.",
+      "website_url": "https://adscreator.com",
+      "profile_url": "https://toolify.ai",
+      "industry": "Marketing",
+      "country": "USA",
+      "city": null,
+      "is_ai_startup": true,
+      "ai_category": "Vision",
+      "program": null,
+      "batch": null,
+      "confidence": 0.85
+    },
+    {
+      "name": "gptimg2.io",
+      "normalized_name": "gptimg2",
+      "domain": "gptimg2.io",
+      "description": "All-in-one AI platform for high-fidelity image and video generation and editing.",
+      "website_url": "https://gptimg2.io",
+      "profile_url": null,
+      "industry": "DevTools",
+      "country": "USA",
+      "city": null,
+      "is_ai_startup": true,
+      "ai_category": "Vision",
+      "program": null,
+      "batch": null,
+      "confidence": 0.7
+    }
+  ]
+}

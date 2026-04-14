@@ -1,0 +1,25 @@
+version: 1
+domain: killerstartups.com
+created_at: '2026-04-07T15:00:51.501347Z'
+updated_at: '2026-04-07T15:00:51.501347Z'
+seed_urls:
+- https://killerstartups.com
+preferred_strategy: subpage_discovery
+fallback_order:
+- single_page_extract
+- subpage_discovery
+- pagination_probe
+- search_probe
+subpage_hints: []
+pagination_hints: []
+quality_expectation_min_records: 1
+last_success:
+  run_id: agentic_run_20260407_150025
+  at: '2026-04-07T15:00:51.501347Z'
+  input_url: https://killerstartups.com
+  strategy: subpage_discovery
+  record_count: 7
+  valid_name_ratio: 1.0
+  duplicate_ratio: 0.0
+  completeness_score: 1.0
+notes: null

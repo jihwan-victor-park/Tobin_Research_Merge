@@ -1,0 +1,25 @@
+version: 1
+domain: stationf.co
+created_at: '2026-04-07T03:39:37.288280Z'
+updated_at: '2026-04-07T03:39:37.288280Z'
+seed_urls:
+- https://stationf.co/
+preferred_strategy: single_page_extract
+fallback_order:
+- single_page_extract
+- subpage_discovery
+- pagination_probe
+- search_probe
+subpage_hints: []
+pagination_hints: []
+quality_expectation_min_records: 1
+last_success:
+  run_id: agentic_run_20260407_033933
+  at: '2026-04-07T03:39:37.288280Z'
+  input_url: https://stationf.co/
+  strategy: single_page_extract
+  record_count: 5
+  valid_name_ratio: 1.0
+  duplicate_ratio: 0.0
+  completeness_score: 1.0
+notes: null

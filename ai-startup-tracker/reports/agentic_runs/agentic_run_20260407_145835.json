@@ -1,0 +1,66 @@
+{
+  "run_id": "agentic_run_20260407_145835",
+  "input_url": "https://microlaunch.net",
+  "started_at": "2026-04-07T14:58:35.162196Z",
+  "finished_at": "2026-04-07T14:58:55.759240Z",
+  "plan": {
+    "data_available": [],
+    "strategy": "single_page_extract",
+    "subpage_hints": [],
+    "pagination_hints": [],
+    "quality_expectation_min_records": 1
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "strategy": "single_page_extract",
+      "fetched_urls": [
+        "https://microlaunch.net"
+      ],
+      "validation": {
+        "is_good": true,
+        "reason": "31 records, 100% valid names, 0% duplicates",
+        "completeness_score": 1.0,
+        "valid_name_ratio": 1.0,
+        "duplicate_ratio": 0.0,
+        "record_count": 31
+      }
+    }
+  ],
+  "final_validation": {
+    "is_good": true,
+    "reason": "31 records, 100% valid names, 0% duplicates",
+    "completeness_score": 1.0,
+    "valid_name_ratio": 1.0,
+    "duplicate_ratio": 0.0,
+    "record_count": 31
+  },
+  "total_records_before_clean": 31,
+  "total_records_after_clean": 1,
+  "saved_to_db": true,
+  "db_new_companies": 1,
+  "db_updated_companies": 0,
+  "site_domain": "microlaunch.net",
+  "instruction_loaded": false,
+  "instruction_path": "/Users/jihwanpark/Tobin_Research/ai-startup-tracker/data/scrape_instructions/microlaunch.net.yaml",
+  "instruction_saved": true,
+  "instruction_saved_path": "/Users/jihwanpark/Tobin_Research/ai-startup-tracker/data/scrape_instructions/microlaunch.net.yaml",
+  "extracted_preview": [
+    {
+      "name": "hyperfocal",
+      "normalized_name": "hyperfocal",
+      "domain": "microlaunch.net",
+      "description": "Photography editing made easy with AI-generated Lightroom presets.",
+      "website_url": null,
+      "profile_url": "https://microlaunch.net",
+      "industry": "Photography",
+      "country": "USA",
+      "city": null,
+      "is_ai_startup": true,
+      "ai_category": "Vision",
+      "program": "Microlaunch",
+      "batch": null,
+      "confidence": 0.7
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+version: 1
+domain: generalcatalyst.com
+created_at: '2026-04-07T14:08:35.504835Z'
+updated_at: '2026-04-07T14:08:35.504835Z'
+seed_urls:
+- https://www.generalcatalyst.com/portfolio
+preferred_strategy: single_page_extract
+fallback_order:
+- single_page_extract
+- subpage_discovery
+- pagination_probe
+- search_probe
+subpage_hints: []
+pagination_hints: []
+quality_expectation_min_records: 1
+last_success:
+  run_id: agentic_run_20260407_140819
+  at: '2026-04-07T14:08:35.504835Z'
+  input_url: https://www.generalcatalyst.com/portfolio
+  strategy: single_page_extract
+  record_count: 31
+  valid_name_ratio: 1.0
+  duplicate_ratio: 0.0
+  completeness_score: 1.0
+notes: null

@@ -1,0 +1,26 @@
+version: 1
+domain: capitalfactory.com
+created_at: '2026-04-07T02:37:25.868672Z'
+updated_at: '2026-04-07T02:56:41.782024Z'
+seed_urls:
+- https://capitalfactory.com/portfolio/
+- https://www.capitalfactory.com/portfolio/
+preferred_strategy: single_page_extract
+fallback_order:
+- single_page_extract
+- subpage_discovery
+- pagination_probe
+- search_probe
+subpage_hints: []
+pagination_hints: []
+quality_expectation_min_records: 1
+last_success:
+  run_id: agentic_run_20260407_025623
+  at: '2026-04-07T02:56:41.782024Z'
+  input_url: https://capitalfactory.com/portfolio/
+  strategy: single_page_extract
+  record_count: 30
+  valid_name_ratio: 1.0
+  duplicate_ratio: 0.0
+  completeness_score: 1.0
+notes: null

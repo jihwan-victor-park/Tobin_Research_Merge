@@ -48,6 +48,10 @@ env/
 # Database
 *.db
 *.sqlite
+
+# Large data files (use local copies, not tracked in git)
+data/pitchbook_other_glob_deal.parquet
+data/pitchbook_other_glob_deal_investor_relation.parquet
 *.sqlite3
 
 # Logs

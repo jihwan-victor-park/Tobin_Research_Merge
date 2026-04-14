@@ -1,0 +1,67 @@
+{
+  "run_id": "agentic_run_20260407_145452",
+  "input_url": "https://www.f6s.com",
+  "started_at": "2026-04-07T14:54:52.012416Z",
+  "finished_at": "2026-04-07T14:55:30.066798Z",
+  "plan": {
+    "data_available": [],
+    "strategy": "single_page_extract",
+    "subpage_hints": [],
+    "pagination_hints": [],
+    "quality_expectation_min_records": 1
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "strategy": "single_page_extract",
+      "fetched_urls": [
+        "https://www.f6s.com"
+      ],
+      "validation": {
+        "is_good": false,
+        "reason": "No records extracted",
+        "completeness_score": 0.0,
+        "valid_name_ratio": 0.0,
+        "duplicate_ratio": 0.0,
+        "record_count": 0
+      }
+    },
+    {
+      "attempt": 2,
+      "strategy": "subpage_discovery",
+      "fetched_urls": [
+        "https://www.f6s.com",
+        "https://www.f6s.com/portfolio",
+        "https://www.f6s.com/companies",
+        "https://www.f6s.com/startups"
+      ],
+      "validation": {
+        "is_good": false,
+        "reason": "No records extracted",
+        "completeness_score": 0.0,
+        "valid_name_ratio": 0.0,
+        "duplicate_ratio": 0.0,
+        "record_count": 0
+      }
+    }
+  ],
+  "final_validation": {
+    "is_good": false,
+    "reason": "No records extracted",
+    "completeness_score": 0.0,
+    "valid_name_ratio": 0.0,
+    "duplicate_ratio": 0.0,
+    "record_count": 0
+  },
+  "total_records_before_clean": 0,
+  "total_records_after_clean": 0,
+  "saved_to_db": true,
+  "db_new_companies": 0,
+  "db_updated_companies": 0,
+  "site_domain": "f6s.com",
+  "instruction_loaded": false,
+  "instruction_path": "/Users/jihwanpark/Tobin_Research/ai-startup-tracker/data/scrape_instructions/f6s.com.yaml",
+  "instruction_saved": false,
+  "instruction_saved_path": null,
+  "extracted_preview": []
+}

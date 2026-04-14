@@ -1,0 +1,15 @@
+# Registered URLs for the in-process scheduler (scripts/run_scheduled_scraper.py).
+# Edit this list and run: python scripts/run_scheduled_scraper.py
+
+schedule:
+  # "daily" — run once per day at local time (uses the `schedule` library)
+  # "interval" — run every N hours
+  mode: daily
+  time: "09:00"
+  interval_hours: 24
+
+sites:
+  # Example (disabled by default — enable after setting keys in .env)
+  - url: "https://www.techstars.com/portfolio"
+    enabled: false
+    max_retries: 2

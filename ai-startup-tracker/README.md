@@ -1,411 +1,277 @@
-# 🚀 Global AI Startup Tracker
+# Global AI Startup Tracker (GitHub-first)
 
-**Real-time intelligence system that discovers, analyzes, and tracks emerging AI startups worldwide.**
-
-Automatically scrapes 12+ global sources, stores in PostgreSQL, and visualizes on an interactive dashboard with geographic mapping.
+Discover emerging AI startups from GitHub, classify them with LLM, enrich/verify against Crunchbase and PitchBook parquet data, and explore results through an interactive Streamlit dashboard.
 
 ---
 
-## 🎯 What You Get
+## Architecture
 
-- **84+ startups tracked** across 3 active data sources
-- **Global coverage** from North America, Europe, Asia, and beyond
-- **Interactive map** showing startup locations worldwide
-- **Startup directory** with search, filtering, and vertical categorization
-- **Trend analysis** with time-series charts and source distribution
-- **Automated pipeline** that scrapes, imports, and displays in 3 commands
+```
+GitHub API (weekly)          Crunchbase (.parquet)       PitchBook (.parquet)
+      |                            |                           |
+      v                            v                           v
+ github_weekly_discover.py   import_crunchbase.py        import_pitchbook.py
+      |                            |                           |
+      +------------+---------------+---------------------------+
+                   v
+            PostgreSQL DB
+       +----------------------------+
+       |  companies                 |  <- core entity table
+       |  github_signals            |  <- repo-level data
+       |  github_repo_snapshots     |  <- time-series metrics
+       |  funding_signals           |  <- PitchBook deals
+       |  source_matches            |  <- audit trail
+       +----------------------------+
+                   |
+           +-------+-------+
+           v               v
+  run_llm_classify.py   pipeline_dashboard.py
+  (LLM classification)  (Streamlit frontend)
+```
 
----
+## Quick Start
 
-## ⚡ Quick Start
+### 1. Setup
 
 ```bash
-# 1. Scrape global startup data
-python run_full_scraper.py
-
-# 2. Import to database
-python scripts/import_scraped_data.py
-
-# 3. Launch dashboard
-streamlit run frontend/dashboard.py
-```
-
-**Or run complete pipeline:**
-```bash
-./update_tracker.sh
-```
-
-Dashboard opens at: [http://localhost:8501](http://localhost:8501)
-
----
-
-## 🏗️ How It Works
-
-```
-┌──────────────┐      ┌──────────────┐      ┌──────────────┐
-│   SCRAPER    │  →   │   IMPORTER   │  →   │  DASHBOARD   │
-│              │      │              │      │              │
-│ Collects     │      │ Bridges      │      │ Displays     │
-│ from 12+     │      │ JSON → DB    │      │ in browser   │
-│ sources      │      │              │      │              │
-└──────────────┘      └──────────────┘      └──────────────┘
-```
-
-### 1️⃣ Scraper
-**File**: `run_full_scraper.py`
-
-Collects startup data from:
-- ✅ **Hacker News** (Show HN) - ~30 startups
-- ✅ **TechCrunch** - ~25 startups
-- ✅ **GitHub Trending** (AI repos) - ~12 startups
-- 🔧 Crunchbase Search (configured)
-- 🔧 Tech in Asia (configured)
-- 🔧 EU-Startups (configured)
-- 🔧 Indie Hackers (configured)
-- 🔧 F6S Global (configured)
-- 🔧 Product Hunt (configured)
-- 🔧 Y Combinator (configured)
-- 🔧 BetaList (configured)
-
-**Output**: `data/global_startups_full.json`
-
-### 2️⃣ Importer
-**File**: `scripts/import_scraped_data.py`
-
-Bridges JSON files → PostgreSQL database:
-- Maps source names to database enums
-- Extracts domain from URLs
-- Parses location into country/city
-- Sets default relevance scores
-- Skips duplicates automatically
-- Commits in batches of 50
-
-### 3️⃣ Dashboard
-**File**: `frontend/dashboard.py`
-
-Interactive Streamlit dashboard with:
-- 📊 Key metrics (startups, sources, countries, verticals)
-- 🗺️ Geographic distribution map with coordinate plotting
-- 📈 Trend analysis with time-series and source breakdown
-- 🏢 Startup directory organized by vertical
-- 🔍 Filtering by source, country, vertical, and relevance
-
----
-
-## 📦 Installation
-
-### Prerequisites
-- Python 3.10+
-- PostgreSQL 14+ with pgvector extension
-
-### Setup
-
-```bash
-# 1. Clone repository
 cd ai-startup-tracker
-
-# 2. Create virtual environment
-python -m venv venv
-source venv/bin/activate
-
-# 3. Install dependencies
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-# 4. Setup PostgreSQL
-createdb ai_startup_tracker
-psql -U postgres -d ai_startup_tracker -f backend/database/schema.sql
-
-# 5. Configure environment (optional for LLM features)
+# Configure environment
 cp .env.example .env
-# Edit .env with GROQ_API_KEY if you want AI-powered location prediction
+# Edit .env: set GITHUB_TOKEN, DATABASE_URL, TOGETHER_API_KEY (for LLM)
+```
+
+### 2. Create database
+
+```bash
+createdb ai_startup_tracker
+
+# Initialize tables
+python -c "from backend.db.connection import init_db; init_db()"
+```
+
+### 3. Run GitHub Discovery
+
+```bash
+# Discover AI repos from the last 30 days
+python scripts/github_weekly_discover.py --since-days 30
+
+# Skip LLM classification (just save to DB, classify later)
+python scripts/github_weekly_discover.py --since-days 30 --no-llm
+```
+
+### 4. Run LLM Classification (standalone)
+
+```bash
+# Classify all unclassified snapshots
+python scripts/run_llm_classify.py
+
+# Classify a limited batch
+python scripts/run_llm_classify.py --batch-limit 500
+
+# Dry run (classify but don't save)
+python scripts/run_llm_classify.py --dry-run
+```
+
+### 5. Import Crunchbase & PitchBook data
+
+```bash
+python scripts/import_crunchbase.py --path data/organizations.parquet --categories data/category_groups.parquet
+python scripts/import_pitchbook.py --deal data/pitchbook_other_glob_deal.parquet --relation data/pitchbook_other_glob_deal_investor_relation.parquet
+```
+
+### 6. Run Full Weekly Update
+
+```bash
+# Runs all steps: GitHub -> Crunchbase -> PitchBook -> Report
+python scripts/run_weekly_update.py --init-db
+```
+
+### 7. Launch Dashboard
+
+```bash
+streamlit run frontend/pipeline_dashboard.py
+```
+
+### 8. Run Tests
+
+```bash
+pytest tests/ -v
 ```
 
 ---
 
-## 📊 Current Statistics
+## Pipeline Steps
 
-- **Total Startups**: 84
-- **High Relevance** (≥0.70): 68
-- **Countries**: 12+
-- **Active Sources**: 3 (Hacker News, TechCrunch, GitHub)
-- **Configured Sources**: 12+
+### A) GitHub Discovery (`scripts/github_weekly_discover.py`)
 
----
+- Searches GitHub for repos with 26 AI topics and 25 keywords
+- 6 search strategies: topic search, keyword search, starred repos, topic x stars combos, org-owned repos, recently updated
+- Extracts company domain from repo homepage, org profile, and README
+- Computes `startup_likelihood` heuristic score (0-1)
+- Saves ALL discovered repos to DB (both accepted and rejected)
+- Optional LLM classification step (can be run separately)
+- Resilient: retries with exponential backoff, owner caching, rate limit checks
 
-## 🗄️ Database Schema
+### B) LLM Classification (`scripts/run_llm_classify.py`)
 
-### Startup Table
-```sql
-CREATE TABLE startups (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    url VARCHAR(512) UNIQUE NOT NULL,
-    domain VARCHAR(255) NOT NULL,
-    description TEXT,
-    country VARCHAR(100),
-    city VARCHAR(100),
-    latitude DECIMAL(10, 8),
-    longitude DECIMAL(11, 8),
-    source DataSource NOT NULL,
-    relevance_score DECIMAL(3, 2),
-    confidence_score DECIMAL(3, 2),
-    industry_vertical VARCHAR(100),
-    founder_names TEXT[],
-    extra_metadata JSONB,
-    discovered_date TIMESTAMP DEFAULT NOW(),
-    status CompanyStatus DEFAULT 'active',
-    review_status ReviewStatus DEFAULT 'pending'
-);
-```
+- Standalone script to classify unclassified snapshots
+- Supports 3 backends: **Together.ai** (recommended), Groq, Ollama
+- 3-tier filter: auto-accept (heuristic >= 0.70), auto-reject (< 0.10), LLM for middle range
+- Categories: startup, personal_project, research, community_tool
+- Incremental: saves after each batch, safe to interrupt and resume
+- 3 consecutive failures = auto-stop
 
----
+### C) Crunchbase Import (`scripts/import_crunchbase.py`)
 
-## 🔧 Common Tasks
+- Loads `organizations.parquet` + `category_groups.parquet`
+- Auto-detects column names (flexible schema handling)
+- Computes `cb_ai_flag` from categories + description keywords
+- Matches to existing companies by canonical domain
+- Updates `verification_status` to `verified_cb`
 
-### Update Data Daily
-```bash
-./update_tracker.sh
-```
+### D) PitchBook Import (`scripts/import_pitchbook.py`)
 
-### Re-import Without Re-scraping
-```bash
-python scripts/import_scraped_data.py
-```
+- Loads `deal.parquet` + `deal_investor_relation.parquet`
+- Matches companies by domain (preferred) or strict fuzzy name (>= 0.95)
+- Creates `funding_signals` with deal date, size, round type, top 5 investors
+- Batched inserts for performance
 
-### View Raw Scraped Data
-```bash
-cat data/global_startups_full.json | python -m json.tool | less
-```
+### E) Weekly Orchestrator (`scripts/run_weekly_update.py`)
 
-### Check Database Status
-```bash
-psql ai_startup_tracker -c "SELECT COUNT(*) FROM startups;"
-psql ai_startup_tracker -c "SELECT name, source, country FROM startups LIMIT 10;"
-```
-
-### Clear Database and Start Fresh
-```bash
-psql ai_startup_tracker -c "TRUNCATE startups CASCADE;"
-python scripts/import_scraped_data.py
-```
-
-### Restart Dashboard with Fresh Cache
-```bash
-./restart_dashboard.sh
-```
-
-### Fix Location Data
-```bash
-# Extract locations from descriptions, set defaults
-python scripts/fix_locations.py
-
-# Add coordinates for mapping
-python scripts/geocode_locations.py
-
-# (Optional) Use LLM to predict locations intelligently
-python scripts/llm_predict_locations.py
-```
+- Runs all steps in sequence
+- Generates `reports/weekly_report_YYYYMMDD.json`
 
 ---
 
-## 🗺️ Location Intelligence
+## Dashboard Features (`frontend/pipeline_dashboard.py`)
 
-The tracker includes 3 location scripts:
-
-### 1. `fix_locations.py`
-Extracts locations from descriptions, sets default (San Francisco) for unknowns
-
-### 2. `geocode_locations.py`
-Comprehensive coordinate database for 100+ global tech hubs
-
-### 3. `llm_predict_locations.py`
-Uses Groq LLM to intelligently predict startup locations from:
-- Company names (geographic indicators)
-- Descriptions (market mentions)
-- URL domains (.com vs .co.uk vs .de)
-- Source platform patterns
-- Industry conventions
-
-**Requires**: `GROQ_API_KEY` in `.env` (free tier: 30 req/min)
+- **Overview**: Total stats, geographic map, verification status breakdown
+- **Trending Repos**: Velocity metrics (7-day stars/forks delta)
+- **AI Categories**: Subdomain classification, stack layers, language distribution
+- **Startup Directory**: Paginated company listings with filters
+- **GitHub Signals**: Stars/forks distributions, repo-level details
+- **Funding Data**: PitchBook deals, deal sizes, round types
+- **Emerging vs Funded**: Compare GitHub-only startups vs CB/PB-verified ones
 
 ---
 
-## 📁 Project Structure
+## Scoring
+
+### Startup Likelihood (0-1)
+
+| Signal | Weight |
+|--------|--------|
+| Has product domain (not github.com/docs/etc.) | +0.25 |
+| Repo owned by GitHub organization | +0.15 |
+| Commercial keywords (pricing, enterprise, waitlist, demo) | +0.15 |
+| Has Crunchbase/PitchBook record | +0.15 |
+| Multiple contributors / recent activity | +0.10 |
+| Has professional README with branding | +0.10 |
+| Stars > 100 | +0.10 |
+
+### LLM Classification
+
+| Category | Description |
+|----------|-------------|
+| `startup` | Commercial product, SaaS, platform by a company/team |
+| `personal_project` | Individual side project, portfolio, learning exercise |
+| `research` | Academic research, paper implementations, benchmarks |
+| `community_tool` | Open-source utilities without commercial intent |
+
+---
+
+## Database Tables
+
+| Table | Purpose |
+|-------|---------|
+| `companies` | Core entity (name, domain, location, scores, verification) |
+| `github_signals` | Per-repo data (stars, forks, topics, README snippet) |
+| `github_repo_snapshots` | Time-series snapshots with LLM classification |
+| `funding_signals` | PitchBook deals (date, size, round, investors) |
+| `source_matches` | Audit trail (CB/PB IDs, match method, confidence) |
+
+---
+
+## Project Structure
 
 ```
 ai-startup-tracker/
-├── run_full_scraper.py          # Scraper entry point
-├── update_tracker.sh            # Complete pipeline automation
-├── restart_dashboard.sh         # Dashboard restart utility
-│
 ├── backend/
-│   ├── scrapers/
-│   │   ├── aggregator_scraper.py    # Main scraping logic (12+ sources)
-│   │   └── base_scraper.py          # Scraper base class
-│   │
-│   ├── database/
-│   │   ├── models.py                # SQLAlchemy ORM models
-│   │   ├── connection.py            # Database connection
-│   │   └── schema.sql               # PostgreSQL schema
-│   │
-│   ├── intelligence/
-│   │   ├── embeddings.py            # Vector embeddings
-│   │   └── llm_analyzer.py          # Groq LLM analysis
-│   │
-│   └── config.py                    # Configuration management
-│
-├── scripts/
-│   ├── import_scraped_data.py       # JSON → Database importer
-│   ├── fix_locations.py             # Location extraction
-│   ├── geocode_locations.py         # Coordinate mapping
-│   └── llm_predict_locations.py     # AI location prediction
+│   ├── db/
+│   │   ├── models.py              # SQLAlchemy ORM (companies, signals, snapshots)
+│   │   └── connection.py          # DB engine + session management
+│   ├── utils/
+│   │   ├── llm_filter.py          # LLM classifier (Together.ai / Groq / Ollama)
+│   │   ├── classify.py            # Rule-based AI subdomain/stack layer classifier
+│   │   ├── scoring.py             # Heuristic scoring (ai_score, startup_likelihood)
+│   │   ├── domain.py              # Domain extraction + canonicalization
+│   │   ├── normalize.py           # Company name normalization + fuzzy match
+│   │   ├── dedup.py               # Entity resolution + deduplication
+│   │   └── trends.py              # Trend analysis utilities
+│   ├── scrapers/                   # Legacy scrapers (YC, ProductHunt, etc.)
+│   ├── database/                   # Legacy DB schema
+│   └── intelligence/               # Legacy embeddings + LLM analyzer
 │
 ├── frontend/
-│   └── dashboard.py                 # Streamlit dashboard
+│   ├── pipeline_dashboard.py       # Main Streamlit dashboard (use this)
+│   └── dashboard.py                # Legacy dashboard
 │
-├── data/
-│   ├── global_startups_full.json    # Scraped data
-│   └── test_results.json            # Test data
+├── scripts/
+│   ├── github_weekly_discover.py   # GitHub repo discovery pipeline
+│   ├── run_llm_classify.py         # Standalone LLM classification
+│   ├── import_crunchbase.py        # Crunchbase parquet import
+│   ├── import_pitchbook.py         # PitchBook parquet import
+│   ├── run_weekly_update.py        # Weekly orchestrator
+│   ├── backfill_locations.py       # Backfill missing location data from GitHub
+│   ├── fix_locations.py            # Fix/normalize location strings
+│   └── geocode_locations.py        # Geocode location strings
 │
-├── requirements.txt                 # Python dependencies
-├── .env.example                     # Environment template
-└── COMPLETE_WORKFLOW.md             # Detailed workflow documentation
+├── tests/
+│   ├── test_domain.py              # Domain extraction tests
+│   ├── test_normalize.py           # Name normalization tests
+│   ├── test_scoring.py             # Scoring function tests
+│   └── test_dedup.py               # Deduplication tests
+│
+├── data/                           # Parquet files + reports
+│   ├── organizations.parquet       # Crunchbase organizations
+│   ├── category_groups.parquet     # Crunchbase categories
+│   ├── pitchbook_*.parquet         # PitchBook deals + investor relations
+│   └── revelio_*.parquet           # Revelio Labs workforce data
+│
+├── reports/                        # Generated weekly reports
+├── requirements.txt
+├── .env.example
+└── README.md
 ```
 
 ---
 
-## 🔄 Data Flow
+## Environment Variables
 
-### Initial Setup (Empty Database)
-```bash
-# Step 1: Scrape data
-python run_full_scraper.py
-# Output: data/global_startups_full.json (67 startups)
-
-# Step 2: Import to database
-python scripts/import_scraped_data.py
-# Output: ✅ Added 55, ⏭️ Skipped 12 duplicates
-
-# Step 3: View dashboard
-streamlit run frontend/dashboard.py
-# Shows: 55 startups with metrics and map
-```
-
-### Daily Update (Incremental)
-```bash
-./update_tracker.sh
-# New scrape: 80 startups (30 new, 50 existing)
-# Import result: ✅ Added 30, ⏭️ Skipped 50
-# Database now: 85 startups total
-```
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `GITHUB_TOKEN` | Yes | GitHub personal access token |
+| `TOGETHER_API_KEY` | For LLM | Together.ai API key (recommended LLM backend) |
+| `GROQ_API_KEY` | For LLM | Groq API key (alternative, strict rate limits) |
+| `LLM_BACKEND` | No | `together` (default), `groq`, or `ollama` |
+| `LLM_MODEL` | No | Model name (default: `meta-llama/Llama-3.3-70B-Instruct-Turbo`) |
+| `CB_ORGANIZATIONS_PATH` | No | Path to Crunchbase organizations.parquet |
+| `CB_CATEGORIES_PATH` | No | Path to Crunchbase category_groups.parquet |
+| `PB_DEAL_PATH` | No | Path to PitchBook deal.parquet |
+| `PB_RELATION_PATH` | No | Path to PitchBook deal_investor_relation.parquet |
 
 ---
 
-## 🐛 Troubleshooting
+## Design Decisions
 
-### Dashboard shows 0 startups
-**Problem**: Database is empty
-**Solution**: Run `python scripts/import_scraped_data.py`
-
-### Import says "0 added"
-**Problem**: All startups already in database OR no JSON files
-**Solution**: Check if `data/global_startups_full.json` exists, run scraper first
-
-### Scraper gets 0 from some sources
-**Problem**: Website HTML changed or anti-scraping measures
-**Solution**: Normal! 3 sources (Hacker News, TechCrunch, GitHub) currently work reliably
-
-### Map doesn't show startups
-**Problem**: Startups missing coordinates
-**Solution**: Run `python scripts/fix_locations.py` and `python scripts/geocode_locations.py`
-
-### Database connection error
-**Problem**: PostgreSQL not running
-**Solution**: Start postgres or check `.env` file configuration
-
-### Streamlit cache issues
-**Problem**: Dashboard shows stale data
-**Solution**: Run `./restart_dashboard.sh` to clear cache
-
----
-
-## 🚀 Advanced Features
-
-### Automate with Cron
-```bash
-# Edit crontab
-crontab -e
-
-# Add daily update at 9 AM
-0 9 * * * cd /Users/jihwanpark/Tobin_Research/ai-startup-tracker && ./update_tracker.sh
-```
-
-### Export Data to CSV
-```bash
-psql ai_startup_tracker -c "COPY (SELECT name, url, description, country, city FROM startups) TO '/tmp/startups.csv' CSV HEADER;"
-```
-
-### Filter Dashboard by Multiple Criteria
-Dashboard supports filtering by:
-- Source (Hacker News, TechCrunch, GitHub, etc.)
-- Country
-- Industry vertical
-- Relevance score threshold
-
----
-
-## 📈 Metrics You Can Track
-
-- ✅ Total global startups discovered
-- ✅ Geographic distribution (countries, cities)
-- ✅ Trending industry verticals
-- ✅ Source effectiveness (which finds more startups?)
-- ✅ Emerging markets
-- ✅ Time-series trends (with AI embeddings)
-- ✅ Similar startup clusters (with vector search)
-
----
-
-## 🔑 API Keys (Optional)
-
-For enhanced AI features, add to `.env`:
-
-```env
-# Groq LLM (for intelligent location prediction)
-GROQ_API_KEY=your_key_here
-
-# Get free key at: https://console.groq.com
-# Free tier: 30 requests/min
-```
-
----
-
-## 📄 License
-
-MIT License
-
----
-
-## 🙏 Acknowledgments
-
-Built with:
-- **Streamlit** - Dashboard framework
-- **PostgreSQL + pgvector** - Database with vector extensions
-- **BeautifulSoup4** - Web scraping
-- **Plotly** - Interactive visualizations
-- **Groq LLM** - AI-powered analysis
-
----
-
-## 📧 Support
-
-For detailed workflow documentation, see: [COMPLETE_WORKFLOW.md](COMPLETE_WORKFLOW.md)
-
-For issues or questions:
-- Check the troubleshooting section above
-- Review `COMPLETE_WORKFLOW.md` for detailed explanations
-- Examine logs: `full_scraper_final.log`
-
----
-
-**🌍 Track global AI startups in real-time!**
+- **Domain as primary key**: Companies are matched by canonical domain first, then normalized name
+- **DB-first pipeline**: All repos saved to DB before LLM classification, so processing work is never lost
+- **Incremental LLM**: Classification can be interrupted and resumed; saves after each batch
+- **3-tier LLM filter**: High-confidence heuristics skip LLM entirely, saving API calls
+- **Idempotent**: Running any script twice produces the same result (upserts, not inserts)
+- **NULL locations**: Unknown locations stay NULL (never defaulted to a specific city)
+- **Flexible parquet schemas**: Column detection adapts to whatever column names exist
