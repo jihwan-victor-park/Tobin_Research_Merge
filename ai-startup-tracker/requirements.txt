@@ -1,3 +1,15 @@
+# Python: use 3.11–3.12 (recommended) or 3.13 — NOT 3.14 yet.
+# On 3.14 you will see: Failed building wheel for psycopg2-binary / pydantic-core
+# (ForwardRef._evaluate / missing wheels). Fix: recreate the venv with 3.12.
+#
+# From repo root (pyenv reads ../.python-version if you `cd ai-startup-tracker`):
+#   cd ai-startup-tracker
+#   rm -rf .venv ../.venv
+#   brew install python@3.12
+#   /opt/homebrew/opt/python@3.12/bin/python3.12 -m venv .venv
+#   source .venv/bin/activate && python -V   # must show 3.12.x
+#   pip install -U pip && pip install -r requirements.txt && playwright install chromium
+#
 # Core Framework
 fastapi==0.109.0
 uvicorn==0.27.0
@@ -7,33 +19,41 @@ python-dotenv==1.0.0
 # Database
 sqlalchemy==2.0.25
 psycopg2-binary==2.9.9
-pgvector==0.2.4
 alembic==1.13.1
 
-# Scraping
-playwright==1.41.0
-firecrawl-py==0.0.10
+# GitHub-first Pipeline
+requests==2.31.0
+tldextract>=5.0.0
+rapidfuzz>=3.0.0
+pandas>=2.0.0
+pyarrow>=14.0.0
+
+# Scraping (legacy — kept for existing scrapers)
 beautifulsoup4==4.12.3
 lxml==5.1.0
-requests==2.31.0
-google-search-results==2.4.2  # SerpApi
+httpx==0.26.0
 
-# AI/ML
-groq==0.4.2  # Groq API for LLM
-sentence-transformers==2.3.1  # Local embeddings (no API needed)
-torch==2.1.2  # Required for sentence-transformers
-numpy==1.26.3
-scikit-learn==1.4.0
-
-# Frontend
-streamlit==1.30.0
+# Frontend (Streamlit >=1.41 allows packaging 24+; avoids conflict with `wheel` / modern pip)
+streamlit>=1.41.0,<2
 plotly==5.18.0
-pandas==2.2.0
 
 # Utilities
 schedule==1.2.0
 pydantic-settings==2.1.0
-httpx==0.26.0
-aiohttp==3.9.1
 loguru==0.7.2
 tenacity==8.2.3
+
+# Testing
+pytest>=7.0.0
+
+# Agentic scraper — YAML instruction files
+PyYAML>=6.0.0
+
+# Agentic scraper — Anthropic Messages API (Claude Haiku etc.)
+anthropic>=0.40.0
+
+# Tolerant JSON parse for LLM output (trailing commas, minor syntax issues)
+json-repair>=0.30.0
+
+# Agentic scraper — JS-rendered pages (install browsers: playwright install chromium)
+playwright>=1.40.0

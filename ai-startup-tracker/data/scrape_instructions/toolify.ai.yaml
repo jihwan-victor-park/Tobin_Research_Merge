@@ -1,0 +1,25 @@
+version: 1
+domain: toolify.ai
+created_at: '2026-04-07T15:06:21.910430Z'
+updated_at: '2026-04-07T15:06:21.910430Z'
+seed_urls:
+- https://toolify.ai
+preferred_strategy: single_page_extract
+fallback_order:
+- single_page_extract
+- subpage_discovery
+- pagination_probe
+- search_probe
+subpage_hints: []
+pagination_hints: []
+quality_expectation_min_records: 1
+last_success:
+  run_id: agentic_run_20260407_150556
+  at: '2026-04-07T15:06:21.910430Z'
+  input_url: https://toolify.ai
+  strategy: single_page_extract
+  record_count: 31
+  valid_name_ratio: 1.0
+  duplicate_ratio: 0.0
+  completeness_score: 1.0
+notes: null

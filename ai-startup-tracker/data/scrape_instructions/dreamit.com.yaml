@@ -1,0 +1,26 @@
+version: 1
+domain: dreamit.com
+created_at: '2026-04-07T02:37:47.382020Z'
+updated_at: '2026-04-07T02:59:04.859659Z'
+seed_urls:
+- https://www.dreamit.com/portfolio
+- https://dreamit.com/portfolio
+preferred_strategy: single_page_extract
+fallback_order:
+- single_page_extract
+- subpage_discovery
+- pagination_probe
+- search_probe
+subpage_hints: []
+pagination_hints: []
+quality_expectation_min_records: 1
+last_success:
+  run_id: agentic_run_20260407_025831
+  at: '2026-04-07T02:59:04.859659Z'
+  input_url: https://www.dreamit.com/portfolio
+  strategy: single_page_extract
+  record_count: 25
+  valid_name_ratio: 1.0
+  duplicate_ratio: 0.0
+  completeness_score: 1.0
+notes: null
