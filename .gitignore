@@ -1,0 +1,22 @@
+# Data outputs — large/generated, not versioned
+data/
+*.db
+*.parquet
+*.csv
+yc_companies.json
+
+# Agent logs
+logs/
+
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# macOS
+.DS_Store
