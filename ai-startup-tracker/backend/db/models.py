@@ -68,7 +68,10 @@ class IncubatorSource(str, enum.Enum):
     harvard_ilabs = "harvard_ilabs"
     georgia_tech_atdc = "georgia_tech_atdc"
     michigan_zell_lurie = "michigan_zell_lurie"
+    rice_owlspark = "rice_owlspark"
+    princeton_elab = "princeton_elab"
     # Major Accelerators
+    yc = "yc"
     techstars = "techstars"
     five_hundred_global = "five_hundred_global"
     alchemist = "alchemist"

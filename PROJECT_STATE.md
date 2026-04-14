@@ -174,4 +174,4 @@ Weekly Updates - problematic
  - 
 
  Database structuring: think about the columns, what to include
- Enriching 
+ Enriching later
