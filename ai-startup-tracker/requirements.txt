@@ -1,0 +1,39 @@
+# Core Framework
+fastapi==0.109.0
+uvicorn==0.27.0
+pydantic==2.5.3
+python-dotenv==1.0.0
+
+# Database
+sqlalchemy==2.0.25
+psycopg2-binary==2.9.9
+pgvector==0.2.4
+alembic==1.13.1
+
+# Scraping
+playwright==1.41.0
+firecrawl-py==0.0.10
+beautifulsoup4==4.12.3
+lxml==5.1.0
+requests==2.31.0
+google-search-results==2.4.2  # SerpApi
+
+# AI/ML
+groq==0.4.2  # Groq API for LLM
+sentence-transformers==2.3.1  # Local embeddings (no API needed)
+torch==2.1.2  # Required for sentence-transformers
+numpy==1.26.3
+scikit-learn==1.4.0
+
+# Frontend
+streamlit==1.30.0
+plotly==5.18.0
+pandas==2.2.0
+
+# Utilities
+schedule==1.2.0
+pydantic-settings==2.1.0
+httpx==0.26.0
+aiohttp==3.9.1
+loguru==0.7.2
+tenacity==8.2.3
