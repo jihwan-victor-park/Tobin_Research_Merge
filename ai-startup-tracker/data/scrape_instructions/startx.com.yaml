@@ -3,7 +3,7 @@ domain: startx.com
 created_at: '2026-04-07T02:34:28.583414Z'
 updated_at: '2026-04-07T02:51:28.851090Z'
 seed_urls:
-- https://startx.com/companies
+- https://web.startx.com/companies
 preferred_strategy: single_page_extract
 fallback_order:
 - single_page_extract
@@ -22,4 +22,14 @@ last_success:
   valid_name_ratio: 1.0
   duplicate_ratio: 0.0
   completeness_score: 1.0
-notes: null
+pattern_hints:
+- webflow_finsweet_cmslist
+- dynamic_hash_key_detection
+- check_subdomains_for_spa
+notes: |
+  Data lives on web.startx.com (separate server-rendered subdomain), NOT startx.com
+  which is a React SPA returning an empty shell. When the scout flags a site as JS SPA,
+  check for a data subdomain (web., app., portfolio.) before giving up.
+  Finsweet cmslist pagination: ?{hash}_page=N. 1,313 companies across ~54 pages.
+  AI detection was initially low (1.2%) because 'ai' keyword was missing — fixed to 10.6%.
+  Hard-coded easy scraper exists: backend/scrapers/easy/startx_scraper.py.

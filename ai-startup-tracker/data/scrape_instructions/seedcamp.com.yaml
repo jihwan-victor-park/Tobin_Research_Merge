@@ -22,4 +22,13 @@ last_success:
   valid_name_ratio: 1.0
   duplicate_ratio: 0.0
   completeness_score: 1.0
-notes: null
+pattern_hints:
+- static_html_client_side_filter
+- css_class_as_category_tag
+notes: |
+  Server-rendered single 441KB HTML payload — all companies embedded in initial response,
+  no pagination or JS rendering needed. CSS classes on company divs (e.g. 'ai', 'climate',
+  'fintech') are ground-truth category tags, not just styling — parse them as industry tags.
+  CSS class 'ai' gives 27.8% AI companies, more reliable than keyword matching on descriptions.
+  Client-side filter sites embed full dataset in HTML — always check payload size before
+  assuming JS rendering is needed. Hard-coded easy scraper exists: backend/scrapers/easy/seedcamp_scraper.py.

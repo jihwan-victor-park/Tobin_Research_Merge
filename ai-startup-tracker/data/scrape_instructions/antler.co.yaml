@@ -22,4 +22,14 @@ last_success:
   valid_name_ratio: 1.0
   duplicate_ratio: 0.0
   completeness_score: 1.0
-notes: null
+pattern_hints:
+- webflow_finsweet_cmslist
+- dynamic_hash_key_detection
+notes: |
+  Webflow Finsweet cmslist pagination. Hash key must be detected dynamically from
+  a.w-pagination-next[href] — do not hardcode. URL pattern: ?{hash}_page=N.
+  Selectors: div.portco_cms_wrap div.portco_card, p[fs-cmsfilter-field="name"],
+  p[fs-cmsfilter-field="description"], div.tag_small_wrap tags distinguished by
+  fs-cmsfilter-field="sector"/"year"/location-value, a.clickable_link[href].
+  ~52 cards/page. Hard-coded easy scraper exists: backend/scrapers/easy/antler_scraper.py
+  — prefer that over agentic for this domain.

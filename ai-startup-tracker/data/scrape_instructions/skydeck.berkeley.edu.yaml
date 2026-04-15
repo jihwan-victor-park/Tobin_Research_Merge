@@ -22,4 +22,10 @@ last_success:
   valid_name_ratio: 1.0
   duplicate_ratio: 0.0
   completeness_score: 1.0
-notes: null
+pattern_hints:
+- wordpress_admin_ajax_no_pagination
+notes: |
+  Single POST to /wp-admin/admin-ajax.php — no pagination, all 800+ companies returned
+  in one JSON response. Action: company_filtration_query. Critical: params must be sent
+  as a list of tuples, not a dict — the endpoint requires duplicate keys which dicts
+  silently overwrite. Hard-coded easy scraper exists: backend/scrapers/easy/skydeck_scraper.py.
