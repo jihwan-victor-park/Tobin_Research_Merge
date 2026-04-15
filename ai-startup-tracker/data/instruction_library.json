@@ -243,5 +243,35 @@
     "ai_detection": null,
     "last_run": null,
     "result": null
+  },
+  {
+    "id": "028",
+    "site": "Plug and Play Tech Center",
+    "domain": "plugandplaytechcenter.com",
+    "status": "excluded",
+    "backend": null,
+    "approach": "excluded_js_rendered",
+    "scraper": null,
+    "notes": "Angular SPA — requests returns empty HTML shell. Portfolio at /companies/ has no visible company data in static HTML. No Algolia, Typesense, __NEXT_DATA__, or observable REST API endpoint detected via static HTTP inspection. Requires DevTools network tab investigation to find the data layer. Excluded pending further investigation.",
+    "fields_available": [],
+    "fields_missing": ["name", "description", "website", "batch", "location"],
+    "ai_detection": null,
+    "last_run": null,
+    "result": null
+  },
+  {
+    "id": "029",
+    "site": "500 Global",
+    "domain": "500.co",
+    "status": "excluded",
+    "backend": null,
+    "approach": "excluded_js_rendered",
+    "scraper": null,
+    "notes": "Next.js client-rendered — requests returns empty HTML shell. Portfolio at /companies has no visible company data in static HTML. No __NEXT_DATA__ JSON blob or observable REST API endpoint detected via static HTTP inspection. Requires DevTools network tab investigation to find the data layer. Excluded pending further investigation.",
+    "fields_available": [],
+    "fields_missing": ["name", "description", "website", "batch", "location"],
+    "ai_detection": null,
+    "last_run": null,
+    "result": null
   }
 ]
