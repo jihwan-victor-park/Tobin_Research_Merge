@@ -227,7 +227,7 @@ def postprocess_records(records: List[ScrapedCompany]) -> List[dict]:
     """Normalize + deduplicate scraped records."""
     candidates = []
     for r in records:
-        domain = canonicalize_domain(r.website_url or r.profile_url or "")
+        domain = canonicalize_domain(r.website_url or "")
         candidates.append({
             "name": (r.name or "").strip(),
             "normalized_name": normalize_company_name(r.name or ""),
@@ -336,12 +336,15 @@ def save_companies_to_db(
                     .first()
                 )
                 if not existing:
+                    industry = r.get("industry")
+                    if industry and len(industry) > 255:
+                        industry = industry[:255]
                     signal = IncubatorSignal(
                         company_id=company.id,
                         source=IncubatorSource.agentic_scrape,
                         company_name_raw=name,
                         website_url=r.get("website_url"),
-                        industry=r.get("industry"),
+                        industry=industry,
                         batch=r.get("batch"),
                         program=r.get("program"),
                         description=r.get("description"),

@@ -12,8 +12,11 @@ from typing import Dict, Optional, Type
 from backend.scrapers.base import BaseScraper
 
 # Import all easy scrapers
+from backend.scrapers.easy.alchemist_scraper import AlchemistScraper
 from backend.scrapers.easy.antler_scraper import AntlerScraper
+from backend.scrapers.easy.capitalfactory_scraper import CapitalFactoryScraper
 from backend.scrapers.easy.columbia_scraper import ColumbiaScraper
+from backend.scrapers.easy.eranyc_scraper import ERANYCScraper
 from backend.scrapers.easy.crunchbase_import import CrunchbaseImportScraper
 from backend.scrapers.easy.ef_scraper import EFScraper
 from backend.scrapers.easy.harvard_scraper import HarvardScraper
@@ -24,6 +27,7 @@ from backend.scrapers.easy.seedcamp_scraper import SeedcampScraper
 from backend.scrapers.easy.skydeck_scraper import SkydeckScraper
 from backend.scrapers.easy.startx_scraper import StartxScraper
 from backend.scrapers.easy.techstars_scraper import TechstarsScraper
+from backend.scrapers.easy.villageglobal_scraper import VillageGlobalScraper
 from backend.scrapers.easy.yc_scraper import YCScraper
 
 
@@ -63,6 +67,14 @@ SCRAPER_REGISTRY: Dict[str, ScraperEntry] = {
 
     # Bulk import (parquet)
     "crunchbase.com": ScraperEntry(cls=CrunchbaseImportScraper, difficulty="easy", pattern="parquet"),
+
+    # REST API (additional)
+    "alchemistaccelerator.com": ScraperEntry(cls=AlchemistScraper, difficulty="easy", pattern="api_direct"),
+
+    # BeautifulSoup single-page (additional)
+    "capitalfactory.com": ScraperEntry(cls=CapitalFactoryScraper, difficulty="easy", pattern="bs_single"),
+    "villageglobal.com": ScraperEntry(cls=VillageGlobalScraper, difficulty="easy", pattern="bs_single"),
+    "eranyc.com": ScraperEntry(cls=ERANYCScraper, difficulty="easy", pattern="bs_single"),
 }
 
 
