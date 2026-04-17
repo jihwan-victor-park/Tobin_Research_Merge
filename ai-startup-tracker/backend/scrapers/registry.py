@@ -12,10 +12,13 @@ from typing import Dict, Optional, Type
 from backend.scrapers.base import BaseScraper
 
 # Import all easy scrapers
+from backend.scrapers.easy.alchemist_scraper import AlchemistScraper
 from backend.scrapers.easy.antler_scraper import AntlerScraper
+from backend.scrapers.easy.capitalfactory_scraper import CapitalFactoryScraper
 from backend.scrapers.easy.columbia_scraper import ColumbiaScraper
 from backend.scrapers.easy.crunchbase_import import CrunchbaseImportScraper
 from backend.scrapers.easy.ef_scraper import EFScraper
+from backend.scrapers.easy.eranyc_scraper import ERANYCScraper
 from backend.scrapers.easy.harvard_scraper import HarvardScraper
 from backend.scrapers.easy.mit_deltav_scraper import MitDeltavScraper
 from backend.scrapers.easy.princeton_scraper import PrincetonScraper
@@ -24,6 +27,7 @@ from backend.scrapers.easy.seedcamp_scraper import SeedcampScraper
 from backend.scrapers.easy.skydeck_scraper import SkydeckScraper
 from backend.scrapers.easy.startx_scraper import StartxScraper
 from backend.scrapers.easy.techstars_scraper import TechstarsScraper
+from backend.scrapers.easy.villageglobal_scraper import VillageGlobalScraper
 from backend.scrapers.easy.yc_scraper import YCScraper
 
 
@@ -37,12 +41,16 @@ class ScraperEntry:
 # ── Registry ──────────────────────────────────────────────────────────────
 
 SCRAPER_REGISTRY: Dict[str, ScraperEntry] = {
-    # API Direct (Algolia / Typesense)
+    # API Direct (Algolia / Typesense / REST)
     "ycombinator.com": ScraperEntry(cls=YCScraper, difficulty="easy", pattern="api_direct"),
     "techstars.com": ScraperEntry(cls=TechstarsScraper, difficulty="easy", pattern="api_direct"),
+    "alchemistaccelerator.com": ScraperEntry(cls=AlchemistScraper, difficulty="easy", pattern="api_direct"),
 
     # BeautifulSoup single-page
     "seedcamp.com": ScraperEntry(cls=SeedcampScraper, difficulty="easy", pattern="bs_single"),
+    "capitalfactory.com": ScraperEntry(cls=CapitalFactoryScraper, difficulty="easy", pattern="bs_single"),
+    "eranyc.com": ScraperEntry(cls=ERANYCScraper, difficulty="easy", pattern="bs_single"),
+    "villageglobal.com": ScraperEntry(cls=VillageGlobalScraper, difficulty="easy", pattern="bs_single"),
 
     # BeautifulSoup paginated
     "antler.co": ScraperEntry(cls=AntlerScraper, difficulty="easy", pattern="bs_paginated"),

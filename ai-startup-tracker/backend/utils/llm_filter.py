@@ -24,9 +24,11 @@ logger = logging.getLogger("llm_filter")
 # API keys
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY", "")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001")
 
 # Backend config
-LLM_BACKEND = os.getenv("LLM_BACKEND", "together")  # "together", "groq", or "ollama"
+LLM_BACKEND = os.getenv("LLM_BACKEND", "together")  # "together", "groq", "anthropic", or "ollama"
 LLM_MODEL = os.getenv("LLM_MODEL", "meta-llama/Llama-3.3-70B-Instruct-Turbo")
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 
@@ -190,6 +192,43 @@ def _call_groq(messages: List[Dict], temperature: float = 0.1) -> str:
     return data["choices"][0]["message"]["content"].strip()
 
 
+def _call_anthropic(messages: List[Dict], temperature: float = 0.1) -> str:
+    """Call Anthropic Claude API."""
+    try:
+        import anthropic
+    except ImportError:
+        raise RuntimeError("anthropic package not installed. Run: pip install anthropic")
+
+    if not ANTHROPIC_API_KEY:
+        raise RuntimeError("ANTHROPIC_API_KEY not set")
+
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+
+    system_content = ""
+    user_messages = []
+    for msg in messages:
+        if msg["role"] == "system":
+            system_content = msg["content"]
+        else:
+            user_messages.append(msg)
+
+    try:
+        response = client.messages.create(
+            model=ANTHROPIC_MODEL,
+            max_tokens=8192,
+            system=system_content,
+            messages=user_messages,
+            temperature=temperature,
+        )
+    except Exception as e:
+        err = str(e)
+        if "529" in err or "overloaded" in err.lower():
+            raise RateLimitError(10)
+        raise
+
+    return response.content[0].text.strip()
+
+
 class RateLimitError(Exception):
     def __init__(self, wait_seconds: int):
         self.wait_seconds = wait_seconds
@@ -207,6 +246,9 @@ def classify_batch_with_llm(records: List[Dict]) -> List[Dict]:
         return [{"classification": "unknown", "confidence": 0.0, "reason": "no API key"}] * len(records)
     if backend == "together" and not TOGETHER_API_KEY:
         logger.warning("TOGETHER_API_KEY not set, skipping LLM classification")
+        return [{"classification": "unknown", "confidence": 0.0, "reason": "no API key"}] * len(records)
+    if backend == "anthropic" and not ANTHROPIC_API_KEY:
+        logger.warning("ANTHROPIC_API_KEY not set, skipping LLM classification")
         return [{"classification": "unknown", "confidence": 0.0, "reason": "no API key"}] * len(records)
 
     # Build the user prompt with all repos
@@ -227,7 +269,7 @@ def classify_batch_with_llm(records: List[Dict]) -> List[Dict]:
         {"role": "user", "content": user_prompt},
     ]
 
-    call_fn = {"together": _call_together, "groq": _call_groq, "ollama": _call_ollama}
+    call_fn = {"together": _call_together, "groq": _call_groq, "ollama": _call_ollama, "anthropic": _call_anthropic}
     if backend not in call_fn:
         logger.error(f"Unknown LLM_BACKEND: {backend}. Use 'together', 'groq', or 'ollama'.")
         return [{"classification": "unknown", "confidence": 0.0, "reason": f"unknown backend: {backend}"}] * len(records)
