@@ -58,6 +58,16 @@ DEFAULT_STRATEGIES = ["single_page_extract", "subpage_discovery", "pagination_pr
 # JSON / UI preview rows (full run still saves all rows to DB)
 EXTRACTED_PREVIEW_CAP = 500
 
+# Fast path: long-page extraction — multiple Claude calls, then merge
+EXTRACT_CHUNK_CHARS = 30_000
+
+# Fast path: force agent if few rows but page clearly paginates / load-more
+_ESCALATE_RECORD_THRESHOLD = 20
+
+# Agent tool budgets (per run)
+AGENT_FETCH_PAGE_MAX_CALLS = 12
+AGENT_FETCH_RENDERED_MAX_CALLS = 8
+
 
 # ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -280,22 +290,32 @@ def _maybe_enrich_chunks_playwright(
     return chunks
 
 
-# ── Extract records (THE ONLY LLM CALL) ─────────────────────────────────
+# ── Extract records (Claude; chunked on long combined text) ───────────
 
 def _extract_records(
     api_key: str,
     input_url: str,
     extracted_chunks: List[Dict[str, Any]],
 ) -> List[ScrapedCompany]:
-    """Single Claude call: extract company records with location + AI classification."""
-    text_bundle = []
+    """Chunked Claude calls (long pages): split raw text, extract per slice, merge + dedup."""
+    text_bundle: List[str] = []
     for chunk in extracted_chunks:
         url = chunk.get("url", "")
-        content = (chunk.get("raw_content") or "")[:12000]
+        content = (chunk.get("raw_content") or "").strip()
         text_bundle.append(f"URL: {url}\nCONTENT:\n{content}")
     combined = "\n\n---\n\n".join(text_bundle)
 
-    prompt = f"""Extract startup/company records from the content below.
+    slices: List[str] = []
+    for i in range(0, len(combined), EXTRACT_CHUNK_CHARS):
+        slices.append(combined[i : i + EXTRACT_CHUNK_CHARS])
+    if not slices:
+        return []
+
+    system_prompt = "You are a precise information extractor. Return JSON only. No explanation."
+    all_out: List[ScrapedCompany] = []
+
+    for si, slice_text in enumerate(slices):
+        prompt = f"""Extract startup/company records from the content below.
 
 Output strict JSON object:
 {{
@@ -318,32 +338,35 @@ Output strict JSON object:
 }}
 
 Rules:
-- Extract ALL companies/startups listed on the page. Do not skip any.
+- Extract ALL companies/startups mentioned in THIS excerpt only. Do not skip any that appear here.
+- If the same company appears multiple times in this excerpt, return one merged record.
 - For location: infer country and city from the text. If the page is for an incubator in a known city, use that city for companies without explicit location.
 - For is_ai_startup: true if the company works on AI, ML, LLM, deep learning, computer vision, NLP, data science, or similar. false otherwise.
 - For ai_category: classify only if is_ai_startup is true. Use null otherwise.
 - Do not invent data. If a field is not available, use null.
 - Prefer URLs found in the text over guessing.
 
+Context: this is excerpt part {si + 1} of {len(slices)} from the same crawl (same site). Other parts may list different companies — extract everything visible here.
+
 Input URL: {input_url}
 
 Content:
-{combined}"""
+{slice_text}"""
 
-    parsed = _call_claude_json(
-        anthropic_api_key=api_key,
-        system_prompt="You are a precise information extractor. Return JSON only. No explanation.",
-        user_prompt=prompt,
-        max_tokens=4000,
-    )
-    raw_records = parsed.get("records", [])
-    out: List[ScrapedCompany] = []
-    for item in raw_records:
-        try:
-            out.append(ScrapedCompany(**item))
-        except Exception:
-            continue
-    return out
+        parsed = _call_claude_json(
+            anthropic_api_key=api_key,
+            system_prompt=system_prompt,
+            user_prompt=prompt,
+            max_tokens=16000,
+        )
+        raw_records = parsed.get("records", [])
+        for item in raw_records:
+            try:
+                all_out.append(ScrapedCompany(**item))
+            except Exception:
+                continue
+
+    return _merge_dedupe_scraped(all_out)
 
 
 # ── Rule-based validation (NO LLM) ──────────────────────────────────────
@@ -395,6 +418,85 @@ def _validate_records(
         duplicate_ratio=round(duplicate_ratio, 3),
         record_count=len(records),
     )
+
+
+def _pagination_hints_present(chunks: List[Dict[str, Any]]) -> bool:
+    """Heuristic: listing likely continues (pagination / load more)."""
+    blob = "\n".join((c.get("raw_content") or "") for c in chunks)
+    low = blob.lower()
+    phrases = (
+        "view more",
+        "load more",
+        "show more",
+        "see more",
+        "read more",
+        "next page",
+        "older posts",
+        "newer posts",
+        "previous page",
+        "prev page",
+    )
+    if any(p in low for p in phrases):
+        return True
+    if re.search(r"[?&]page\s*=\s*\d+", blob, re.I):
+        return True
+    if re.search(r"/page/\d+", blob, re.I):
+        return True
+    if re.search(r"[?&]p\s*=\s*\d+", blob, re.I):
+        return True
+    if re.search(r"/p/\d+", blob, re.I):
+        return True
+    if re.search(r"[?&]offset\s*=\s*\d+", blob, re.I):
+        return True
+    if re.search(r"[?&]cursor\s*=", blob, re.I):
+        return True
+    if "pagination" in low:
+        return True
+    if re.search(r"\bpage\s+\d+\s+of\s+\d+", low):
+        return True
+    if re.search(r"\b\d+\s*[-–]\s*\d+\s+of\s+\d+", low):
+        return True
+    return False
+
+
+def _apply_escalation_rules(
+    validation: ValidationResult,
+    chunks: List[Dict[str, Any]],
+) -> ValidationResult:
+    """If fast path looks 'too small' but the raw text hints at more pages, fail → agent."""
+    if (
+        validation.is_good
+        and validation.record_count < _ESCALATE_RECORD_THRESHOLD
+        and _pagination_hints_present(chunks)
+    ):
+        return validation.model_copy(
+            update={
+                "is_good": False,
+                "reason": (
+                    f"{validation.reason} | Escalation: {validation.record_count} < "
+                    f"{_ESCALATE_RECORD_THRESHOLD} while pagination/load-more signals present "
+                    "(likely partial list) — use agent."
+                ),
+            }
+        )
+    return validation
+
+
+def _merge_dedupe_scraped(records: List[ScrapedCompany]) -> List[ScrapedCompany]:
+    """Merge chunk extractions; same company key = one row (first wins)."""
+    seen: set[Tuple[str, str]] = set()
+    out: List[ScrapedCompany] = []
+    for r in records:
+        nn = normalize_company_name(r.name or "")
+        if not nn:
+            continue
+        dom = canonicalize_domain(r.website_url or r.profile_url or "")
+        key = (nn, dom)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(r)
+    return out
 
 
 # ── Strategy selection (NO LLM) ─────────────────────────────────────────
@@ -690,7 +792,11 @@ def _save_to_db(records: List[Dict[str, Any]], source_url: str = "") -> Tuple[in
 AGENT_TOOLS = [
     {
         "name": "fetch_page",
-        "description": "Fetch and extract clean text content from one or more URLs using Tavily. Use this to get page content.",
+        "description": (
+            "Fetch clean text from URLs via Tavily (up to 6 URLs per call). "
+            f"Budget: max {AGENT_FETCH_PAGE_MAX_CALLS} fetch_page invocations per run. "
+            "Good for static HTML; pair with fetch_page_rendered for JS-heavy grids."
+        ),
         "input_schema": {
             "type": "object",
             "properties": {
@@ -703,8 +809,9 @@ AGENT_TOOLS = [
         "name": "fetch_page_rendered",
         "description": (
             "Fetch visible page text after JavaScript runs in headless Chromium (Playwright). "
-            "Use when fetch_page returns only navigation, footers, empty shells, or messages about "
-            "dynamic/SPA content. Max 2 URLs per call — use the real portfolio/listing URLs."
+            "Prefer this FIRST on VC/incubator portfolio pages (React/Next). "
+            f"Budget: max {AGENT_FETCH_RENDERED_MAX_CALLS} calls per run (up to 2 URLs each). "
+            "Use the real listing URLs (portfolio, companies, alumni)."
         ),
         "input_schema": {
             "type": "object",
@@ -755,21 +862,21 @@ AGENT_TOOLS = [
     },
 ]
 
-AGENT_SYSTEM_PROMPT = """You are an AI web scraping agent. You were called because a fast extraction attempt got too few results.
+AGENT_SYSTEM_PROMPT = """You are an AI web scraping agent. You were called because a fast extraction attempt got too few results or looked incomplete.
 
 Your goal: extract ALL startup/company records from the given website.
 
-Strategy:
-1. Check read_instruction for this domain — it may have hints from previous scrapes
-2. Use fetch_page to get content from promising URLs (try subpages like /portfolio, /companies, /startups, pagination like ?page=2)
-3. If fetch_page returns almost no company names (nav-only, empty, or "dynamic content"), use fetch_page_rendered on the SAME key URLs — it runs a real browser and often fixes React/Next.js SPAs
-4. Use extract_companies on the fetched content to get structured data
-5. If you think there are more pages (pagination, "load more", etc.), fetch additional pages
-6. When you have a good set of results, use save_results
+Strategy (VC / accelerator sites are usually React or Next.js — client-rendered lists):
+1. read_instruction for this domain first — reuse seed URLs, subpage_hints, pagination_hints when present.
+2. Prefer fetch_page_rendered FIRST on the main portfolio / companies / alumni URL (and obvious listing URLs). Headless Chromium sees JS-rendered grids; Tavily-only fetch_page often misses them.
+3. Use fetch_page when you need quick text from many static URLs or after rendered text confirms extra links (?page=2, /page/2, /p/2, ?p=2, offset=, cursor=).
+4. Auto-think pagination: try ?page=2, ?page=3, /portfolio?page=2, /companies/2, /p/2, next cohort tabs, and "Load more" / infinite-scroll pages until diminishing returns.
+5. extract_companies on each substantial body of text you fetch.
+6. When coverage is good, save_results.
 
 For each company extract: name, description, website_url, industry, country, city, is_ai_startup (bool), ai_category, program, batch, confidence (0-1).
 
-Budget: at most 6 fetch_page calls total, and at most 4 fetch_page_rendered calls total (each up to 2 URLs). Prefer fetch_page_rendered early when the site looks JS-heavy."""
+Budget: at most 12 fetch_page calls total, and at most 8 fetch_page_rendered calls total (each call up to 2 URLs for rendered). Stay within budget; prioritize rendered + pagination depth over redundant fetches."""
 
 
 def _execute_agent_tool(
@@ -785,6 +892,13 @@ def _execute_agent_tool(
     state = agent_state if agent_state is not None else {}
 
     if tool_name == "fetch_page":
+        used_fetch = int(state.get("fetch_batches", 0))
+        if used_fetch >= AGENT_FETCH_PAGE_MAX_CALLS:
+            return (
+                f"fetch_page budget exhausted (max {AGENT_FETCH_PAGE_MAX_CALLS} calls). "
+                "Use fetch_page_rendered, extract_companies on existing text, or save_results."
+            )
+        state["fetch_batches"] = used_fetch + 1
         urls = tool_input.get("urls", [])[:6]
         results = _tavily_extract(tavily_api_key, urls)
         # Return truncated content
@@ -796,9 +910,9 @@ def _execute_agent_tool(
 
     if tool_name == "fetch_page_rendered":
         used = int(state.get("rendered_batches", 0))
-        if used >= 4:
+        if used >= AGENT_FETCH_RENDERED_MAX_CALLS:
             return (
-                "fetch_page_rendered budget exhausted (max 4 calls). "
+                f"fetch_page_rendered budget exhausted (max {AGENT_FETCH_RENDERED_MAX_CALLS} calls). "
                 "Use extract_companies on text you already have or save_results."
             )
         urls = tool_input.get("urls", [])[:2]
@@ -882,12 +996,12 @@ def _run_tool_use_agent(
     all_records: List[ScrapedCompany] = list(initial_records)
     new_count, updated_count = 0, 0
     max_iterations = 10
-    agent_state: Dict[str, Any] = {"rendered_batches": 0}
+    agent_state: Dict[str, Any] = {"rendered_batches": 0, "fetch_batches": 0}
 
     for iteration in range(max_iterations):
         response = client.messages.create(
             model=model_id,
-            max_tokens=4000,
+            max_tokens=16000,
             system=AGENT_SYSTEM_PROMPT,
             tools=AGENT_TOOLS,
             messages=messages,
@@ -1124,12 +1238,13 @@ def run_agentic_scrape(
             ))
             continue
 
-        # 5. Claude extract (THE ONLY LLM CALL)
+        # 5. Claude extract (chunked merge inside _extract_records)
         _notify(progress_callback, f"[{idx}/{len(strategies)}] Claude extracting records…")
         records = _extract_records(anthropic_api_key, url, chunks)
 
-        # 6. Rule-based validation (NO LLM)
+        # 6. Rule-based validation + pagination escalation
         validation = _validate_records(records, min_records=max(1, min_records))
+        validation = _apply_escalation_rules(validation, chunks)
         attempts.append(RetryAttempt(
             attempt=idx,
             strategy=strategy,

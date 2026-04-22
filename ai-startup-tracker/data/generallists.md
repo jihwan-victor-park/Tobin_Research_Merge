@@ -1,3 +1,4 @@
+
 1. StartX (Stanford) - https://startx.com/companies
 2. 500 Global - https://500.co/companies
 3. Techstars - https://www.techstars.com/portfolio

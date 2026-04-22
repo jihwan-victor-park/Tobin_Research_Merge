@@ -13,6 +13,8 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
+from sqlalchemy import or_
+
 from backend.db.connection import session_scope
 from backend.db.models import SiteHealth
 from backend.scrapers.base import ScrapeRunResult
@@ -31,9 +33,19 @@ class HealthMonitor:
         domain: str,
         result: ScrapeRunResult,
         escalated_from: Optional[str] = None,
+        *,
+        seed_url: Optional[str] = None,
+        difficulty: Optional[str] = None,
     ):
-        """Update site_health row after a scrape run."""
+        """Update site_health row after a scrape run.
+
+        seed_url: last URL scraped (so ad-hoc / random sites get a real portfolio URL on file).
+        difficulty: registry tier ('easy' | 'hard'); defaults to 'hard' for new rows.
+        """
         now = datetime.now(timezone.utc)
+        tier = (difficulty or "hard").strip().lower()
+        if tier not in ("easy", "hard"):
+            tier = "hard"
 
         with session_scope() as session:
             health = session.query(SiteHealth).filter(SiteHealth.domain == domain).first()
@@ -41,12 +53,18 @@ class HealthMonitor:
             if health is None:
                 health = SiteHealth(
                     domain=domain,
-                    url=result.scraper_name,  # will be overwritten
-                    difficulty="hard",
+                    url=(seed_url or None),
+                    difficulty=tier,
+                    scraper_name=result.scraper_name,
                     status="pending",
                     created_at=now,
                 )
                 session.add(health)
+            else:
+                if seed_url:
+                    health.url = seed_url
+                health.difficulty = tier
+                health.scraper_name = result.scraper_name or health.scraper_name
 
             health.total_runs = (health.total_runs or 0) + 1
             health.updated_at = now
@@ -69,6 +87,7 @@ class HealthMonitor:
                     health.next_scrape_at = now + timedelta(hours=48)
                 else:
                     health.status = "broken"
+                    health.next_scrape_at = now + timedelta(days=1)
 
                 # Check if should exclude
                 if health.consecutive_failures >= MAX_HARD_FAILURES:
@@ -92,7 +111,10 @@ class HealthMonitor:
                 session.query(SiteHealth)
                 .filter(
                     SiteHealth.status.notin_(["excluded"]),
-                    SiteHealth.next_scrape_at <= now,
+                    or_(
+                        SiteHealth.next_scrape_at.is_(None),
+                        SiteHealth.next_scrape_at <= now,
+                    ),
                 )
                 .all()
             )
