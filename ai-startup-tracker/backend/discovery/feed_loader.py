@@ -36,7 +36,8 @@ def load_urls_from_csv(csv_path: Path) -> List[dict]:
     with open(csv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            url = row.get("url") or row.get("website") or row.get("URL") or row.get("Website")
+            url = (row.get("portfolio_url") or row.get("url") or
+                   row.get("website") or row.get("URL") or row.get("Website"))
             name = row.get("name") or row.get("Name") or row.get("incubator")
             if url:
                 entries.append({"url": url.strip(), "name": name, "source": "csv"})

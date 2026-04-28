@@ -70,6 +70,8 @@ def main():
     parser.add_argument("--register-easy", action="store_true", help="Register all easy scrapers")
     parser.add_argument("--schedule", action="store_true", help="Run on daily schedule")
     parser.add_argument("--cooldown", type=int, default=7, help="Cooldown days (default: 7)")
+    parser.add_argument("--discover", action="store_true", help="Register all CSV + markdown sources in site_health")
+    parser.add_argument("--full", action="store_true", help="Register all sources then scrape everything")
     args = parser.parse_args()
 
     # Initialize DB tables
@@ -79,6 +81,21 @@ def main():
 
     if args.register_easy:
         register_easy_scrapers()
+        return
+
+    if args.discover:
+        from backend.discovery.feed_loader import register_new_sites
+        register_new_sites()
+        return
+
+    if args.full:
+        logger.info("=== Full pipeline: register + discover + batch ===")
+        register_easy_scrapers()
+        from backend.discovery.feed_loader import register_new_sites
+        register_new_sites()
+        results = orch.run_all_due()
+        success = sum(1 for r in results if r.success)
+        logger.info(f"Full pipeline complete: {success}/{len(results)} succeeded")
         return
 
     if args.url:
