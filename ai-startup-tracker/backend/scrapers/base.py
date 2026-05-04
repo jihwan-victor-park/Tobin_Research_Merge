@@ -30,17 +30,7 @@ from backend.utils.normalize import normalize_company_name
 
 logger = logging.getLogger(__name__)
 
-# ── AI keyword detection (consolidated from Alastair's duplicated lists) ──
-
-AI_KEYWORDS = [
-    "artificial intelligence", "machine learning", "large language model", "llm",
-    "generative ai", "generative", "gpt", "neural network", "deep learning", "nlp",
-    "natural language processing", "computer vision", "data science", "autonomous",
-    "robotics", "predictive", "recommendation engine", "ai", "transformer",
-    "diffusion", "reinforcement learning", "rag", "retrieval augmented",
-    "foundation model", "fine-tuning", "embeddings",
-]
-_AI_PATTERNS = [re.compile(rf"\b{re.escape(kw)}\b", re.IGNORECASE) for kw in AI_KEYWORDS]
+from backend.utils.classify_ai import classify_ai
 
 
 class BaseScraper(ABC):
@@ -57,10 +47,11 @@ class BaseScraper(ABC):
         ...
 
     def detect_ai(self, text: str) -> bool:
-        """Check if text contains AI-related keywords (word-boundary regex)."""
+        """Backwards-compatible wrapper around `classify_ai` for free-form text."""
         if not text:
             return False
-        return any(p.search(text) for p in _AI_PATTERNS)
+        is_ai, _conf, _src = classify_ai(name="", description=text)
+        return is_ai
 
     def run(self, save_to_db: bool = True) -> ScrapeRunResult:
         """Template method: scrape -> validate -> dedup -> save -> log."""

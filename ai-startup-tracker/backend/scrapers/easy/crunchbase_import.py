@@ -18,7 +18,6 @@ CB_CATEGORIES_PATH (see .env.example).
 
 import logging
 import os
-import re
 from pathlib import Path
 from typing import List
 
@@ -26,23 +25,13 @@ import pandas as pd
 
 from backend.agentic.schemas import ScrapedCompany
 from backend.scrapers.base import BaseScraper
+from backend.utils.classify_ai import _AI_PATTERN, _BARE_AI_PATTERN
 from backend.utils.denylist import is_denylisted
 
 logger = logging.getLogger(__name__)
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent.parent / "data"
 BATCH_SIZE = 10_000
-
-AI_KEYWORDS_FOR_REGEX = [
-    "artificial intelligence", "machine learning", "large language model", "llm",
-    "generative ai", "generative", "gpt", "neural network", "deep learning", "nlp",
-    "natural language processing", "computer vision", "data science", "autonomous",
-    "robotics", "predictive", "recommendation engine",
-]
-AI_PATTERN = re.compile(
-    r"\b(?:" + "|".join(re.escape(kw) for kw in AI_KEYWORDS_FOR_REGEX) + r")\b",
-    re.IGNORECASE,
-)
 
 
 class CrunchbaseImportScraper(BaseScraper):
@@ -76,13 +65,19 @@ class CrunchbaseImportScraper(BaseScraper):
             df = df[funding.isna() | (funding < 500_000_000)]
         logger.info(f"After filters: {len(df):,}")
 
-        # Vectorized AI detection
+        # Vectorized AI detection — keyword tier of the unified classifier.
+        # We skip the LLM fallback for bulk parquet ingest (millions of rows);
+        # ambiguous Crunchbase rows can be re-tagged later by
+        # scripts/backfill_is_ai_startup.py.
         text = (
             df["short_description"].fillna("") + " " +
             df["category_list"].fillna("") + " " +
             df["category_groups_list"].fillna("")
         )
-        df["uses_ai"] = text.str.contains(AI_PATTERN, regex=True)
+        df["uses_ai"] = (
+            text.str.contains(_AI_PATTERN, regex=True)
+            | text.str.contains(_BARE_AI_PATTERN, regex=True)
+        )
 
         # Convert to ScrapedCompany
         results = []

@@ -542,9 +542,19 @@ def _derive_retry_urls(input_url: str, strategy: str, instr: Optional[Dict[str, 
 # ── Postprocess ──────────────────────────────────────────────────────────
 
 def _postprocess_records(records: List[ScrapedCompany]) -> List[Dict[str, Any]]:
+    from backend.utils.classify_ai import classify_ai
+
     candidates: List[Dict[str, Any]] = []
     for r in records:
         domain = canonicalize_domain(r.website_url or r.profile_url or "")
+        # Re-classify using the unified classifier so the agentic tier matches
+        # what the easy scrapers and Crunchbase ingest produce. The LLM
+        # extractor's own is_ai_startup field is unreliable across prompts.
+        is_ai, _conf, _src = classify_ai(
+            name=r.name or "",
+            description=r.description,
+            tags=r.industry,
+        )
         candidates.append(
             {
                 "name": (r.name or "").strip(),
@@ -556,7 +566,7 @@ def _postprocess_records(records: List[ScrapedCompany]) -> List[Dict[str, Any]]:
                 "industry": r.industry,
                 "country": r.country,
                 "city": r.city,
-                "is_ai_startup": r.is_ai_startup,
+                "is_ai_startup": is_ai,
                 "ai_category": r.ai_category,
                 "program": r.program,
                 "batch": r.batch,

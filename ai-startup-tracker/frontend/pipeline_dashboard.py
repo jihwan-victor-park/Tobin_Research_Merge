@@ -571,8 +571,17 @@ def load_startups() -> pd.DataFrame:
 
 @st.cache_data(ttl=60)
 def load_site_health() -> pd.DataFrame:
+    # Make sure every registered scraper has a row, so newly added scrapers
+    # show up even before their first run.
+    try:
+        from backend.orchestrator.health import HealthMonitor
+        HealthMonitor().seed_registry()
+    except Exception:
+        pass
+
     engine = get_engine()
-    q = """SELECT domain, url, difficulty, scraper_name, status,
+    q = """SELECT domain, url, difficulty, scraper_name, status, worker_state,
+                  category, pending_reason, pending_reason_at,
                   consecutive_failures, last_success_at, last_failure_at,
                   last_record_count, total_runs, total_successes
            FROM site_health ORDER BY domain"""
@@ -911,42 +920,104 @@ def page_health(health_df: pd.DataFrame, runs_df: pd.DataFrame):
 
     st.markdown(
         f'<div class="section-header">Pipeline Health</div>'
-        f'<div class="section-sub">Per-domain status from the <code>site_health</code> table. '
-        f'Any URL you run under <b>Scraper → Run Agentic Scraper</b> registers/updates that domain '
-        f"here (seed URL, last counts, next batch due). Hard-coded easy scrapers are only part of the list.</div>",
+        f'<div class="section-sub">Each scraper is classified <b>Working</b> (last attempt produced valid records) '
+        f'or <b>Pending</b> (last attempt failed, returned zero, or was never tried). '
+        f'Detailed status (degraded / broken / excluded) is shown alongside.</div>',
         unsafe_allow_html=True,
     )
 
-    healthy = int((health_df["status"] == "healthy").sum())
-    degraded = int((health_df["status"] == "degraded").sum())
-    broken = int((health_df["status"] == "broken").sum())
-    excluded = int((health_df["status"] == "excluded").sum())
-    pending = int((health_df["status"] == "pending").sum())
+    # Backward compat: if older rows don't yet have worker_state, derive it from status.
+    if "worker_state" not in health_df.columns:
+        health_df = health_df.copy()
+        health_df["worker_state"] = health_df["status"].apply(
+            lambda s: "working" if s == "healthy" else "pending"
+        )
 
-    m1, m2, m3, m4, m5 = st.columns(5)
-    m1.metric("Healthy", healthy)
-    m2.metric("Degraded", degraded)
-    m3.metric("Broken", broken)
-    m4.metric("Excluded", excluded)
-    m5.metric("Pending", pending)
+    working_df = health_df[health_df["worker_state"] == "working"].copy()
+    pending_df = health_df[health_df["worker_state"] != "working"].copy()
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Master Working", len(working_df))
+    m2.metric("Master Pending", len(pending_df))
+    m3.metric("Easy tier", int((health_df["difficulty"] == "easy").sum()))
+    m4.metric("Hard tier", int((health_df["difficulty"] == "hard").sum()))
 
     st.markdown("<br/>", unsafe_allow_html=True)
 
-    tier = health_df["difficulty"].value_counts().reset_index()
-    tier.columns = ["Tier", "Count"]
-    h1, h2 = st.columns([1, 2])
-    with h1:
-        fig = px.pie(tier, values="Count", names="Tier", title="By Tier",
-                     hole=0.55, color_discrete_sequence=[YALE_BLUE, GREEN, AMBER])
-        fig.update_layout(**_layout(height=280))
-        st.plotly_chart(fig, use_container_width=True)
+    # ── Inventory by category ───────────────────────────────────────────
+    st.markdown("### Inventory by category")
+    if "category" in health_df.columns and health_df["category"].notna().any():
+        inv = (
+            health_df.assign(category=health_df["category"].fillna("other"))
+            .groupby(["category", "worker_state"]).size()
+            .reset_index(name="count")
+        )
+        try:
+            import plotly.express as px
+            fig = px.bar(
+                inv, x="category", y="count", color="worker_state",
+                color_discrete_map={"working": "#1aab68", "pending": "#d97706"},
+                category_orders={"category": [
+                    "university_incubator", "accelerator", "vc_portfolio",
+                    "discovery_aggregator", "government_program", "other",
+                ]},
+                barmode="stack",
+            )
+            fig.update_layout(**_layout(height=260, legend_title_text=""))
+            st.plotly_chart(fig, use_container_width=True)
+        except Exception:
+            st.dataframe(inv, hide_index=True, use_container_width=True)
+    else:
+        st.caption("No category tags yet — run `python scripts/backfill_site_health_from_companies.py`.")
 
-    with h2:
-        hd = health_df[["domain", "difficulty", "status", "consecutive_failures",
-                         "last_record_count", "total_runs", "total_successes", "last_success_at"]].copy()
-        if "last_success_at" in hd.columns:
-            hd["last_success_at"] = pd.to_datetime(hd["last_success_at"], errors="coerce").dt.strftime("%Y-%m-%d %H:%M")
-        st.dataframe(hd, use_container_width=True, hide_index=True, height=300)
+    # ── Scout button ────────────────────────────────────────────────────
+    sc_col, _ = st.columns([1, 5])
+    if sc_col.button("Scout 5 new US sites", key="scout_btn"):
+        with st.spinner("Scouting…"):
+            import subprocess
+            from pathlib import Path
+            project_root = Path(__file__).resolve().parent.parent
+            try:
+                out = subprocess.run(
+                    [sys.executable, "scripts/run_scout.py", "--country", "US", "--limit", "5"],
+                    cwd=project_root, capture_output=True, text=True, timeout=600,
+                )
+                st.code((out.stdout or "") + (out.stderr or ""), language="text")
+                st.cache_data.clear()
+            except Exception as e:
+                st.error(f"Scout failed: {e}")
+
+    cols_to_show_working = ["domain", "category", "difficulty", "scraper_name", "status",
+                            "consecutive_failures", "last_record_count",
+                            "total_runs", "total_successes", "last_success_at"]
+    cols_to_show_pending = ["domain", "category", "difficulty", "scraper_name", "status",
+                            "consecutive_failures", "pending_reason",
+                            "last_record_count", "total_runs", "last_failure_at"]
+
+    def _fmt(df, cols):
+        d = df[[c for c in cols if c in df.columns]].copy()
+        for tcol in ("last_success_at", "last_failure_at"):
+            if tcol in d.columns:
+                d[tcol] = pd.to_datetime(d[tcol], errors="coerce").dt.strftime("%Y-%m-%d %H:%M")
+        return d
+
+    w_tab, p_tab = st.tabs([f"Master Working ({len(working_df)})",
+                             f"Master Pending ({len(pending_df)})"])
+    with w_tab:
+        if working_df.empty:
+            st.caption("No scrapers have produced records yet.")
+        else:
+            st.dataframe(_fmt(working_df.sort_values("last_success_at", ascending=False, na_position="last"),
+                              cols_to_show_working),
+                         use_container_width=True, hide_index=True, height=320)
+
+    with p_tab:
+        if pending_df.empty:
+            st.caption("All scrapers are currently working.")
+        else:
+            st.dataframe(_fmt(pending_df.sort_values(["consecutive_failures", "domain"], ascending=[False, True]),
+                              cols_to_show_pending),
+                         use_container_width=True, hide_index=True, height=320)
 
     st.markdown("### Recent Runs (7 days)")
     if runs_df.empty:
@@ -1133,18 +1204,19 @@ def page_scraper():
         for j, (domain, entry) in enumerate(batch):
             with cols[j]:
                 health = health_map.get(domain, {})
-                status = health.get("status", "pending")
-                dot_cls = {"healthy": "dot-healthy", "degraded": "dot-degraded",
-                           "broken": "dot-broken", "excluded": "dot-excluded"
-                           }.get(status, "dot-pending")
+                worker_state = health.get("worker_state") or (
+                    "working" if health.get("status") == "healthy" else "pending"
+                )
+                dot_cls = "dot-healthy" if worker_state == "working" else "dot-pending"
                 last_ct = health.get("last_record_count")
                 ct_text = f" &middot; {last_ct} records" if last_ct else ""
+                state_label = worker_state.capitalize()
 
                 st.markdown(
                     f'<div class="scraper-card">'
                     f'<div class="scraper-domain">'
                     f'<span class="{dot_cls}">&#9679;</span> {domain}</div>'
-                    f'<div class="scraper-meta">{entry.pattern}{ct_text}</div>'
+                    f'<div class="scraper-meta">{state_label} &middot; {entry.pattern}{ct_text}</div>'
                     f'</div>',
                     unsafe_allow_html=True,
                 )
