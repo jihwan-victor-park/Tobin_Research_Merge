@@ -1269,6 +1269,275 @@ def page_scraper():
             st.cache_data.clear()
 
 
+# ── Page: Inventory ──────────────────────────────────────────────────
+
+_DOMAIN_CATEGORIES: dict[str, str] = {
+    # University / research incubators
+    "berkeley.edu": "university_incubator",
+    "skydeck.berkeley.edu": "university_incubator",
+    "startx.com": "university_incubator",
+    "web.startx.com": "university_incubator",
+    "innovationlabs.harvard.edu": "university_incubator",
+    "kellercenter.princeton.edu": "university_incubator",
+    "alliance.rice.edu": "university_incubator",
+    "entrepreneurship.mit.edu": "university_incubator",
+    "startups.columbia.edu": "university_incubator",
+    # Accelerators
+    "500.co": "accelerator",
+    "alchemistaccelerator.com": "accelerator",
+    "antler.co": "accelerator",
+    "astrolabs.com": "accelerator",
+    "beondeck.com": "accelerator",
+    "brinc.io": "accelerator",
+    "capitalfactory.com": "accelerator",
+    "dreamit.com": "accelerator",
+    "eranyc.com": "accelerator",
+    "fi.co": "accelerator",
+    "flat6labs.com": "accelerator",
+    "gener8tor.com": "accelerator",
+    "h-farm.com": "accelerator",
+    "hax.co": "accelerator",
+    "jfdi.asia": "accelerator",
+    "joinef.com": "accelerator",
+    "masschallenge.org": "accelerator",
+    "neo.com": "accelerator",
+    "plugandplaytechcenter.com": "accelerator",
+    "rockstart.com": "accelerator",
+    "seedcamp.com": "accelerator",
+    "seedstars.com": "accelerator",
+    "sosv.com": "accelerator",
+    "sparklabs.co.kr": "accelerator",
+    "startupbootcamp.org": "accelerator",
+    "stationf.co": "accelerator",
+    "sting.co": "accelerator",
+    "surgeahead.com": "accelerator",
+    "techstars.com": "accelerator",
+    "turn8.co": "accelerator",
+    "wayra.com": "accelerator",
+    "ycombinator.com": "accelerator",
+    # VC portfolios
+    "8vc.com": "vc_portfolio",
+    "a16z.com": "vc_portfolio",
+    "accel.com": "vc_portfolio",
+    "allvp.vc": "vc_portfolio",
+    "beenext.com": "vc_portfolio",
+    "bvp.com": "vc_portfolio",
+    "foundersfund.com": "vc_portfolio",
+    "generalcatalyst.com": "vc_portfolio",
+    "greylock.com": "vc_portfolio",
+    "lsvp.com": "vc_portfolio",
+    "nea.com": "vc_portfolio",
+    "nxtp.vc": "vc_portfolio",
+    "pioneerfund.vc": "vc_portfolio",
+    "sequoiacap.com": "vc_portfolio",
+    "venturesplatform.com": "vc_portfolio",
+    "villageglobal.com": "vc_portfolio",
+    # Government programs
+    "parallel18.com": "government_program",
+    "startupchile.org": "government_program",
+    # Discovery aggregators
+    "ai-startups.org": "discovery_aggregator",
+    "aitoolhunt.com": "discovery_aggregator",
+    "aitools.fyi": "discovery_aggregator",
+    "alternativeto.net": "discovery_aggregator",
+    "appsruntheworld.com": "discovery_aggregator",
+    "betalist.com": "discovery_aggregator",
+    "cbinsights.com": "discovery_aggregator",
+    "crozdesk.com": "discovery_aggregator",
+    "crunchbase.com": "discovery_aggregator",
+    "dang.ai": "discovery_aggregator",
+    "dealroom.co": "discovery_aggregator",
+    "futurepedia.io": "discovery_aggregator",
+    "g2.com": "discovery_aggregator",
+    "getapp.com": "discovery_aggregator",
+    "insidr.ai": "discovery_aggregator",
+    "killerstartups.com": "discovery_aggregator",
+    "launched.io": "discovery_aggregator",
+    "launchingnext.com": "discovery_aggregator",
+    "lmarks.com": "discovery_aggregator",
+    "microlaunch.net": "discovery_aggregator",
+    "nationalstartupsdirectory.com": "discovery_aggregator",
+    "openvc.app": "discovery_aggregator",
+    "pitchbook.com": "discovery_aggregator",
+    "saasaitools.com": "discovery_aggregator",
+    "saasworthy.com": "discovery_aggregator",
+    "softwareworld.co": "discovery_aggregator",
+    "sourceforge.net": "discovery_aggregator",
+    "stackshare.io": "discovery_aggregator",
+    "startup88.com": "discovery_aggregator",
+    "startupbase.io": "discovery_aggregator",
+    "startupguys.net": "discovery_aggregator",
+    "startupinspire.com": "discovery_aggregator",
+    "startupjohn.com": "discovery_aggregator",
+    "startupranking.com": "discovery_aggregator",
+    "startups.gallery": "discovery_aggregator",
+    "startupstash.com": "discovery_aggregator",
+    "startuptabs.com": "discovery_aggregator",
+    "thehub.io": "discovery_aggregator",
+    "theresanaiforthat.com": "discovery_aggregator",
+    "toolify.ai": "discovery_aggregator",
+    "topai.tools": "discovery_aggregator",
+    "topstartups.io": "discovery_aggregator",
+    "tracxn.com": "discovery_aggregator",
+    "wellfound.com": "discovery_aggregator",
+}
+
+_EASY_DOMAINS = {
+    "ycombinator.com", "techstars.com", "alchemistaccelerator.com",
+    "seedcamp.com", "capitalfactory.com", "eranyc.com", "villageglobal.com",
+    "antler.co", "innovationlabs.harvard.edu", "web.startx.com",
+    "kellercenter.princeton.edu", "alliance.rice.edu", "joinef.com",
+    "skydeck.berkeley.edu", "startups.columbia.edu", "entrepreneurship.mit.edu",
+    "crunchbase.com",
+}
+
+_CATEGORY_LABELS = {
+    "university_incubator": "University / Incubator",
+    "accelerator":          "Accelerator",
+    "vc_portfolio":         "VC Portfolio",
+    "government_program":   "Government Program",
+    "discovery_aggregator": "Discovery Aggregator",
+    "other":                "Other",
+}
+
+_CATEGORY_ORDER = [
+    "university_incubator", "accelerator", "vc_portfolio",
+    "government_program", "discovery_aggregator", "other",
+]
+
+_CAT_COLORS = {
+    "university_incubator": "#286dc0",
+    "accelerator":          "#1aab68",
+    "vc_portfolio":         "#a855f7",
+    "government_program":   "#d97706",
+    "discovery_aggregator": "#06b6d4",
+    "other":                "#94a3b8",
+}
+
+
+@st.cache_data(ttl=300)
+def _load_yaml_inventory() -> pd.DataFrame:
+    yaml_dir = Path(__file__).resolve().parent.parent / "data" / "scrape_instructions"
+    rows = []
+    seen = set()
+    try:
+        import yaml as _yaml
+        for f in sorted(yaml_dir.glob("*.yaml")):
+            d = _yaml.safe_load(f.read_text())
+            domain = d.get("domain", f.stem)
+            ls = d.get("last_success") or {}
+            rc = ls.get("record_count", 0) if ls else 0
+            seen.add(domain)
+            rows.append({"domain": domain, "record_count": rc, "source": "yaml"})
+    except Exception:
+        pass
+    # registry-only entries (have scraper but no YAML)
+    for d in _EASY_DOMAINS:
+        if d not in seen:
+            rows.append({"domain": d, "record_count": -1, "source": "registry"})
+    df = pd.DataFrame(rows)
+    df["category"] = df["domain"].map(_DOMAIN_CATEGORIES).fillna("other")
+    df["scrapeability"] = df.apply(
+        lambda r: "easy" if r["domain"] in _EASY_DOMAINS
+        else ("agentic" if r["record_count"] > 5 else "challenging"),
+        axis=1,
+    )
+    return df
+
+
+def page_inventory():
+    st.markdown(
+        '<div class="section-header">Site Inventory</div>'
+        '<div class="section-sub">Every website we have analysed — categorised by type '
+        'and rated for scrapeability.</div>',
+        unsafe_allow_html=True,
+    )
+
+    inv = _load_yaml_inventory()
+    total = len(inv)
+    easy = int((inv["scrapeability"] == "easy").sum())
+    agentic = int((inv["scrapeability"] == "agentic").sum())
+    challenging = int((inv["scrapeability"] == "challenging").sum())
+
+    # ── Top metrics ────────────────────────────────────────────────────
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Total sites analysed", total)
+    m2.metric("Easy scraper", easy, help="Dedicated scraper — reliable, high-volume")
+    m3.metric("AI agent worked", agentic, help="Agentic engine extracted >5 records")
+    m4.metric("Challenging", challenging, help="AI struggled — JS-heavy or paywalled")
+
+    st.markdown("<br/>", unsafe_allow_html=True)
+
+    # ── By-category bar chart ──────────────────────────────────────────
+    cat_counts = (
+        inv.groupby(["category", "scrapeability"])
+        .size()
+        .reset_index(name="count")
+    )
+    cat_counts["category_label"] = cat_counts["category"].map(_CATEGORY_LABELS)
+
+    scrape_colors = {"easy": "#1aab68", "agentic": "#286dc0", "challenging": "#dc2626"}
+
+    fig_cat = px.bar(
+        cat_counts,
+        x="category_label",
+        y="count",
+        color="scrapeability",
+        color_discrete_map=scrape_colors,
+        category_orders={
+            "category_label": [_CATEGORY_LABELS[c] for c in _CATEGORY_ORDER],
+            "scrapeability": ["easy", "agentic", "challenging"],
+        },
+        barmode="stack",
+        labels={"category_label": "", "count": "Sites", "scrapeability": ""},
+        title="Sites by Type & Scrapeability",
+    )
+    fig_cat.update_layout(**_layout(height=320))
+    st.plotly_chart(fig_cat, use_container_width=True)
+
+    # ── Scrapeability donut ────────────────────────────────────────────
+    col_donut, col_table = st.columns([1, 2])
+    with col_donut:
+        fig_d = go.Figure(go.Pie(
+            labels=["Easy scraper", "AI agent worked", "Challenging"],
+            values=[easy, agentic, challenging],
+            marker_colors=[scrape_colors["easy"], scrape_colors["agentic"], scrape_colors["challenging"]],
+            hole=0.55,
+            textinfo="label+value",
+            hovertemplate="%{label}: %{value}<extra></extra>",
+        ))
+        fig_d.update_layout(**_layout(height=280, title_text="Scrapeability split"))
+        st.plotly_chart(fig_d, use_container_width=True)
+
+    # ── Challenging sites table ────────────────────────────────────────
+    with col_table:
+        st.markdown("**Challenging sites — AI struggled**")
+        hard = inv[inv["scrapeability"] == "challenging"][["domain", "category", "record_count"]].copy()
+        hard["category"] = hard["category"].map(_CATEGORY_LABELS)
+        hard = hard.rename(columns={
+            "domain": "Domain",
+            "category": "Type",
+            "record_count": "AI records extracted",
+        }).sort_values("Domain")
+        st.dataframe(hard, hide_index=True, use_container_width=True, height=260)
+
+    st.markdown("<br/>", unsafe_allow_html=True)
+
+    # ── Full site list ─────────────────────────────────────────────────
+    st.markdown("### All sites")
+    badge_map = {"easy": "✓ easy", "agentic": "~ AI", "challenging": "✗ hard"}
+    display = inv[["domain", "category", "scrapeability", "record_count"]].copy()
+    display["type"] = display["category"].map(_CATEGORY_LABELS)
+    display["scraper"] = display["scrapeability"].map(badge_map)
+    display["AI records"] = display["record_count"].apply(
+        lambda x: "—" if x < 0 else str(x)
+    )
+    display = display[["domain", "type", "scraper", "AI records"]].sort_values(
+        ["type", "domain"]
+    )
+    st.dataframe(display, hide_index=True, use_container_width=True, height=480)
+
+
 # ── Main ─────────────────────────────────────────────────────────────
 
 def main():
@@ -1295,8 +1564,8 @@ def main():
     else:
         github_df = github_df_all.iloc[0:0].copy()
 
-    tab_overview, tab_github, tab_trends, tab_health, tab_scraper = st.tabs([
-        "Overview", "GitHub Discovery", "Trends", "Pipeline Health", "Scraper",
+    tab_overview, tab_github, tab_trends, tab_health, tab_inventory, tab_scraper = st.tabs([
+        "Overview", "GitHub Discovery", "Trends", "Pipeline Health", "Inventory", "Scraper",
     ])
 
     with tab_overview:
@@ -1307,6 +1576,8 @@ def main():
         page_trends(scraper_df)
     with tab_health:
         page_health(health_df, runs_df)
+    with tab_inventory:
+        page_inventory()
     with tab_scraper:
         page_scraper()
 
