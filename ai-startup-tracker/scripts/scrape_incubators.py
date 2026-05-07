@@ -37,6 +37,7 @@ from backend.db.models import (
 )
 from backend.utils.domain import canonicalize_domain
 from backend.utils.normalize import normalize_company_name
+from backend.utils.denylist import is_denylisted
 
 load_dotenv()
 
@@ -1901,6 +1902,10 @@ def scrape_hn_who_is_hiring(session: requests.Session) -> List[Dict]:
             raw_name = re.sub(r"\s*\(.*?\)", "", raw_name).strip()
 
             if not _is_valid_name(raw_name) or len(raw_name) > 80:
+                continue
+
+            # Skip big-tech / incumbent postings — not emerging startups
+            if is_denylisted(raw_name):
                 continue
 
             location = parts[1].strip() if len(parts) > 1 else None

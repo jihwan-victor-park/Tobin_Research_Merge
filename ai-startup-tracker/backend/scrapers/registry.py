@@ -36,41 +36,45 @@ class ScraperEntry:
     cls: Type[BaseScraper]
     difficulty: str  # "easy" or "hard"
     pattern: str     # "api_direct", "bs_single", "bs_paginated", "wp_ajax", "claude_extraction", "parquet", "agentic"
+    # Inventory bucket — see SiteHealth.category. One of:
+    # university_incubator | accelerator | vc_portfolio
+    # | discovery_aggregator | government_program | other
+    category: str = "other"
 
 
 # ── Registry ──────────────────────────────────────────────────────────────
 
 SCRAPER_REGISTRY: Dict[str, ScraperEntry] = {
     # API Direct (Algolia / Typesense / REST)
-    "ycombinator.com": ScraperEntry(cls=YCScraper, difficulty="easy", pattern="api_direct"),
-    "techstars.com": ScraperEntry(cls=TechstarsScraper, difficulty="easy", pattern="api_direct"),
-    "alchemistaccelerator.com": ScraperEntry(cls=AlchemistScraper, difficulty="easy", pattern="api_direct"),
+    "ycombinator.com": ScraperEntry(cls=YCScraper, difficulty="easy", pattern="api_direct", category="accelerator"),
+    "techstars.com": ScraperEntry(cls=TechstarsScraper, difficulty="easy", pattern="api_direct", category="accelerator"),
+    "alchemistaccelerator.com": ScraperEntry(cls=AlchemistScraper, difficulty="easy", pattern="api_direct", category="accelerator"),
 
     # BeautifulSoup single-page
-    "seedcamp.com": ScraperEntry(cls=SeedcampScraper, difficulty="easy", pattern="bs_single"),
-    "capitalfactory.com": ScraperEntry(cls=CapitalFactoryScraper, difficulty="easy", pattern="bs_single"),
-    "eranyc.com": ScraperEntry(cls=ERANYCScraper, difficulty="easy", pattern="bs_single"),
-    "villageglobal.com": ScraperEntry(cls=VillageGlobalScraper, difficulty="easy", pattern="bs_single"),
+    "seedcamp.com": ScraperEntry(cls=SeedcampScraper, difficulty="easy", pattern="bs_single", category="accelerator"),
+    "capitalfactory.com": ScraperEntry(cls=CapitalFactoryScraper, difficulty="easy", pattern="bs_single", category="accelerator"),
+    "eranyc.com": ScraperEntry(cls=ERANYCScraper, difficulty="easy", pattern="bs_single", category="accelerator"),
+    "villageglobal.com": ScraperEntry(cls=VillageGlobalScraper, difficulty="easy", pattern="bs_single", category="vc_portfolio"),
 
     # BeautifulSoup paginated
-    "antler.co": ScraperEntry(cls=AntlerScraper, difficulty="easy", pattern="bs_paginated"),
-    "innovationlabs.harvard.edu": ScraperEntry(cls=HarvardScraper, difficulty="easy", pattern="bs_paginated"),
-    "web.startx.com": ScraperEntry(cls=StartxScraper, difficulty="easy", pattern="bs_paginated"),
-    "kellercenter.princeton.edu": ScraperEntry(cls=PrincetonScraper, difficulty="easy", pattern="bs_paginated"),
-    "alliance.rice.edu": ScraperEntry(cls=RiceOwlsparkScraper, difficulty="easy", pattern="bs_single"),
+    "antler.co": ScraperEntry(cls=AntlerScraper, difficulty="easy", pattern="bs_paginated", category="vc_portfolio"),
+    "innovationlabs.harvard.edu": ScraperEntry(cls=HarvardScraper, difficulty="easy", pattern="bs_paginated", category="university_incubator"),
+    "web.startx.com": ScraperEntry(cls=StartxScraper, difficulty="easy", pattern="bs_paginated", category="university_incubator"),
+    "kellercenter.princeton.edu": ScraperEntry(cls=PrincetonScraper, difficulty="easy", pattern="bs_paginated", category="university_incubator"),
+    "alliance.rice.edu": ScraperEntry(cls=RiceOwlsparkScraper, difficulty="easy", pattern="bs_single", category="university_incubator"),
 
     # WordPress AJAX
-    "joinef.com": ScraperEntry(cls=EFScraper, difficulty="easy", pattern="wp_ajax"),
-    "skydeck.berkeley.edu": ScraperEntry(cls=SkydeckScraper, difficulty="easy", pattern="wp_ajax"),
+    "joinef.com": ScraperEntry(cls=EFScraper, difficulty="easy", pattern="wp_ajax", category="accelerator"),
+    "skydeck.berkeley.edu": ScraperEntry(cls=SkydeckScraper, difficulty="easy", pattern="wp_ajax", category="university_incubator"),
 
     # REST API
-    "startups.columbia.edu": ScraperEntry(cls=ColumbiaScraper, difficulty="easy", pattern="api_direct"),
+    "startups.columbia.edu": ScraperEntry(cls=ColumbiaScraper, difficulty="easy", pattern="api_direct", category="university_incubator"),
 
     # Claude extraction
-    "entrepreneurship.mit.edu": ScraperEntry(cls=MitDeltavScraper, difficulty="easy", pattern="claude_extraction"),
+    "entrepreneurship.mit.edu": ScraperEntry(cls=MitDeltavScraper, difficulty="easy", pattern="claude_extraction", category="university_incubator"),
 
     # Bulk import (parquet)
-    "crunchbase.com": ScraperEntry(cls=CrunchbaseImportScraper, difficulty="easy", pattern="parquet"),
+    "crunchbase.com": ScraperEntry(cls=CrunchbaseImportScraper, difficulty="easy", pattern="parquet", category="discovery_aggregator"),
 }
 
 

@@ -18,7 +18,6 @@ CB_CATEGORIES_PATH (see .env.example).
 
 import logging
 import os
-import re
 from pathlib import Path
 from typing import List
 
@@ -26,22 +25,13 @@ import pandas as pd
 
 from backend.agentic.schemas import ScrapedCompany
 from backend.scrapers.base import BaseScraper
+from backend.utils.classify_ai import _AI_PATTERN, _BARE_AI_PATTERN
+from backend.utils.denylist import is_denylisted
 
 logger = logging.getLogger(__name__)
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent.parent / "data"
 BATCH_SIZE = 10_000
-
-AI_KEYWORDS_FOR_REGEX = [
-    "artificial intelligence", "machine learning", "large language model", "llm",
-    "generative ai", "generative", "gpt", "neural network", "deep learning", "nlp",
-    "natural language processing", "computer vision", "data science", "autonomous",
-    "robotics", "predictive", "recommendation engine",
-]
-AI_PATTERN = re.compile(
-    r"\b(?:" + "|".join(re.escape(kw) for kw in AI_KEYWORDS_FOR_REGEX) + r")\b",
-    re.IGNORECASE,
-)
 
 
 class CrunchbaseImportScraper(BaseScraper):
@@ -61,26 +51,45 @@ class CrunchbaseImportScraper(BaseScraper):
 
         # Apply filters
         df = df[df["roles"].str.contains("company", na=False)]
-        df = df[df["status"].isin(["operating", "ipo"])]
+        # 'ipo' excluded — public companies aren't emerging startups
+        df = df[df["status"] == "operating"]
         df["founded_year"] = pd.to_datetime(df["founded_on"], errors="coerce").dt.year
         df = df[df["founded_year"] >= 2015]
         df = df[df["name"].notna()]
         df = df[df["short_description"].notna() | df["total_funding_usd"].notna()]
+
+        # Cap funding at $500M — beyond that it's a mega-cap, not an emerging startup.
+        # Keep rows with NULL funding (unknown) so early-stage companies aren't dropped.
+        if "total_funding_usd" in df.columns:
+            funding = pd.to_numeric(df["total_funding_usd"], errors="coerce")
+            df = df[funding.isna() | (funding < 500_000_000)]
         logger.info(f"After filters: {len(df):,}")
 
-        # Vectorized AI detection
+        # Vectorized AI detection — keyword tier of the unified classifier.
+        # We skip the LLM fallback for bulk parquet ingest (millions of rows);
+        # ambiguous Crunchbase rows can be re-tagged later by
+        # scripts/backfill_is_ai_startup.py.
         text = (
             df["short_description"].fillna("") + " " +
             df["category_list"].fillna("") + " " +
             df["category_groups_list"].fillna("")
         )
-        df["uses_ai"] = text.str.contains(AI_PATTERN, regex=True)
+        df["uses_ai"] = (
+            text.str.contains(_AI_PATTERN, regex=True)
+            | text.str.contains(_BARE_AI_PATTERN, regex=True)
+        )
 
         # Convert to ScrapedCompany
         results = []
+        dropped_big_tech = 0
         for row in df.itertuples(index=False):
             name = row.name
             if not name or pd.isna(name):
+                continue
+
+            homepage = getattr(row, "homepage_url", None)
+            if is_denylisted(str(name), str(homepage) if homepage and not pd.isna(homepage) else None):
+                dropped_big_tech += 1
                 continue
 
             description = None
@@ -119,5 +128,9 @@ class CrunchbaseImportScraper(BaseScraper):
                 source_url=self.source_url,
             ))
 
-        logger.info(f"Total: {len(results):,} companies ({sum(1 for r in results if r.is_ai_startup):,} AI)")
+        logger.info(
+            f"Total: {len(results):,} companies "
+            f"({sum(1 for r in results if r.is_ai_startup):,} AI, "
+            f"{dropped_big_tech:,} big-tech dropped)"
+        )
         return results

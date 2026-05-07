@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Local-only launchd schedule for the AI startup tracker.
+
+  Install (one-time):
+    cp scripts/launchd/com.tobin.ai-startup-tracker.daily.plist \
+       ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.tobin.ai-startup-tracker.daily.plist
+
+  Manual fire (handy for testing the schedule path end-to-end):
+    launchctl start com.tobin.ai-startup-tracker.daily
+
+  Uninstall:
+    launchctl unload ~/Library/LaunchAgents/com.tobin.ai-startup-tracker.daily.plist
+    rm ~/Library/LaunchAgents/com.tobin.ai-startup-tracker.daily.plist
+
+  Edit the four absolute paths below if your checkout lives anywhere other
+  than /Users/jihwanpark/Tobin_Research/ai-startup-tracker.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.tobin.ai-startup-tracker.daily</string>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/jihwanpark/Tobin_Research/ai-startup-tracker</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/jihwanpark/Tobin_Research/ai-startup-tracker/.venv/bin/python</string>
+        <string>/Users/jihwanpark/Tobin_Research/ai-startup-tracker/scripts/run_daily.py</string>
+    </array>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>9</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <!-- Catch-up if the Mac was asleep at 09:00. -->
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/jihwanpark/Tobin_Research/ai-startup-tracker/logs/launchd.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/jihwanpark/Tobin_Research/ai-startup-tracker/logs/launchd.err.log</string>
+
+    <!-- Inherit shell-level env vars (DATABASE_URL, ANTHROPIC_API_KEY, etc.) -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+    </dict>
+</dict>
+</plist>

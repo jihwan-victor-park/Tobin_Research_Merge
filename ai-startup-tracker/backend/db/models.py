@@ -403,11 +403,22 @@ class SiteHealth(Base):
     difficulty = Column(String(16), nullable=False, default="hard")  # easy, hard, excluded
     scraper_name = Column(String(128), nullable=True)  # registered easy scraper class name
     status = Column(String(32), nullable=False, default="pending")  # healthy, degraded, broken, excluded, pending
+    # Master classification: "working" if the scraper has produced valid records on its
+    # last attempt, otherwise "pending". Derived from `status` + run outcome; kept as a
+    # column so the dashboard can split scrapers into two clean buckets.
+    worker_state = Column(String(16), nullable=False, default="pending")  # working, pending
+    # Inventory bucket: university_incubator, accelerator, vc_portfolio,
+    # discovery_aggregator, government_program, other.
+    category = Column(String(32), nullable=True)
     consecutive_failures = Column(Integer, default=0)
     last_success_at = Column(DateTime, nullable=True)
     last_failure_at = Column(DateTime, nullable=True)
     last_error = Column(Text, nullable=True)
     last_record_count = Column(Integer, nullable=True)
+    # One-line natural-language explanation of why a scraper keeps failing.
+    # Written by backend.orchestrator.diagnose after consecutive_failures hits 2.
+    pending_reason = Column(Text, nullable=True)
+    pending_reason_at = Column(DateTime, nullable=True)
     next_scrape_at = Column(DateTime, nullable=True)
     exclude_until = Column(DateTime, nullable=True)  # 3-month revisit date
     exclude_reason = Column(Text, nullable=True)
@@ -420,6 +431,8 @@ class SiteHealth(Base):
         UniqueConstraint("domain", name="uq_site_health_domain"),
         Index("ix_site_health_status", "status"),
         Index("ix_site_health_difficulty", "difficulty"),
+        Index("ix_site_health_worker_state", "worker_state"),
+        Index("ix_site_health_category", "category"),
         Index("ix_site_health_next_scrape", "next_scrape_at"),
     )
 

@@ -74,16 +74,22 @@ class Orchestrator:
             # Auto-escalate on failure
             if not result.success:
                 logger.warning(f"Easy scraper failed for {domain}: {result.error_message}. Escalating to hard tier.")
-                hard_result = self._run_hard(url, domain)
+                hard_result = self._run_hard(url, domain, force=force)
                 hard_result.error_message = f"Escalated from easy: {result.error_message}"
-                self.health.update(domain, hard_result, escalated_from="easy")
+                self.health.update(
+                    domain,
+                    hard_result,
+                    escalated_from="easy",
+                    seed_url=url,
+                    difficulty="hard",
+                )
                 return hard_result
             else:
-                self.health.update(domain, result)
+                self.health.update(domain, result, seed_url=url, difficulty="easy")
                 return result
         else:
-            result = self._run_hard(url, domain)
-            self.health.update(domain, result)
+            result = self._run_hard(url, domain, force=force)
+            self.health.update(domain, result, seed_url=url, difficulty="hard")
             return result
 
     def _run_easy(self, url: str, domain: str) -> ScrapeRunResult:
@@ -100,9 +106,9 @@ class Orchestrator:
             )
         return scraper.run(save_to_db=True)
 
-    def _run_hard(self, url: str, domain: str) -> ScrapeRunResult:
+    def _run_hard(self, url: str, domain: str, force: bool = False) -> ScrapeRunResult:
         """Run the agentic engine for this URL."""
-        scraper = AgenticScraper(url=url, domain=domain)
+        scraper = AgenticScraper(url=url, domain=domain, force=force)
         return scraper.run(save_to_db=True)
 
     def _is_on_cooldown(self, domain: str) -> bool:
@@ -180,7 +186,7 @@ class Orchestrator:
             if not url:
                 continue
             result = self._run_hard(url, domain)
-            self.health.update(domain, result)
+            self.health.update(domain, result, seed_url=url, difficulty="hard")
             results.append(result)
 
         return results
