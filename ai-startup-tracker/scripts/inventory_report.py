@@ -127,6 +127,61 @@ DOMAIN_CATEGORIES: dict[str, str] = {
     "topstartups.io":                 "discovery_aggregator",
     "tracxn.com":                     "discovery_aggregator",
     "wellfound.com":                  "discovery_aggregator",
+    "producthunt.com":                "discovery_aggregator",
+    "f6s.com":                        "discovery_aggregator",
+    "growjo.com":                     "discovery_aggregator",
+    "signal.nfx.com":                 "discovery_aggregator",
+    "techcrunch.com":                 "discovery_aggregator",
+
+    # ── VC Portfolios (new) ───────────────────────────────────────────────
+    "benchmark.com":                  "vc_portfolio",
+    "firstround.com":                 "vc_portfolio",
+    "kleinerperkins.com":             "vc_portfolio",
+    "indexventures.com":              "vc_portfolio",
+    "sparkcapital.com":               "vc_portfolio",
+    "usv.com":                        "vc_portfolio",
+    "insightpartners.com":            "vc_portfolio",
+    "ivp.com":                        "vc_portfolio",
+    "battery.com":                    "vc_portfolio",
+    "balderton.com":                  "vc_portfolio",
+    "atomico.com":                    "vc_portfolio",
+    "khoslaventures.com":             "vc_portfolio",
+    "redpoint.com":                   "vc_portfolio",
+    "gv.com":                         "vc_portfolio",
+    "crv.com":                        "vc_portfolio",
+    "felicis.com":                    "vc_portfolio",
+    "initialized.com":                "vc_portfolio",
+    "svangel.com":                    "vc_portfolio",
+
+    # ── University Incubators (new) ───────────────────────────────────────
+    "atdc.org":                       "university_incubator",
+    "zli.umich.edu":                  "university_incubator",
+    "tech.cornell.edu":               "university_incubator",
+    "polskycenter.uchicago.edu":      "university_incubator",
+    "entrepreneurship.duke.edu":      "university_incubator",
+    "engine.xyz":                     "university_incubator",
+    "enterprise.cam.ac.uk":           "university_incubator",
+    "oxfordsciencesinnovation.com":   "university_incubator",
+    "imperialenterprises.co.uk":      "university_incubator",
+    "whartonentrepreneurship.org":    "university_incubator",
+
+    # ── Accelerators (new) ────────────────────────────────────────────────
+    "angelpad.com":                   "accelerator",
+    "boost.vc":                       "accelerator",
+    "vilcap.com":                     "accelerator",
+    "village-capital.com":            "accelerator",
+    "rockhealth.com":                 "accelerator",
+    "betaworks.com":                  "accelerator",
+    "indiebio.co":                    "accelerator",
+    "mattervc.com":                   "accelerator",
+    "launchaccelerator.co":           "accelerator",
+
+    # ── Government Programs (new) ─────────────────────────────────────────
+    "sbir.gov":                       "government_program",
+    "eic.ec.europa.eu":               "government_program",
+    "enterprise.gov.sg":              "government_program",
+    "startupindia.gov.in":            "government_program",
+    "nzte.govt.nz":                   "government_program",
 }
 
 # Domains with a dedicated easy scraper (from registry.py)
@@ -183,11 +238,15 @@ def load_yaml_sites(yaml_dir: Path) -> list[dict]:
             "domain": domain,
             "record_count": record_count,
             "has_last_success": bool(ls and record_count > 0),
+            "probe_result": d.get("probe_result"),  # set by expand_inventory.py
+            "probe_reason": d.get("probe_reason", ""),
         })
     return sites
 
 
-def classify_site(domain: str, record_count: int) -> tuple[str, str, str]:
+def classify_site(domain: str, record_count: int,
+                  probe_result: str | None = None,
+                  probe_reason: str = "") -> tuple[str, str, str]:
     """Returns (category, scrapeability, scrapeability_reason)."""
     category = DOMAIN_CATEGORIES.get(domain, "other")
 
@@ -200,6 +259,13 @@ def classify_site(domain: str, record_count: int) -> tuple[str, str, str]:
     elif record_count > 0:
         scrapeability = "challenging"
         reason = f"AI agent only extracted {record_count} record(s) — limited or JS-heavy"
+    elif probe_result == "easy_candidate":
+        # New site: not yet scraped by AI, but HTTP probe says it's accessible
+        scrapeability = "agentic"
+        reason = f"not yet scraped — HTTP probe: accessible ({probe_reason})"
+    elif probe_result == "challenging":
+        scrapeability = "challenging"
+        reason = f"HTTP probe: {probe_reason}"
     else:
         scrapeability = "challenging"
         reason = "no successful extraction recorded"
@@ -236,7 +302,10 @@ def main() -> None:
     rows = []
     for site in all_sites:
         domain = site["domain"]
-        cat, scrape, reason = classify_site(domain, site["record_count"])
+        cat, scrape, reason = classify_site(
+            domain, site["record_count"],
+            site.get("probe_result"), site.get("probe_reason", ""),
+        )
         rows.append({
             "domain": domain,
             "category": cat,

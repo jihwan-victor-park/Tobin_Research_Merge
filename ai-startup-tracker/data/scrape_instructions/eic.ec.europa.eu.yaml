@@ -1,0 +1,19 @@
+version: 1
+domain: eic.ec.europa.eu
+category: government_program
+created_at: '2026-05-07T21:47:54.299041+00:00'
+updated_at: '2026-05-07T21:47:54.299041+00:00'
+seed_urls:
+- https://eic.ec.europa.eu/eic-funding/eic-accelerator_en
+preferred_strategy: single_page_extract
+fallback_order:
+- single_page_extract
+- subpage_discovery
+- pagination_probe
+subpage_hints: []
+pagination_hints: []
+quality_expectation_min_records: 1
+probe_result: easy_candidate
+probe_reason: static HTML (HTTP 200) (found at https://eic.ec.europa.eu/)
+last_success: null
+notes: null

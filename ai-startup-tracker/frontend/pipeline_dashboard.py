@@ -1380,6 +1380,57 @@ _DOMAIN_CATEGORIES: dict[str, str] = {
     "topstartups.io": "discovery_aggregator",
     "tracxn.com": "discovery_aggregator",
     "wellfound.com": "discovery_aggregator",
+    "producthunt.com": "discovery_aggregator",
+    "f6s.com": "discovery_aggregator",
+    "growjo.com": "discovery_aggregator",
+    "signal.nfx.com": "discovery_aggregator",
+    "techcrunch.com": "discovery_aggregator",
+    # VC Portfolios (new)
+    "benchmark.com": "vc_portfolio",
+    "firstround.com": "vc_portfolio",
+    "kleinerperkins.com": "vc_portfolio",
+    "indexventures.com": "vc_portfolio",
+    "sparkcapital.com": "vc_portfolio",
+    "usv.com": "vc_portfolio",
+    "insightpartners.com": "vc_portfolio",
+    "ivp.com": "vc_portfolio",
+    "battery.com": "vc_portfolio",
+    "balderton.com": "vc_portfolio",
+    "atomico.com": "vc_portfolio",
+    "khoslaventures.com": "vc_portfolio",
+    "redpoint.com": "vc_portfolio",
+    "gv.com": "vc_portfolio",
+    "crv.com": "vc_portfolio",
+    "felicis.com": "vc_portfolio",
+    "initialized.com": "vc_portfolio",
+    "svangel.com": "vc_portfolio",
+    # University Incubators (new)
+    "atdc.org": "university_incubator",
+    "zli.umich.edu": "university_incubator",
+    "tech.cornell.edu": "university_incubator",
+    "polskycenter.uchicago.edu": "university_incubator",
+    "entrepreneurship.duke.edu": "university_incubator",
+    "engine.xyz": "university_incubator",
+    "enterprise.cam.ac.uk": "university_incubator",
+    "oxfordsciencesinnovation.com": "university_incubator",
+    "imperialenterprises.co.uk": "university_incubator",
+    "whartonentrepreneurship.org": "university_incubator",
+    # Accelerators (new)
+    "angelpad.com": "accelerator",
+    "boost.vc": "accelerator",
+    "vilcap.com": "accelerator",
+    "village-capital.com": "accelerator",
+    "rockhealth.com": "accelerator",
+    "betaworks.com": "accelerator",
+    "indiebio.co": "accelerator",
+    "mattervc.com": "accelerator",
+    "launchaccelerator.co": "accelerator",
+    # Government Programs (new)
+    "sbir.gov": "government_program",
+    "eic.ec.europa.eu": "government_program",
+    "enterprise.gov.sg": "government_program",
+    "startupindia.gov.in": "government_program",
+    "nzte.govt.nz": "government_program",
 }
 
 _EASY_DOMAINS = {
@@ -1428,20 +1479,31 @@ def _load_yaml_inventory() -> pd.DataFrame:
             ls = d.get("last_success") or {}
             rc = ls.get("record_count", 0) if ls else 0
             seen.add(domain)
-            rows.append({"domain": domain, "record_count": rc, "source": "yaml"})
+            rows.append({
+                "domain": domain, "record_count": rc, "source": "yaml",
+                "probe_result": d.get("probe_result"),
+            })
     except Exception:
         pass
     # registry-only entries (have scraper but no YAML)
     for d in _EASY_DOMAINS:
         if d not in seen:
-            rows.append({"domain": d, "record_count": -1, "source": "registry"})
+            rows.append({"domain": d, "record_count": -1, "source": "registry", "probe_result": None})
     df = pd.DataFrame(rows)
     df["category"] = df["domain"].map(_DOMAIN_CATEGORIES).fillna("other")
-    df["scrapeability"] = df.apply(
-        lambda r: "easy" if r["domain"] in _EASY_DOMAINS
-        else ("agentic" if r["record_count"] > 5 else "challenging"),
-        axis=1,
-    )
+
+    def _scrape_tier(r):
+        if r["domain"] in _EASY_DOMAINS:
+            return "easy"
+        if r["record_count"] > 5:
+            return "agentic"
+        if r["record_count"] > 0:
+            return "challenging"
+        if r.get("probe_result") == "easy_candidate":
+            return "agentic"  # accessible but not yet run
+        return "challenging"
+
+    df["scrapeability"] = df.apply(_scrape_tier, axis=1)
     return df
 
 

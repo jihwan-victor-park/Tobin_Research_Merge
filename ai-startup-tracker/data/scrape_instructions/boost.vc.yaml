@@ -1,0 +1,19 @@
+version: 1
+domain: boost.vc
+category: accelerator
+created_at: '2026-05-07T21:47:12.276925+00:00'
+updated_at: '2026-05-07T21:47:12.276925+00:00'
+seed_urls:
+- https://www.boost.vc/portfolio/
+preferred_strategy: single_page_extract
+fallback_order:
+- single_page_extract
+- subpage_discovery
+- pagination_probe
+subpage_hints: []
+pagination_hints: []
+quality_expectation_min_records: 1
+probe_result: easy_candidate
+probe_reason: static HTML (HTTP 200)
+last_success: null
+notes: null

@@ -1,0 +1,19 @@
+version: 1
+domain: redpoint.com
+category: vc_portfolio
+created_at: '2026-05-07T21:46:35.502391+00:00'
+updated_at: '2026-05-07T21:46:35.502391+00:00'
+seed_urls:
+- https://www.redpoint.com/portfolio/
+preferred_strategy: single_page_extract
+fallback_order:
+- single_page_extract
+- subpage_discovery
+- pagination_probe
+subpage_hints: []
+pagination_hints: []
+quality_expectation_min_records: 1
+probe_result: easy_candidate
+probe_reason: static HTML (HTTP 200) (found at https://www.redpoint.com/companies)
+last_success: null
+notes: null

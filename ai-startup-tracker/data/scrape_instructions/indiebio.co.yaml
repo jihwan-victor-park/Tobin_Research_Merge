@@ -1,0 +1,19 @@
+version: 1
+domain: indiebio.co
+category: accelerator
+created_at: '2026-05-07T21:47:28.405374+00:00'
+updated_at: '2026-05-07T21:47:28.405374+00:00'
+seed_urls:
+- https://indiebio.co/portfolio/
+preferred_strategy: single_page_extract
+fallback_order:
+- single_page_extract
+- subpage_discovery
+- pagination_probe
+subpage_hints: []
+pagination_hints: []
+quality_expectation_min_records: 1
+probe_result: easy_candidate
+probe_reason: static HTML (HTTP 200) (found at https://indiebio.co/companies)
+last_success: null
+notes: null
