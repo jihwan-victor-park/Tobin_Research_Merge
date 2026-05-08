@@ -1632,6 +1632,173 @@ def page_inventory():
     st.dataframe(display, hide_index=True, use_container_width=True, height=480)
 
 
+def page_ai_analysis(df: pd.DataFrame):
+    st.markdown(
+        '<div class="section-header">AI Startup Analysis</div>'
+        '<div class="section-sub">Classification of all tracked companies — AI-focused vs. non-AI, '
+        'broken down by source, geography, and discovery date.</div>',
+        unsafe_allow_html=True,
+    )
+
+    if df.empty:
+        st.info("No company data available.")
+        return
+
+    total = len(df)
+    ai_cos = int((df["ai_score"] >= 0.6).sum()) if "ai_score" in df.columns else 0
+    non_ai = total - ai_cos
+    ai_pct = round(ai_cos * 100.0 / total, 1) if total else 0
+    unclassified = int(df["ai_score"].isna().sum()) if "ai_score" in df.columns else 0
+
+    # ── Headline metrics ─────────────────────────────────────────────
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Total companies", f"{total:,}")
+    m2.metric("AI companies", f"{ai_cos:,}", help="ai_score ≥ 0.6")
+    m3.metric("AI share", f"{ai_pct}%")
+    m4.metric("Unclassified", f"{unclassified:,}", help="ai_score is NULL")
+
+    st.markdown("<br/>", unsafe_allow_html=True)
+
+    # ── AI % by source program ───────────────────────────────────────
+    if "incubator_source" in df.columns:
+        src = df.copy()
+        src["incubator_source"] = src["incubator_source"].fillna("(no source)")
+        prog = (
+            src.groupby("incubator_source")
+            .agg(
+                total=("ai_score", "count"),
+                ai_count=("ai_score", lambda s: (s >= 0.6).sum()),
+            )
+            .reset_index()
+        )
+        prog = prog[prog["total"] >= 5].copy()
+        prog["ai_pct"] = (prog["ai_count"] / prog["total"] * 100).round(1)
+        prog = prog.sort_values("ai_count", ascending=True).tail(20)
+
+        fig_src = px.bar(
+            prog,
+            x="ai_count",
+            y="incubator_source",
+            orientation="h",
+            color="ai_pct",
+            color_continuous_scale=[[0, "#cce3ff"], [1, "#286dc0"]],
+            labels={"ai_count": "AI Companies", "incubator_source": "", "ai_pct": "AI %"},
+            title="AI Companies by Source",
+            text="ai_count",
+        )
+        fig_src.update_traces(textposition="outside")
+        fig_src.update_layout(**_layout(height=max(300, len(prog) * 26 + 80)))
+        st.plotly_chart(fig_src, use_container_width=True)
+
+    # ── Country distribution ─────────────────────────────────────────
+    st.markdown("<br/>", unsafe_allow_html=True)
+    col_left, col_right = st.columns([3, 2])
+
+    with col_left:
+        if "country" in df.columns:
+            ai_df = df[df["ai_score"] >= 0.6].copy() if "ai_score" in df.columns else df
+            # Normalise messy country strings: "USA", "United States", "US" → "United States"
+            norm = {"USA": "United States", "US": "United States", "usa": "United States",
+                    "U.S.A.": "United States", "U.S.": "United States"}
+            ai_df["country_norm"] = ai_df["country"].replace(norm)
+            # Strip trailing semicolon fields like "USA; Remote"
+            ai_df["country_norm"] = ai_df["country_norm"].str.split(";").str[0].str.strip()
+
+            ctry = (
+                ai_df[ai_df["country_norm"].notna()]
+                .groupby("country_norm")
+                .size()
+                .reset_index(name="count")
+                .sort_values("count", ascending=False)
+                .head(15)
+            )
+            fig_ctry = px.bar(
+                ctry,
+                x="count",
+                y="country_norm",
+                orientation="h",
+                color="count",
+                color_continuous_scale=[[0, "#cce3ff"], [1, "#00356b"]],
+                labels={"count": "AI Startups", "country_norm": ""},
+                title="AI Startups by Country (top 15)",
+                text="count",
+            )
+            fig_ctry.update_traces(textposition="outside")
+            fig_ctry.update_layout(**_layout(height=440))
+            st.plotly_chart(fig_ctry, use_container_width=True)
+
+    with col_right:
+        # AI vs non-AI donut
+        fig_d = go.Figure(go.Pie(
+            labels=["AI-focused", "Non-AI"],
+            values=[ai_cos, non_ai],
+            marker_colors=["#286dc0", "#e3e7ee"],
+            hole=0.55,
+            textinfo="label+percent",
+            hovertemplate="%{label}: %{value:,}<extra></extra>",
+        ))
+        fig_d.update_layout(**_layout(height=280, title_text="AI vs. Non-AI"))
+        st.plotly_chart(fig_d, use_container_width=True)
+
+        # Score histogram
+        if "ai_score" in df.columns:
+            score_df = df[df["ai_score"].notna()]
+            fig_hist = px.histogram(
+                score_df,
+                x="ai_score",
+                nbins=20,
+                color_discrete_sequence=["#286dc0"],
+                labels={"ai_score": "AI Score", "count": "Companies"},
+                title="AI Score Distribution",
+            )
+            fig_hist.add_vline(x=0.6, line_dash="dash", line_color=RED,
+                               annotation_text="AI threshold (0.6)")
+            fig_hist.update_layout(**_layout(height=240))
+            st.plotly_chart(fig_hist, use_container_width=True)
+
+    # ── Discovery over time ──────────────────────────────────────────
+    st.markdown("<br/>", unsafe_allow_html=True)
+    if "first_seen_at" in df.columns and "ai_score" in df.columns:
+        time_df = df[df["first_seen_at"].notna()].copy()
+        time_df["month"] = pd.to_datetime(time_df["first_seen_at"]).dt.to_period("M").astype(str)
+        monthly = (
+            time_df.groupby("month")
+            .agg(
+                total=("ai_score", "count"),
+                ai=("ai_score", lambda s: (s >= 0.6).sum()),
+            )
+            .reset_index()
+            .tail(24)
+        )
+        fig_time = px.bar(
+            monthly,
+            x="month",
+            y=["ai", "total"],
+            barmode="overlay",
+            color_discrete_map={"ai": "#286dc0", "total": "#e3e7ee"},
+            labels={"month": "", "value": "Companies", "variable": ""},
+            title="Monthly Company Discovery (AI in blue, all in grey)",
+        )
+        fig_time.update_layout(**_layout(height=280))
+        st.plotly_chart(fig_time, use_container_width=True)
+
+    # ── Recently discovered AI companies ────────────────────────────
+    st.markdown("<br/>", unsafe_allow_html=True)
+    st.markdown("### Recently Discovered AI Companies")
+    if "ai_score" in df.columns and "first_seen_at" in df.columns:
+        recent = (
+            df[df["ai_score"] >= 0.6]
+            .sort_values("first_seen_at", ascending=False)
+            .head(30)
+            [["name", "country", "description", "ai_score", "incubator_source", "first_seen_at"]]
+            .copy()
+        )
+        recent["ai_score"] = recent["ai_score"].round(2)
+        recent["first_seen_at"] = pd.to_datetime(recent["first_seen_at"]).dt.date
+        recent.columns = ["Name", "Country", "Description", "AI Score", "Source", "First Seen"]
+        st.dataframe(recent, hide_index=True, use_container_width=True, height=480)
+
+
 # ── Main ─────────────────────────────────────────────────────────────
 
 def main():
@@ -1658,12 +1825,14 @@ def main():
     else:
         github_df = github_df_all.iloc[0:0].copy()
 
-    tab_overview, tab_github, tab_trends, tab_health, tab_inventory, tab_scraper = st.tabs([
-        "Overview", "GitHub Discovery", "Trends", "Pipeline Health", "Inventory", "Scraper",
+    tab_overview, tab_ai, tab_github, tab_trends, tab_health, tab_inventory, tab_scraper = st.tabs([
+        "Overview", "AI Analysis", "GitHub Discovery", "Trends", "Pipeline Health", "Inventory", "Scraper",
     ])
 
     with tab_overview:
         page_overview(scraper_df)
+    with tab_ai:
+        page_ai_analysis(scraper_df)
     with tab_github:
         page_github(github_df, github_df_all)
     with tab_trends:
