@@ -1,0 +1,19 @@
+version: 1
+domain: tlvpartners.com
+category: vc_portfolio
+created_at: '2026-05-08T19:39:28.153984+00:00'
+updated_at: '2026-05-08T19:39:28.153984+00:00'
+seed_urls:
+- https://www.tlvpartners.com/portfolio/
+preferred_strategy: single_page_extract
+fallback_order:
+- single_page_extract
+- subpage_discovery
+- pagination_probe
+subpage_hints: []
+pagination_hints: []
+quality_expectation_min_records: 1
+probe_result: challenging
+probe_reason: connection refused / DNS failure / timeout
+last_success: null
+notes: null

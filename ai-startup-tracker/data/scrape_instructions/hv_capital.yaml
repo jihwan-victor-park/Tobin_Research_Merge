@@ -1,0 +1,18 @@
+category: vc_portfolio
+created_at: '2026-05-08T19:41:48.684741+00:00'
+domain: hv.capital
+fallback_order:
+- subpage_discovery
+last_success: null
+notes: HV Capital — Germany's largest VC
+pagination_hints: []
+preferred_strategy: single_page_extract
+probe_reason: 'HTTPSConnectionPool(host=''hv.capital'', port=443): Max retries exceeded
+  with url:'
+probe_result: challenging
+quality_expectation_min_records: 10
+seed_urls:
+- https://hv.capital/portfolio/
+subpage_hints: []
+updated_at: '2026-05-08T19:41:48.684741+00:00'
+version: 1

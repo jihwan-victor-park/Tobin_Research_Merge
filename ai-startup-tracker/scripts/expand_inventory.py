@@ -95,6 +95,37 @@ NEW_SITES: list[tuple[str, str, str]] = [
     ("initialized.com",         "https://www.initialized.com/portfolio/",                  "vc_portfolio"),
     ("ycombinator.com",         "https://www.ycombinator.com/companies",                   "accelerator"),  # will skip (exists)
     ("svangel.com",             "https://svangel.com/portfolio/",                          "vc_portfolio"),
+
+    # ── International VCs — Europe ─────────────────────────────────────────
+    ("earlybird.com",           "https://earlybird.com/portfolio/",                        "vc_portfolio"),
+    ("northzone.com",           "https://northzone.com/portfolio/",                        "vc_portfolio"),
+    ("atomico.com",             "https://www.atomico.com/portfolio/",                      "vc_portfolio"),
+    ("partech.vc",              "https://partech.vc/portfolio/",                           "vc_portfolio"),
+    ("speedinvest.com",         "https://www.speedinvest.com/portfolio",                   "vc_portfolio"),
+    ("localglobe.vc",           "https://localglobe.vc/portfolio/",                        "vc_portfolio"),
+    ("creandum.com",            "https://www.creandum.com/portfolio/",                     "vc_portfolio"),
+    ("targetglobal.vc",         "https://targetglobal.vc/portfolio/",                      "vc_portfolio"),
+
+    # ── International VCs — India ─────────────────────────────────────────
+    ("nexusvp.com",             "https://nexusvp.com/portfolio/",                          "vc_portfolio"),
+    ("kalaari.com",             "https://www.kalaari.com/portfolio/",                      "vc_portfolio"),
+    ("blume.vc",                "https://blume.vc/portfolio/",                             "vc_portfolio"),
+
+    # ── International VCs — Israel ────────────────────────────────────────
+    ("tlvpartners.com",         "https://www.tlvpartners.com/portfolio/",                  "vc_portfolio"),
+    ("jvp.co.il",               "https://jvp.co.il/portfolio/",                           "vc_portfolio"),
+    ("lool.vc",                 "https://lool.vc/portfolio/",                              "vc_portfolio"),
+
+    # ── International VCs — APAC & Americas ──────────────────────────────
+    ("blackbird.vc",            "https://www.blackbird.vc/portfolio/",                     "vc_portfolio"),
+    ("startmate.com",           "https://www.startmate.com/portfolio/",                    "accelerator"),
+    ("marsdd.com",              "https://www.marsdd.com/portfolio/",                       "university_incubator"),
+    ("cdl.utoronto.ca",         "https://cdl.utoronto.ca/companies/",                      "university_incubator"),
+
+    # ── Additional US VCs ────────────────────────────────────────────────
+    ("lightspeedvp.com",        "https://lsvp.com/portfolio/",                             "vc_portfolio"),
+    ("foundation.capital",      "https://foundation.capital/portfolio/",                   "vc_portfolio"),
+    ("venrock.com",             "https://www.venrock.com/portfolio/",                      "vc_portfolio"),
 ]
 
 # Remove sites that already have a YAML (e.g. 500.co)

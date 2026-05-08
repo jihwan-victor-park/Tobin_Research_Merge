@@ -1431,15 +1431,47 @@ _DOMAIN_CATEGORIES: dict[str, str] = {
     "enterprise.gov.sg": "government_program",
     "startupindia.gov.in": "government_program",
     "nzte.govt.nz": "government_program",
+    # International VCs — Europe
+    "earlybird.com": "vc_portfolio",
+    "northzone.com": "vc_portfolio",
+    "partech.vc": "vc_portfolio",
+    "speedinvest.com": "vc_portfolio",
+    "localglobe.vc": "vc_portfolio",
+    "creandum.com": "vc_portfolio",
+    "targetglobal.vc": "vc_portfolio",
+    # International VCs — India
+    "nexusvp.com": "vc_portfolio",
+    "kalaari.com": "vc_portfolio",
+    "blume.vc": "vc_portfolio",
+    # International VCs — Israel
+    "tlvpartners.com": "vc_portfolio",
+    "jvp.co.il": "vc_portfolio",
+    "lool.vc": "vc_portfolio",
+    # International VCs — APAC & Americas
+    "blackbird.vc": "vc_portfolio",
+    "startmate.com": "accelerator",
+    "marsdd.com": "university_incubator",
+    "cdl.utoronto.ca": "university_incubator",
+    # Additional US VCs
+    "lightspeedvp.com": "vc_portfolio",
+    "foundation.capital": "vc_portfolio",
+    "venrock.com": "vc_portfolio",
+    # International VCs — Germany
+    "hv.capital": "vc_portfolio",
 }
 
 _EASY_DOMAINS = {
+    # Original easy scrapers
     "ycombinator.com", "techstars.com", "alchemistaccelerator.com",
     "seedcamp.com", "capitalfactory.com", "eranyc.com", "villageglobal.com",
     "antler.co", "innovationlabs.harvard.edu", "web.startx.com",
     "kellercenter.princeton.edu", "alliance.rice.edu", "joinef.com",
     "skydeck.berkeley.edu", "startups.columbia.edu", "entrepreneurship.mit.edu",
     "crunchbase.com",
+    # VC portfolios added (session 2)
+    "sequoiacap.com", "greylock.com", "balderton.com",
+    # VC portfolios added (session 3)
+    "foundersfund.com", "usv.com", "bvp.com", "generalcatalyst.com",
 }
 
 _CATEGORY_LABELS = {

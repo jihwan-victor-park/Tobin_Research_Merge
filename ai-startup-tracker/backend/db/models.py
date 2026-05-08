@@ -111,6 +111,10 @@ class IncubatorSource(str, enum.Enum):
     sequoia = "sequoia"
     greylock = "greylock"
     balderton = "balderton"
+    foundersfund = "foundersfund"
+    usv = "usv"
+    bvp = "bvp"
+    generalcatalyst = "generalcatalyst"
     # Agentic scraper (auto-detected)
     agentic_scrape = "agentic_scrape"
 

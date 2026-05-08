@@ -32,6 +32,10 @@ from backend.scrapers.easy.yc_scraper import YCScraper
 from backend.scrapers.easy.sequoia_scraper import SequoiaScraper
 from backend.scrapers.easy.greylock_scraper import GreylockScraper
 from backend.scrapers.easy.balderton_scraper import BaldertonScraper
+from backend.scrapers.easy.foundersfund_scraper import FoundersFundScraper
+from backend.scrapers.easy.usv_scraper import USVScraper
+from backend.scrapers.easy.bvp_scraper import BVPScraper
+from backend.scrapers.easy.generalcatalyst_scraper import GeneralCatalystScraper
 
 
 @dataclass
@@ -85,6 +89,14 @@ SCRAPER_REGISTRY: Dict[str, ScraperEntry] = {
 
     # VC portfolios — Playwright (JS-rendered, load-more pagination)
     "balderton.com": ScraperEntry(cls=BaldertonScraper, difficulty="easy", pattern="playwright", category="vc_portfolio"),
+
+    # VC portfolios — WordPress REST API
+    "foundersfund.com": ScraperEntry(cls=FoundersFundScraper, difficulty="easy", pattern="api_direct", category="vc_portfolio"),
+
+    # VC portfolios — BeautifulSoup single-page
+    "usv.com": ScraperEntry(cls=USVScraper, difficulty="easy", pattern="bs_single", category="vc_portfolio"),
+    "bvp.com": ScraperEntry(cls=BVPScraper, difficulty="easy", pattern="bs_single", category="vc_portfolio"),
+    "generalcatalyst.com": ScraperEntry(cls=GeneralCatalystScraper, difficulty="easy", pattern="bs_single", category="vc_portfolio"),
 }
 
 
