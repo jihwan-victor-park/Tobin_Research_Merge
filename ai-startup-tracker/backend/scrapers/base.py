@@ -218,7 +218,9 @@ def postprocess_records(records: List[ScrapedCompany]) -> List[dict]:
     """Normalize + deduplicate scraped records."""
     candidates = []
     for r in records:
-        domain = canonicalize_domain(r.website_url or r.profile_url or "")
+        # Only use the company's own website_url for domain — profile_url points to the
+        # source site (e.g. sequoiacap.com) and would collapse all companies to one key.
+        domain = canonicalize_domain(r.website_url or "")
         candidates.append({
             "name": (r.name or "").strip(),
             "normalized_name": normalize_company_name(r.name or ""),

@@ -103,6 +103,14 @@ class IncubatorSource(str, enum.Enum):
     h_farm = "h_farm"
     sting_stockholm = "sting_stockholm"
     rockstart = "rockstart"
+    # University Accelerators (added to DB via migrations)
+    yc = "yc"
+    rice_owlspark = "rice_owlspark"
+    princeton_elab = "princeton_elab"
+    # VC Portfolios
+    sequoia = "sequoia"
+    greylock = "greylock"
+    balderton = "balderton"
     # Agentic scraper (auto-detected)
     agentic_scrape = "agentic_scrape"
 

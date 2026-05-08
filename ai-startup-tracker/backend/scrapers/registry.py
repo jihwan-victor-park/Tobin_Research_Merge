@@ -29,6 +29,9 @@ from backend.scrapers.easy.startx_scraper import StartxScraper
 from backend.scrapers.easy.techstars_scraper import TechstarsScraper
 from backend.scrapers.easy.villageglobal_scraper import VillageGlobalScraper
 from backend.scrapers.easy.yc_scraper import YCScraper
+from backend.scrapers.easy.sequoia_scraper import SequoiaScraper
+from backend.scrapers.easy.greylock_scraper import GreylockScraper
+from backend.scrapers.easy.balderton_scraper import BaldertonScraper
 
 
 @dataclass
@@ -75,6 +78,13 @@ SCRAPER_REGISTRY: Dict[str, ScraperEntry] = {
 
     # Bulk import (parquet)
     "crunchbase.com": ScraperEntry(cls=CrunchbaseImportScraper, difficulty="easy", pattern="parquet", category="discovery_aggregator"),
+
+    # VC portfolios — WordPress REST API (paginated)
+    "sequoiacap.com": ScraperEntry(cls=SequoiaScraper, difficulty="easy", pattern="api_direct", category="vc_portfolio"),
+    "greylock.com": ScraperEntry(cls=GreylockScraper, difficulty="easy", pattern="api_direct", category="vc_portfolio"),
+
+    # VC portfolios — Playwright (JS-rendered, load-more pagination)
+    "balderton.com": ScraperEntry(cls=BaldertonScraper, difficulty="easy", pattern="playwright", category="vc_portfolio"),
 }
 
 
