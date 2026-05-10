@@ -1,10 +1,11 @@
 version: 1
 domain: 500.co
 created_at: '2026-04-07T03:58:13.210194Z'
-updated_at: '2026-04-07T03:58:13.210194Z'
+updated_at: '2026-05-05T05:36:57.084773Z'
 seed_urls:
+- https://500.co/startups
 - https://500.co/companies
-preferred_strategy: single_page_extract
+preferred_strategy: pagination_probe
 fallback_order:
 - single_page_extract
 - subpage_discovery
@@ -14,11 +15,11 @@ subpage_hints: []
 pagination_hints: []
 quality_expectation_min_records: 1
 last_success:
-  run_id: agentic_run_20260407_035805
-  at: '2026-04-07T03:58:13.210194Z'
-  input_url: https://500.co/companies
-  strategy: single_page_extract
-  record_count: 10
+  run_id: agentic_run_20260505_053559
+  at: '2026-05-05T05:36:57.084773Z'
+  input_url: https://500.co/startups
+  strategy: pagination_probe
+  record_count: 1
   valid_name_ratio: 1.0
   duplicate_ratio: 0.0
   completeness_score: 1.0
