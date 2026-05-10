@@ -32,6 +32,9 @@ def _category_from_yaml(domain: str) -> Optional[str]:
         return d.get("category") if d else None
     except FileNotFoundError:
         return None
+    except yaml.YAMLError:
+        logger.warning("Malformed YAML for domain %s at %s", domain, path)
+        return None
 
 logger = logging.getLogger(__name__)
 

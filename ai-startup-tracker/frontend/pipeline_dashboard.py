@@ -1761,7 +1761,8 @@ def page_ai_analysis(df: pd.DataFrame):
         return
 
     # Align with overview: is_ai = score >= 0.3 OR any ai_tag present
-    has_tags = df["ai_tags"].notna() & (df["ai_tags"] != "") if "ai_tags" in df.columns else pd.Series(False, index=df.index)
+    # Use apply() to handle both list and string storage ([] is falsy but [] != "" is True)
+    has_tags = df["ai_tags"].apply(lambda x: bool(x)) if "ai_tags" in df.columns else pd.Series(False, index=df.index)
     is_ai = ((df["ai_score"].fillna(0) >= 0.3) | has_tags) if "ai_score" in df.columns else has_tags
     df = df.copy()
     df["is_ai"] = is_ai
