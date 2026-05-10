@@ -1,17 +1,17 @@
 ==============================================================================
   AI Startup Tracker — Site Inventory Status
-  Generated: 2026-05-10 23:32 UTC
+  Generated: 2026-05-10 23:44 UTC
 ==============================================================================
 
   Total sources tracked         : 562
-  WORKING (producing data)      : 95  -> 19,471 startup rows pulled across them
-  NOT WORKING / pending         : 467
+  WORKING (producing data)      : 102  -> 19,620 startup rows pulled across them
+  NOT WORKING / pending         : 460
 
   NOTE: URLs are omitted on purpose — only the domain identity, the
         category bucket, and the signal that matters per row.
 
 ==============================================================================
-  WORKING SITES — 95 total
+  WORKING SITES — 102 total
 ==============================================================================
 
   [discovery_aggregator]  (10 sites)
@@ -27,7 +27,7 @@
     futurepedia.io                               7 rows   runs=  0 ok=  0 (hard)
     techcrunch.com                               2 rows   runs=  1 ok=  1 (easy)
 
-  [accelerator]  (28 sites)
+  [accelerator]  (29 sites)
   --------------------------------------------------------------------------
     ycombinator.com                          5,363 rows   runs=  2 ok=  2 (easy)
     gener8tor.com                            1,784 rows   runs=  1 ok=  1 (easy)
@@ -57,8 +57,9 @@
     stationf.co                                  3 rows   runs=  1 ok=  1 (easy)
     plugandplaytechcenter.com                    2 rows   runs=  2 ok=  1 (hard)
     500.co                                       1 rows   runs=  1 ok=  1 (hard)
+    disneyaccelerator.com                        1 rows   runs=  2 ok=  1 (hard)
 
-  [vc_portfolio]  (41 sites)
+  [vc_portfolio]  (47 sites)
   --------------------------------------------------------------------------
     antler.co                                1,220 rows   runs=  1 ok=  1 (easy)
     indexventures.com                          371 rows   runs=  0 ok=  0 (hard)
@@ -72,6 +73,7 @@
     craftventures.com                          100 rows   runs=  0 ok=  0 (hard)
     signalfire.com                             100 rows   runs=  0 ok=  0 (hard)
     aigrant.com                                 92 rows   runs=  0 ok=  0 (hard)
+    paradigm.xyz                                89 rows   runs=  2 ok=  1 (hard)
     villageglobal.com                           76 rows   runs=  1 ok=  1 (easy)
     venturesplatform.com                        75 rows   runs=  1 ok=  1 (easy)
     defy.vc                                     72 rows   runs=  0 ok=  0 (hard)
@@ -82,6 +84,7 @@
     compound.vc                                 63 rows   runs=  0 ok=  0 (hard)
     nxtp.vc                                     61 rows   runs=  1 ok=  1 (easy)
     radical.vc                                  52 rows   runs=  0 ok=  0 (hard)
+    1confirmation.com                           51 rows   runs=  2 ok=  1 (hard)
     luxcapital.com                              48 rows   runs=  1 ok=  1 (easy)
     contrarycap.com                             42 rows   runs=  0 ok=  0 (hard)
     m12.vc                                      40 rows   runs=  0 ok=  0 (hard)
@@ -93,14 +96,18 @@
     kindredventures.com                         12 rows   runs=  2 ok=  1 (hard)
     beenext.com                                 10 rows   runs=  1 ok=  1 (easy)
     ggvc.com                                     7 rows   runs=  2 ok=  1 (hard)
+    dnvgroup.com                                 5 rows   runs=  2 ok=  1 (hard)
     tcv.com                                      4 rows   runs=  2 ok=  1 (hard)
     foundrygroup.com                             3 rows   runs=  2 ok=  1 (hard)
     spark.capital                                3 rows   runs=  2 ok=  1 (hard)
+    balderton.com                                1 rows   runs=  2 ok=  1 (hard)
     bondcap.com                                  1 rows   runs=  2 ok=  1 (hard)
     cowboy.vc                                    1 rows   runs=  2 ok=  1 (hard)
     forerunnerventures.com                       1 rows   runs=  2 ok=  1 (hard)
     muckercapital.com                            1 rows   runs=  2 ok=  1 (hard)
     nfx.com                                      1 rows   runs=  2 ok=  1 (hard)
+    thirdrock.com                                1 rows   runs=  2 ok=  1 (hard)
+    thirdsphere.com                              1 rows   runs=  2 ok=  1 (hard)
 
   [university_incubator]  (12 sites)
   --------------------------------------------------------------------------
@@ -125,14 +132,14 @@
     startupchile.org                             3 rows   runs=  1 ok=  1 (easy)
 
 ==============================================================================
-  NOT WORKING SITES — 467 total
+  NOT WORKING SITES — 460 total
 ==============================================================================
 
   Grouped by failure reason (most common first).
   These sites are registered but currently produce 0 rows.
 
 
-  >> untried (never run)  (339 sites)
+  >> untried (never run)  (332 sites)
   --------------------------------------------------------------------------
     [discovery_aggregator]
       github.com                         indiehackers.com                   startups.com
@@ -145,36 +152,34 @@
       brandery.org                       cambridgeseedfund.com              capitalinnovators.com
       climate-kic.org                    cloudflare.com                     cogniva.com
       collider.no                        dayoneventures.com                 dcamp.kr
-      disneyaccelerator.com              dmzaccelerator.com                 elemental.org
-      entrepreneurfirst.com              entrepreneurfirst.org.uk           fastforward.org
-      fasttrackmalmo.com                 fastventures.co.kr                 foundersinc.com
-      founderzbasic.com                  googleforstartups.com              greatpoint.com
-      greenrubinoinc.com                 greentown.com                      hcl.com
-      intel.com                          iter8.com                          kakaoinvestment.co.kr
-      kibo-ventures.com                  kinglobal.com                      kreutz.de
-      l-marks.com                        lacite.fr                          launchhouse.com
-      line-ventures.com                  maru180.com                        matterchicago.com
-      musinsa-partners.com               ncsoft.com                         newchip.com
-      nvidia.com                         nvidiainception.com                nvidiainceptioneco.com
-      oncedeck.com                       oracle.com                         oxfordseedfund.com
-      petri.bio                          primer.kr                          scaling-africa.com
-      shiftbio.kr                        smileventures.co.kr                softbank-ventures.com
-      spaccelerator.com                  spaceshift.io                      startup-alliance.or.kr
-      startupinresidence.com             startuplab.no                      startuplisboa.com
-      startupschoolwm.com                stripe.com                         thefoundry.com
-      theventures.co.kr                  thirdderivative.org                urban-x.com
-      vala.org                           venturesforamerica.org             workday.com
-      zaffire.com                        zerokr.org                         zinclaunch.com
-      zwhq.com
+      dmzaccelerator.com                 elemental.org                      entrepreneurfirst.com
+      entrepreneurfirst.org.uk           fastforward.org                    fasttrackmalmo.com
+      fastventures.co.kr                 foundersinc.com                    founderzbasic.com
+      googleforstartups.com              greatpoint.com                     greenrubinoinc.com
+      greentown.com                      hcl.com                            intel.com
+      iter8.com                          kakaoinvestment.co.kr              kibo-ventures.com
+      kinglobal.com                      kreutz.de                          l-marks.com
+      lacite.fr                          launchhouse.com                    line-ventures.com
+      maru180.com                        matterchicago.com                  musinsa-partners.com
+      ncsoft.com                         newchip.com                        nvidia.com
+      nvidiainception.com                nvidiainceptioneco.com             oncedeck.com
+      oracle.com                         oxfordseedfund.com                 petri.bio
+      primer.kr                          scaling-africa.com                 shiftbio.kr
+      smileventures.co.kr                softbank-ventures.com              spaccelerator.com
+      spaceshift.io                      startup-alliance.or.kr             startupinresidence.com
+      startuplab.no                      startuplisboa.com                  startupschoolwm.com
+      stripe.com                         thefoundry.com                     theventures.co.kr
+      thirdderivative.org                urban-x.com                        vala.org
+      venturesforamerica.org             workday.com                        zaffire.com
+      zerokr.org                         zinclaunch.com                     zwhq.com
     [vc_portfolio]
-      1confirmation.com                  8vc.com                            altimetercapital.com
-      andreessen-horowitz.com            andreessen.com                     archvp.com
-      balderton.com                      basisset.vc                        benchmark.com
-      bowerycapital.com                  boxgroup.com                       brent-hoberman.com
-      breyer.com                         canaan.com                         cherry.vc
-      citi-ventures.com                  commerce-ventures.com              conviction.com
-      cota-capital.com                   creandum.com                       crv.com
-      dnvgroup.com                       drago.capital                      earlybird.com
+      8vc.com                            altimetercapital.com               andreessen-horowitz.com
+      andreessen.com                     archvp.com                         basisset.vc
+      benchmark.com                      bowerycapital.com                  boxgroup.com
+      brent-hoberman.com                 breyer.com                         canaan.com
+      cherry.vc                          citi-ventures.com                  commerce-ventures.com
+      conviction.com                     cota-capital.com                   creandum.com
+      crv.com                            drago.capital                      earlybird.com
       elaiacap.com                       elevation.cap                      emcap.com
       eqtventures.com                    financialventureslab.com           floodgate.com
       frst.capital                       gigafund.com                       gobiventures.com
@@ -185,12 +190,11 @@
       matrixpartners.com                 menloventures.com                  mirae-asset.com
       naverd2.com                        newtheoryvc.com                    nexusvp.com
       nordicninjavc.com                  norwestvp.com                      nuventures.com
-      openai.fund                        paradigm.xyz                       partechpartners.com
-      pearvc.com                         pi.capital                         pointnine.com
-      pradaria.com                       primary.vc                         redpoint.com
-      ribbitcapital.com                  scaleai.com                        scout-vc.com
-      section32.com                      socialcapital.com                  softbank.com
-      thirdrock.com                      thirdsphere.com                    thrive.cm
+      openai.fund                        partechpartners.com                pearvc.com
+      pi.capital                         pointnine.com                      pradaria.com
+      primary.vc                         redpoint.com                       ribbitcapital.com
+      scaleai.com                        scout-vc.com                       section32.com
+      socialcapital.com                  softbank.com                       thrive.cm
       thrivecap.com                      tigerglobal.com                    true.vc
       union-square-ventures.com          upfront.com                        workbench.vc
       zettavp.com
