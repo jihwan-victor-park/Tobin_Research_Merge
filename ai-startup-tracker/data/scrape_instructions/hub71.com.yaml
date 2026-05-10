@@ -1,0 +1,17 @@
+version: 1
+domain: hub71.com
+category: government_program
+created_at: "2026-05-10T00:00:00Z"
+updated_at: "2026-05-10T00:00:00Z"
+seed_urls:
+  - https://www.hub71.com/portfolio
+preferred_strategy: single_page_extract
+fallback_order:
+  - single_page_extract
+  - subpage_discovery
+subpage_hints:
+  - /portfolio
+  - /startups
+pagination_hints: []
+quality_expectation_min_records: 10
+notes: "Abu Dhabi government-backed tech accelerator. Portfolio page lists cohort startups."

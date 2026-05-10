@@ -1,0 +1,17 @@
+version: 1
+domain: canary.vc
+category: vc_portfolio
+created_at: "2026-05-10T00:00:00Z"
+updated_at: "2026-05-10T00:00:00Z"
+seed_urls:
+  - https://www.canary.vc/portfolio
+preferred_strategy: single_page_extract
+fallback_order:
+  - single_page_extract
+  - subpage_discovery
+subpage_hints:
+  - /portfolio
+  - /companies
+pagination_hints: []
+quality_expectation_min_records: 10
+notes: "Leading Brazilian early-stage VC. Portfolio page lists invested companies."

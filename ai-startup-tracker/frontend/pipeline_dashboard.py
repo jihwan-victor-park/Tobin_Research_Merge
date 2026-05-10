@@ -766,13 +766,57 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
     has_loc = fc3.checkbox("Has location")
     recent = fc4.checkbox("Last 30 days")
 
-    ff1, ff2, ff3 = st.columns(3)
+    _SOURCE_CATEGORY = {
+        "yc": "accelerator", "techstars": "accelerator", "alchemist": "accelerator",
+        "antler": "accelerator", "entrepreneur_first": "accelerator", "seedcamp": "accelerator",
+        "era_nyc": "accelerator", "capital_factory": "accelerator", "dreamit": "accelerator",
+        "sosv": "accelerator", "masschallenge": "accelerator", "plug_and_play": "accelerator",
+        "five_hundred_global": "accelerator", "station_f": "accelerator",
+        "startupbootcamp": "accelerator", "h_farm": "accelerator", "rockstart": "accelerator",
+        "wayra": "accelerator", "surge": "accelerator", "brinc": "accelerator",
+        "hax": "accelerator", "flat6labs": "accelerator", "astrolabs": "accelerator",
+        "parallel18": "accelerator", "nxtp_ventures": "accelerator",
+        "sequoia": "vc_portfolio", "greylock": "vc_portfolio", "balderton": "vc_portfolio",
+        "foundersfund": "vc_portfolio", "usv": "vc_portfolio", "bvp": "vc_portfolio",
+        "generalcatalyst": "vc_portfolio", "village_global": "vc_portfolio",
+        "pioneer_fund": "vc_portfolio", "beenext": "vc_portfolio", "allvp": "vc_portfolio",
+        "lux_capital": "vc_portfolio", "ventures_platform": "vc_portfolio",
+        "berkeley_skydeck": "university_incubator", "stanford_startx": "university_incubator",
+        "harvard_ilabs": "university_incubator", "mit_engine": "university_incubator",
+        "princeton_elab": "university_incubator", "rice_owlspark": "university_incubator",
+        "uiuc_enterpriseworks": "university_incubator", "cmu_swartz": "university_incubator",
+        "georgia_tech_atdc": "university_incubator", "michigan_zell_lurie": "university_incubator",
+        "grindstone": "government_program", "seedstars": "government_program",
+        "sting_stockholm": "government_program", "startup_chile": "government_program",
+        "sparklabs": "government_program",
+        "agentic_scrape": "discovery_aggregator", "betalist": "discovery_aggregator",
+        "wellfound": "discovery_aggregator", "f6s": "discovery_aggregator",
+    }
+    _CAT_LABELS = {
+        "accelerator": "Accelerator", "vc_portfolio": "VC Portfolio",
+        "university_incubator": "University Incubator",
+        "government_program": "Government Program", "discovery_aggregator": "Discovery Aggregator",
+    }
+
+    ff1, ff2, ff3, ff4 = st.columns(4)
     stages = sorted(df["stage"].dropna().unique().tolist())
     sel_stages = ff1.multiselect("Stage", options=stages, placeholder="All stages")
     ctries = sorted(df["country"].dropna().unique().tolist())
     sel_ctries = ff2.multiselect("Country", options=ctries, placeholder="All countries")
     incs = sorted(df["incubator_source"].dropna().astype(str).unique().tolist())
     sel_incs = ff3.multiselect("Incubator", options=incs, placeholder="All incubators")
+    sel_cats = ff4.multiselect("Source type", options=list(_CAT_LABELS.keys()),
+                                format_func=lambda x: _CAT_LABELS.get(x, x),
+                                placeholder="All types")
+
+    if "founded_year" in df.columns and df["founded_year"].notna().any():
+        valid_yrs = df["founded_year"].dropna().astype(int)
+        yr_min, yr_max = int(valid_yrs.min()), int(valid_yrs.max())
+        yr_min = max(yr_min, 2000)
+        yr_range = st.slider("Founded year", yr_min, yr_max, (2015, yr_max), key="yr_range")
+    else:
+        yr_range = None
+
     st.markdown('</div>', unsafe_allow_html=True)
 
     # Apply
@@ -791,6 +835,11 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
         f = f[f["country"].isin(sel_ctries)]
     if sel_incs:
         f = f[f["incubator_source"].astype(str).isin(sel_incs)]
+    if sel_cats:
+        src_cat = f["incubator_source"].astype(str).map(_SOURCE_CATEGORY).fillna("discovery_aggregator")
+        f = f[src_cat.isin(sel_cats)]
+    if yr_range and "founded_year" in f.columns:
+        f = f[f["founded_year"].isna() | f["founded_year"].between(yr_range[0], yr_range[1])]
     if search:
         s = search.lower()
         f = f[
@@ -1711,8 +1760,14 @@ def page_ai_analysis(df: pd.DataFrame):
         st.info("No company data available.")
         return
 
+    # Align with overview: is_ai = score >= 0.3 OR any ai_tag present
+    has_tags = df["ai_tags"].notna() & (df["ai_tags"] != "") if "ai_tags" in df.columns else pd.Series(False, index=df.index)
+    is_ai = ((df["ai_score"].fillna(0) >= 0.3) | has_tags) if "ai_score" in df.columns else has_tags
+    df = df.copy()
+    df["is_ai"] = is_ai
+
     total = len(df)
-    ai_cos = int((df["ai_score"] >= 0.6).sum()) if "ai_score" in df.columns else 0
+    ai_cos = int(is_ai.sum())
     non_ai = total - ai_cos
     ai_pct = round(ai_cos * 100.0 / total, 1) if total else 0
     unclassified = int(df["ai_score"].isna().sum()) if "ai_score" in df.columns else 0
@@ -1720,7 +1775,7 @@ def page_ai_analysis(df: pd.DataFrame):
     # ── Headline metrics ─────────────────────────────────────────────
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Total companies", f"{total:,}")
-    m2.metric("AI companies", f"{ai_cos:,}", help="ai_score ≥ 0.6")
+    m2.metric("AI companies", f"{ai_cos:,}", help="ai_score ≥ 0.3 or has AI tag")
     m3.metric("AI share", f"{ai_pct}%")
     m4.metric("Unclassified", f"{unclassified:,}", help="ai_score is NULL")
 
@@ -1733,8 +1788,8 @@ def page_ai_analysis(df: pd.DataFrame):
         prog = (
             src.groupby("incubator_source")
             .agg(
-                total=("ai_score", "count"),
-                ai_count=("ai_score", lambda s: (s >= 0.6).sum()),
+                total=("id", "size"),
+                ai_count=("is_ai", "sum"),
             )
             .reset_index()
         )
@@ -1763,7 +1818,7 @@ def page_ai_analysis(df: pd.DataFrame):
 
     with col_left:
         if "country" in df.columns:
-            ai_df = df[df["ai_score"] >= 0.6].copy() if "ai_score" in df.columns else df
+            ai_df = df[df["is_ai"]].copy()
             # Normalise messy country strings: "USA", "United States", "US" → "United States"
             norm = {"USA": "United States", "US": "United States", "usa": "United States",
                     "U.S.A.": "United States", "U.S.": "United States"}
@@ -1818,8 +1873,8 @@ def page_ai_analysis(df: pd.DataFrame):
                 labels={"ai_score": "AI Score", "count": "Companies"},
                 title="AI Score Distribution",
             )
-            fig_hist.add_vline(x=0.6, line_dash="dash", line_color=RED,
-                               annotation_text="AI threshold (0.6)")
+            fig_hist.add_vline(x=0.3, line_dash="dash", line_color=RED,
+                               annotation_text="AI threshold (0.3)")
             fig_hist.update_layout(**_layout(height=240))
             st.plotly_chart(fig_hist, use_container_width=True)
 
@@ -1831,8 +1886,8 @@ def page_ai_analysis(df: pd.DataFrame):
         monthly = (
             time_df.groupby("month")
             .agg(
-                total=("ai_score", "count"),
-                ai=("ai_score", lambda s: (s >= 0.6).sum()),
+                total=("id", "size"),
+                ai=("is_ai", "sum"),
             )
             .reset_index()
             .tail(24)
@@ -1852,17 +1907,21 @@ def page_ai_analysis(df: pd.DataFrame):
     # ── Recently discovered AI companies ────────────────────────────
     st.markdown("<br/>", unsafe_allow_html=True)
     st.markdown("### Recently Discovered AI Companies")
-    if "ai_score" in df.columns and "first_seen_at" in df.columns:
+    if "first_seen_at" in df.columns:
+        cols = [c for c in ["name", "country", "description", "ai_score", "incubator_source", "first_seen_at"] if c in df.columns]
         recent = (
-            df[df["ai_score"] >= 0.6]
+            df[df["is_ai"]]
             .sort_values("first_seen_at", ascending=False)
             .head(30)
-            [["name", "country", "description", "ai_score", "incubator_source", "first_seen_at"]]
+            [cols]
             .copy()
         )
-        recent["ai_score"] = recent["ai_score"].round(2)
+        if "ai_score" in recent.columns:
+            recent["ai_score"] = recent["ai_score"].round(2)
         recent["first_seen_at"] = pd.to_datetime(recent["first_seen_at"]).dt.date
-        recent.columns = ["Name", "Country", "Description", "AI Score", "Source", "First Seen"]
+        col_rename = {"name": "Name", "country": "Country", "description": "Description",
+                      "ai_score": "AI Score", "incubator_source": "Source", "first_seen_at": "First Seen"}
+        recent.rename(columns=col_rename, inplace=True)
         st.dataframe(recent, hide_index=True, use_container_width=True, height=480)
 
 

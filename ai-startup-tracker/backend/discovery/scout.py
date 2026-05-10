@@ -128,6 +128,48 @@ _QUERIES_BY_COUNTRY = {
         "Wamda Capital portfolio companies UAE AI startups",
         "Dubai Future Foundation portfolio companies AI startups",
     ],
+    "NG": [
+        "CcHUB portfolio companies Nigeria AI startups",
+        "Ventures Platform portfolio companies Nigeria AI",
+        "Founders Factory Africa portfolio companies Nigeria AI",
+        "Lagos startup accelerator portfolio companies Nigeria",
+        "Nigeria tech incubator portfolio companies AI startups",
+    ],
+    "ZA": [
+        "Knife Capital portfolio companies South Africa AI",
+        "Grindstone accelerator portfolio companies South Africa",
+        "4Di Capital portfolio companies South Africa AI startups",
+        "Cape Town startup accelerator portfolio companies AI",
+        "South Africa tech incubator portfolio companies AI",
+    ],
+    "JP": [
+        "500 Startups Japan portfolio companies AI startups",
+        "JAFCO portfolio companies Japan AI startups",
+        "University of Tokyo IPC portfolio companies Japan",
+        "Tokyo startup accelerator portfolio companies AI 2026",
+        "SoftBank Vision Fund Japan portfolio AI companies",
+    ],
+    "NL": [
+        "Volta Ventures portfolio companies Netherlands AI",
+        "Peak Capital portfolio companies Netherlands AI startups",
+        "Rockstart portfolio companies Netherlands AI startups",
+        "Amsterdam startup accelerator portfolio companies AI",
+        "Netherlands deep tech venture capital portfolio companies",
+    ],
+    "MX": [
+        "ALLVP portfolio companies Mexico AI startups",
+        "Dila Capital portfolio companies Mexico AI",
+        "500 Startups Mexico portfolio companies AI",
+        "Mexico City startup accelerator portfolio companies AI",
+        "Mexican venture capital portfolio companies AI startups",
+    ],
+    "ID": [
+        "East Ventures portfolio companies Indonesia AI startups",
+        "Alpha JWC Ventures portfolio companies Indonesia AI",
+        "Ideosource portfolio companies Indonesia AI startups",
+        "Jakarta startup accelerator portfolio companies AI",
+        "Indonesia tech incubator portfolio companies AI startups",
+    ],
 }
 
 
