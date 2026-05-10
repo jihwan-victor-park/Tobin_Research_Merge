@@ -566,6 +566,11 @@ def load_startups() -> pd.DataFrame:
         dom_root = dom.str.split(".").str[0]
         is_big = name_l.isin(BIG_TECH_DENYLIST) | dom_root.isin(BIG_TECH_DENYLIST)
         df = df[~is_big].reset_index(drop=True)
+
+        # Inclusive "is AI" flag: any model-scored signal OR any AI tag attached.
+        # Captures companies with even a slight AI signal, not only high-confidence ones.
+        has_tags = df["ai_tags"].apply(lambda x: isinstance(x, list) and len(x) > 0)
+        df["is_ai"] = (df["ai_score"].fillna(0) >= 0.3) | has_tags
     return df
 
 
@@ -635,17 +640,63 @@ def _geocode_us(df: pd.DataFrame) -> pd.DataFrame:
 
 # ── Page: Overview ───────────────────────────────────────────────────
 
-def page_overview(df: pd.DataFrame):
+def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
     if df.empty:
         st.info("No companies in database. Go to the Scraper tab to get started.")
         return
 
+    # ── Sources analyzed (site_health inventory) ─────────────────────
+    if health_df is not None and not health_df.empty:
+        st.markdown(
+            '<div class="section-header">Sources Analyzed</div>'
+            '<div class="section-sub">Portfolio sites in the tracker — click to expand category and scraping-state breakdown</div>',
+            unsafe_allow_html=True,
+        )
+
+        cat = health_df.get("category")
+        if cat is None:
+            cat = pd.Series([None] * len(health_df))
+        cat = cat.fillna("other")
+        state = (
+            health_df.get("worker_state").fillna("pending")
+            if "worker_state" in health_df.columns
+            else pd.Series(["pending"] * len(health_df))
+        )
+
+        # Top-level summary: just total sites.
+        st.metric("Total Sites", f"{len(health_df):,}")
+
+        # Detailed breakdown collapsed by default.
+        with st.expander("View detailed breakdown", expanded=False):
+            s1, s2, s3, s4, s5 = st.columns(5)
+            s1.metric("Universities", f"{int((cat == 'university_incubator').sum()):,}")
+            s2.metric("Accelerators", f"{int((cat == 'accelerator').sum()):,}")
+            s3.metric("VC Portfolios", f"{int((cat == 'vc_portfolio').sum()):,}")
+            s4.metric("Discovery", f"{int((cat == 'discovery_aggregator').sum()):,}")
+            s5.metric("Gov Programs", f"{int((cat == 'government_program').sum()):,}")
+
+            working_n = int((state == "working").sum())
+            pending_n = int((state == "pending").sum())
+            sc1, sc2, sc3 = st.columns(3)
+            sc1.metric("Scrapable (working)", f"{working_n:,}")
+            sc2.metric("Challenging (pending)", f"{pending_n:,}")
+            if "pending_reason" in health_df.columns:
+                diagnosed_n = int(health_df["pending_reason"].notna().sum())
+                sc3.metric("With AI diagnosis", f"{diagnosed_n:,}")
+
     # Metrics
     total = len(df)
-    ai_n = int((df["ai_score"].fillna(0) >= 0.5).sum())
+    # Inclusive: any model-scored AI signal OR any AI tag attached.
+    is_ai_col = df["is_ai"] if "is_ai" in df.columns else (df["ai_score"].fillna(0) >= 0.3)
+    ai_n = int(is_ai_col.sum())
     funded = int(df["last_funding_date"].notna().sum())
     countries = df["country"].dropna().nunique()
 
+    st.markdown(
+        '<div class="section-header" style="margin-top:24px;">Companies</div>'
+        '<div class="section-sub">AI-startup totals across all tracked sources (inclusive: any AI signal)</div>',
+        unsafe_allow_html=True,
+    )
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Total Companies", f"{total:,}")
     m2.metric("AI Startups", f"{ai_n:,}")
@@ -665,7 +716,7 @@ def page_overview(df: pd.DataFrame):
     else:
         city_agg = (
             geo.groupby(["city", "lat", "lon"])
-            .agg(count=("id", "size"), ai_pct=("ai_score", lambda s: (s.fillna(0) >= 0.5).mean()))
+            .agg(count=("id", "size"), ai_pct=("is_ai", "mean"))
             .reset_index()
         )
         fig = px.scatter_geo(
@@ -727,7 +778,7 @@ def page_overview(df: pd.DataFrame):
     # Apply
     f = df.copy()
     if ai_only:
-        f = f[f["ai_score"].fillna(0) >= 0.5]
+        f = f[f["is_ai"]] if "is_ai" in f.columns else f[f["ai_score"].fillna(0) >= 0.3]
     if funded_only:
         f = f[f["last_funding_date"].notna()]
     if has_loc:
@@ -763,9 +814,16 @@ def page_overview(df: pd.DataFrame):
         use_container_width=True,
     )
 
-    # Table
+    # Table — sort so AI startups appear first (by is_ai DESC, then by funding date).
+    if "is_ai" in f.columns:
+        f = f.sort_values(
+            by=["is_ai", "last_funding_date", "first_seen_at"],
+            ascending=[False, False, False],
+            na_position="last",
+        )
+
     cols = [c for c in [
-        "name", "ai_tags", "country", "stage",
+        "is_ai", "name", "ai_tags", "country", "stage",
         "last_funding_date", "last_funding_amount", "last_funding_round",
         "city", "incubator_source", "first_seen_at", "domain", "description",
     ] if c in f.columns]
@@ -783,8 +841,11 @@ def page_overview(df: pd.DataFrame):
         disp["first_seen_at"] = disp["first_seen_at"].dt.strftime("%Y-%m-%d")
     if "incubator_source" in disp.columns:
         disp["incubator_source"] = disp["incubator_source"].astype(str).replace("None", "")
+    if "is_ai" in disp.columns:
+        disp["is_ai"] = disp["is_ai"].astype(bool)
 
     disp = disp.rename(columns={
+        "is_ai": "AI",
         "name": "Name", "ai_tags": "AI Category", "country": "Country",
         "city": "City", "stage": "Stage",
         "last_funding_date": "Last Funded", "last_funding_amount": "Amount",
@@ -794,6 +855,10 @@ def page_overview(df: pd.DataFrame):
     })
 
     col_cfg = {}
+    if "AI" in disp.columns:
+        col_cfg["AI"] = st.column_config.CheckboxColumn(
+            "AI", help="AI signal detected (model score or AI tag)", width="small"
+        )
     if "Website" in disp.columns:
         col_cfg["Website"] = st.column_config.LinkColumn("Website", display_text="visit")
     if "Description" in disp.columns:
@@ -821,7 +886,12 @@ def page_trends(df: pd.DataFrame):
 
     c1, c2, c3 = st.columns(3)
     c1.metric("New companies (7d)", f"{len(week):,}")
-    ai_new = int((week["ai_score"].fillna(0) >= 0.5).sum()) if len(week) else 0
+    if len(week) and "is_ai" in week.columns:
+        ai_new = int(week["is_ai"].sum())
+    elif len(week):
+        ai_new = int((week["ai_score"].fillna(0) >= 0.3).sum())
+    else:
+        ai_new = 0
     c2.metric("AI startups (7d)", f"{ai_new:,}")
     funded_new = int(week["last_funding_date"].notna().sum()) if len(week) else 0
     c3.metric("With funding (7d)", f"{funded_new:,}")
@@ -1189,46 +1259,43 @@ def page_scraper():
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
-    # ── Easy scrapers grid ───────────────────────────────────────────
-    st.markdown(
-        f'<div class="section-header">Deterministic Scrapers</div>'
-        f'<div class="section-sub">{len(SCRAPER_REGISTRY)} hard-coded scrapers for known sites</div>',
-        unsafe_allow_html=True,
+    # ── Easy scrapers (collapsed list) ───────────────────────────────
+    sorted_scrapers = sorted(SCRAPER_REGISTRY.items())
+    working_n = sum(
+        1 for d, _ in sorted_scrapers
+        if (health_map.get(d, {}).get("worker_state") or
+            ("working" if health_map.get(d, {}).get("status") == "healthy" else "pending")) == "working"
     )
 
-    sorted_scrapers = sorted(SCRAPER_REGISTRY.items())
-    cols_per_row = 4
-    for i in range(0, len(sorted_scrapers), cols_per_row):
-        batch = sorted_scrapers[i:i + cols_per_row]
-        cols = st.columns(cols_per_row)
-        for j, (domain, entry) in enumerate(batch):
-            with cols[j]:
-                health = health_map.get(domain, {})
-                worker_state = health.get("worker_state") or (
-                    "working" if health.get("status") == "healthy" else "pending"
-                )
-                dot_cls = "dot-healthy" if worker_state == "working" else "dot-pending"
-                last_ct = health.get("last_record_count")
-                ct_text = f" &middot; {last_ct} records" if last_ct else ""
-                state_label = worker_state.capitalize()
-
-                st.markdown(
-                    f'<div class="scraper-card">'
-                    f'<div class="scraper-domain">'
-                    f'<span class="{dot_cls}">&#9679;</span> {domain}</div>'
-                    f'<div class="scraper-meta">{state_label} &middot; {entry.pattern}{ct_text}</div>'
-                    f'</div>',
-                    unsafe_allow_html=True,
-                )
-                if st.button("Run", key=f"easy_{domain}", use_container_width=True):
-                    src_url = health.get("url") or entry.cls().source_url
-                    with st.spinner(f"Running {domain}..."):
-                        result = Orchestrator().run(src_url, force=True)
-                    if result.success:
-                        st.success(f"{result.records_found} ({result.records_new} new)")
-                    else:
-                        st.error(f"{result.status}")
-                    st.cache_data.clear()
+    with st.expander(
+        f"Deterministic Scrapers — {len(sorted_scrapers)} sites "
+        f"({working_n} working / {len(sorted_scrapers) - working_n} pending)",
+        expanded=False,
+    ):
+        for domain, entry in sorted_scrapers:
+            health = health_map.get(domain, {})
+            worker_state = health.get("worker_state") or (
+                "working" if health.get("status") == "healthy" else "pending"
+            )
+            dot = "🟢" if worker_state == "working" else "🟡"
+            last_ct = health.get("last_record_count")
+            ct_text = f" · {last_ct} records" if last_ct else ""
+            row1, row2 = st.columns([5, 1])
+            row1.markdown(
+                f"{dot}&nbsp; **{domain}** "
+                f"<span style='color:{TXT3};font-size:0.82rem;'>"
+                f"&middot; {entry.pattern}{ct_text}</span>",
+                unsafe_allow_html=True,
+            )
+            if row2.button("Run", key=f"easy_{domain}", use_container_width=True):
+                src_url = health.get("url") or entry.cls().source_url
+                with st.spinner(f"Running {domain}..."):
+                    result = Orchestrator().run(src_url, force=True)
+                if result.success:
+                    st.success(f"{domain}: {result.records_found} ({result.records_new} new)")
+                else:
+                    st.error(f"{domain}: {result.status}")
+                st.cache_data.clear()
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
@@ -1830,7 +1897,7 @@ def main():
     ])
 
     with tab_overview:
-        page_overview(scraper_df)
+        page_overview(scraper_df, health_df)
     with tab_ai:
         page_ai_analysis(scraper_df)
     with tab_github:

@@ -215,12 +215,25 @@ def validate_records(
 
 
 def postprocess_records(records: List[ScrapedCompany]) -> List[dict]:
-    """Normalize + deduplicate scraped records."""
+    """Normalize + deduplicate scraped records.
+
+    Domain extraction priority:
+      1. website_url (the company's own homepage — the right dedup key).
+      2. profile_url IF it's a product-style domain (not a shared host like
+         huggingface.co or ycombinator.com — those would collapse every org
+         on the platform into one row).
+    Falling back to a non-product profile_url collapses HF/YC platform pages
+    onto a single dedup key, so we explicitly skip that case.
+    """
+    from backend.utils.domain import is_product_domain
+
     candidates = []
     for r in records:
-        # Only use the company's own website_url for domain — profile_url points to the
-        # source site (e.g. sequoiacap.com) and would collapse all companies to one key.
         domain = canonicalize_domain(r.website_url or "")
+        if not domain and r.profile_url:
+            candidate = canonicalize_domain(r.profile_url)
+            if candidate and is_product_domain(candidate):
+                domain = candidate
         candidates.append({
             "name": (r.name or "").strip(),
             "normalized_name": normalize_company_name(r.name or ""),

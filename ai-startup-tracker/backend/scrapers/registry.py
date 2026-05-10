@@ -20,6 +20,7 @@ from backend.scrapers.easy.crunchbase_import import CrunchbaseImportScraper
 from backend.scrapers.easy.ef_scraper import EFScraper
 from backend.scrapers.easy.eranyc_scraper import ERANYCScraper
 from backend.scrapers.easy.harvard_scraper import HarvardScraper
+from backend.scrapers.easy.huggingface_scraper import HuggingFaceScraper
 from backend.scrapers.easy.mit_deltav_scraper import MitDeltavScraper
 from backend.scrapers.easy.princeton_scraper import PrincetonScraper
 from backend.scrapers.easy.rice_owlspark_scraper import RiceOwlsparkScraper
@@ -97,6 +98,9 @@ SCRAPER_REGISTRY: Dict[str, ScraperEntry] = {
     "usv.com": ScraperEntry(cls=USVScraper, difficulty="easy", pattern="bs_single", category="vc_portfolio"),
     "bvp.com": ScraperEntry(cls=BVPScraper, difficulty="easy", pattern="bs_single", category="vc_portfolio"),
     "generalcatalyst.com": ScraperEntry(cls=GeneralCatalystScraper, difficulty="easy", pattern="bs_single", category="vc_portfolio"),
+
+    # AI-native discovery aggregator
+    "huggingface.co": ScraperEntry(cls=HuggingFaceScraper, difficulty="easy", pattern="bs_paginated", category="discovery_aggregator"),
 }
 
 
