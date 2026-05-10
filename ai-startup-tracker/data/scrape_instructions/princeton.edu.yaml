@@ -1,0 +1,25 @@
+version: 1
+domain: princeton.edu
+created_at: '2026-05-10T23:06:06.078264Z'
+updated_at: '2026-05-10T23:06:06.078264Z'
+seed_urls:
+- https://kellercenter.princeton.edu/people/teams-startups-filtered?program-filter%5B18%5D=18
+preferred_strategy: single_page_extract
+fallback_order:
+- single_page_extract
+- subpage_discovery
+- pagination_probe
+- search_probe
+subpage_hints: []
+pagination_hints: []
+quality_expectation_min_records: 1
+last_success:
+  run_id: agentic_run_20260510_230519
+  at: '2026-05-10T23:06:06.078264Z'
+  input_url: https://kellercenter.princeton.edu/people/teams-startups-filtered?program-filter%5B18%5D=18
+  strategy: single_page_extract
+  record_count: 24
+  valid_name_ratio: 1.0
+  duplicate_ratio: 0.0
+  completeness_score: 1.0
+notes: null
