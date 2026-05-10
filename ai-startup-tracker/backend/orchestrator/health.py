@@ -10,6 +10,8 @@ Escalation rules:
 from __future__ import annotations
 
 import logging
+import os
+import yaml
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
@@ -18,6 +20,18 @@ from sqlalchemy import or_
 from backend.db.connection import session_scope
 from backend.db.models import SiteHealth
 from backend.scrapers.base import ScrapeRunResult
+
+_INSTR_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data", "scrape_instructions")
+
+
+def _category_from_yaml(domain: str) -> Optional[str]:
+    path = os.path.join(_INSTR_DIR, f"{domain}.yaml")
+    try:
+        with open(path) as f:
+            d = yaml.safe_load(f)
+        return d.get("category") if d else None
+    except FileNotFoundError:
+        return None
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +72,7 @@ class HealthMonitor:
                     scraper_name=result.scraper_name,
                     status="pending",
                     worker_state="pending",
+                    category=_category_from_yaml(domain),
                     created_at=now,
                 )
                 session.add(health)
@@ -190,6 +205,7 @@ class HealthMonitor:
         url: str,
         difficulty: str = "hard",
         scraper_name: Optional[str] = None,
+        category: Optional[str] = None,
     ):
         """Register a new site for scraping."""
         now = datetime.now(timezone.utc)
@@ -205,6 +221,7 @@ class HealthMonitor:
                 scraper_name=scraper_name,
                 status="pending",
                 worker_state="pending",
+                category=category or _category_from_yaml(domain),
                 next_scrape_at=now,
                 created_at=now,
             )

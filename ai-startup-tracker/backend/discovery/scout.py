@@ -38,95 +38,95 @@ TAVILY_SEARCH_URL = "https://api.tavily.com/search"
 # for we just append "in {country}" to a generic query set.
 _QUERIES_BY_COUNTRY = {
     "US": [
-        "AI accelerator portfolio United States",
-        "top startup incubators United States 2026",
-        "university entrepreneurship program portfolio US",
-        "venture capital portfolio companies AI United States",
-        "best startup accelerators in the US 2026",
+        "Pioneer Fund portfolio companies AI startups",
+        "Neo accelerator portfolio companies AI",
+        "Z Fellows portfolio companies AI startups",
+        "American university startup incubator portfolio companies AI 2026",
+        "US deep tech seed fund portfolio companies AI startups",
     ],
     "UK": [
-        "AI accelerator portfolio United Kingdom",
-        "London startup incubators 2026",
-        "UK university entrepreneurship program portfolio",
-        "British venture capital portfolio companies AI",
-        "UK deep tech accelerator portfolio 2026",
+        "Notion Capital portfolio companies UK AI startups",
+        "Atomico portfolio companies European AI startups",
+        "Oxford University Innovation spinouts portfolio companies",
+        "Entrepreneur First EF UK portfolio alumni companies",
+        "Deepmind spinout UK AI startup accelerator portfolio",
     ],
     "KR": [
-        "South Korea startup accelerator portfolio",
-        "Seoul AI startup incubator companies",
-        "Korean venture capital portfolio AI startups",
-        "TIPS program Korea portfolio companies",
+        "Kakao Ventures portfolio companies Korea AI startups",
+        "Softbank Ventures Korea portfolio AI startups",
+        "Korea Creative Economy Innovation Center portfolio companies",
+        "POSTECH startup incubator portfolio companies Korea",
+        "Altos Ventures Korea portfolio companies AI",
     ],
     "IN": [
-        "India AI startup accelerator portfolio 2026",
-        "NASSCOM startup ecosystem portfolio companies",
-        "IIT incubator portfolio AI companies India",
-        "Indian venture capital portfolio AI startups",
-        "Startup India DPIIT recognized accelerator portfolio",
-        "iCreate CIIE SIDBI startup fund portfolio India",
+        "CIIE IIM Ahmedabad portfolio companies India AI startups",
+        "iCreate India portfolio companies AI startups",
+        "IIT Bombay incubator portfolio companies startups",
+        "Surge Sequoia India portfolio companies startups",
+        "Blume Ventures portfolio companies India AI startups",
     ],
     "IL": [
-        "Israel tech accelerator portfolio AI startups 2026",
-        "Tel Aviv startup accelerator portfolio companies",
-        "Israel Innovation Authority funded startups",
-        "Israeli venture capital AI portfolio companies",
-        "8200 EISP alumni companies Israel",
+        "JVP Jerusalem Venture Partners portfolio companies Israel AI",
+        "Disruptive AI Israel portfolio companies startups",
+        "8200 EISP alumni companies Israel AI startups",
+        "OurCrowd portfolio companies Israel AI startups",
+        "Team8 portfolio companies Israel AI cybersecurity",
     ],
     "DE": [
-        "Germany AI startup accelerator portfolio 2026",
-        "High-Tech Gründerfonds portfolio companies",
-        "EXIST Gründerstipendium startup portfolio Germany",
-        "Berlin startup incubator portfolio AI",
-        "German deep tech venture capital portfolio",
+        "High-Tech Gründerfonds HTGF portfolio companies Germany AI",
+        "Earlybird venture capital portfolio companies Germany AI",
+        "Berlin startup incubator portfolio companies AI 2026",
+        "UnternehmerTUM portfolio companies Munich AI startups",
+        "Project A Ventures portfolio companies Germany AI",
     ],
     "FR": [
-        "France AI startup accelerator portfolio 2026",
-        "Station F companies portfolio AI startups",
-        "BPIFrance startup portfolio companies",
-        "French Tech accelerator portfolio 2026",
-        "Paris startup incubator portfolio AI companies",
+        "Station F startups portfolio companies France AI",
+        "BPIFrance startup portfolio companies France AI",
+        "Elaia Partners portfolio companies France AI startups",
+        "Kima Ventures portfolio companies France AI startups",
+        "France Paris AI accelerator portfolio companies 2026",
     ],
     "SG": [
-        "Singapore AI startup accelerator portfolio 2026",
-        "SGInnovate portfolio companies AI",
-        "Enterprise Singapore startup portfolio",
-        "NUS BLOCK71 startups Singapore portfolio",
-        "Singapore venture capital AI portfolio companies",
+        "SGInnovate portfolio companies Singapore AI deep tech",
+        "Wavemaker Partners portfolio companies Singapore AI",
+        "NUS Enterprise BLOCK71 portfolio companies Singapore",
+        "Jungle Ventures portfolio companies Singapore AI startups",
+        "Vertex Ventures portfolio companies Singapore AI",
     ],
     "SE": [
-        "Sweden startup accelerator portfolio 2026",
-        "Stockholm AI startup incubator companies",
-        "EQT Ventures portfolio companies Sweden",
-        "Swedish deep tech venture capital portfolio AI",
-        "Nordic startup accelerator portfolio companies",
+        "EQT Ventures portfolio companies Sweden AI startups",
+        "Northzone portfolio companies Sweden AI startups",
+        "STING Stockholm portfolio companies Sweden AI",
+        "Industrifonden portfolio companies Sweden AI startups",
+        "Creandum portfolio companies Sweden AI startups",
     ],
     "CA": [
-        "Canada AI startup accelerator portfolio 2026",
-        "MaRS Discovery District portfolio companies",
-        "Creative Destruction Lab CDL companies AI",
-        "Canadian venture capital AI portfolio startups",
-        "Communitech Waterloo startup portfolio",
+        "Creative Destruction Lab CDL portfolio companies Canada AI",
+        "MaRS Discovery District portfolio companies Canada AI",
+        "Communitech portfolio companies Waterloo Canada AI",
+        "Real Ventures portfolio companies Canada AI startups",
+        "BDC Capital portfolio companies Canada AI startups",
     ],
     "AU": [
-        "Australia AI startup accelerator portfolio 2026",
-        "Startmate portfolio companies Australia",
-        "Blackbird Ventures portfolio AI startups",
-        "CSIRO ON accelerator portfolio companies",
-        "Australian deep tech startup accelerator portfolio",
+        "Startmate portfolio companies Australia AI startups",
+        "Blackbird Ventures portfolio companies Australia AI",
+        "Main Sequence Ventures portfolio companies Australia AI",
+        "Reinventure portfolio companies Australia AI fintech",
+        "CSIRO ON accelerator portfolio companies Australia",
     ],
     "BR": [
-        "Brazil startup accelerator portfolio 2026",
-        "500 Startups LatAm portfolio companies Brazil",
-        "Softbank LatAm portfolio AI startups Brazil",
-        "Brazilian venture capital portfolio AI companies",
-        "Cubo Itaú startup portfolio Brazil",
+        "Distrito portfolio companies Brazil AI startups",
+        "Canary VC portfolio companies Brazil AI startups",
+        "Monashees portfolio companies Brazil AI startups",
+        "Redpoint eventures portfolio companies Brazil AI",
+        "Bossanova Investimentos portfolio companies Brazil AI",
     ],
     "AE": [
-        "UAE startup accelerator portfolio 2026",
-        "Hub71 Abu Dhabi portfolio companies AI",
-        "In5 Dubai startup portfolio companies",
-        "DIFC FinTech Hive portfolio UAE",
-        "Middle East venture capital AI portfolio startups",
+        "Hub71 Abu Dhabi portfolio companies UAE AI startups",
+        "In5 Dubai portfolio companies UAE AI startups",
+        "DIFC FinTech Hive portfolio companies UAE fintech AI",
+        "Wamda Capital portfolio companies UAE AI startups",
+        "Dubai Future Foundation portfolio companies AI startups",
     ],
 }
 
@@ -202,13 +202,8 @@ def scout(country: str = "US", limit: int = 20) -> List[ScoutCandidate]:
             url=cand.url,
             difficulty="hard",  # unknown sites default to the agentic engine
             scraper_name=f"scout:{country.lower()}",
+            category=cand.category,
         )
-        # register_site doesn't take category — patch it in directly so the
-        # row carries the inventory bucket from the start.
-        with session_scope() as session:
-            row = session.query(SiteHealth).filter(SiteHealth.domain == cand.domain).first()
-            if row is not None:
-                row.category = cand.category
         accepted.append(cand)
         logger.info(f"scout: accepted {cand.domain} ({cand.category}, conf={cand.confidence:.2f})")
 
@@ -244,15 +239,24 @@ def _tavily_search(api_key: str, query: str, max_results: int = 10) -> list[dict
 
 
 _VALIDATE_PROMPT = (
-    "You judge whether a URL is the portfolio/companies page of a startup "
-    "investor or accelerator program. Reply with JSON only:\n"
+    "You judge whether a URL is the OFFICIAL portfolio or companies page of a "
+    "startup investor, accelerator, or incubator program. Reply with JSON only:\n"
     '{"is_portfolio": true|false, "category": one of '
     '"university_incubator","accelerator","vc_portfolio",'
     '"discovery_aggregator","government_program","other", '
     '"country": ISO-3166 alpha-2 country code (best guess), '
     '"confidence": 0.0-1.0}.\n'
-    "Only true if the URL clearly lists multiple portfolio companies "
-    "(not a blog post, news article, or generic homepage)."
+    "Set is_portfolio=true ONLY if ALL of the following hold:\n"
+    "1. The domain is the PRIMARY owner of the portfolio (e.g. sequoiacap.com, "
+    "ycombinator.com) — NOT a third-party listing or aggregator site "
+    "(e.g. crunchbase.com, dealroom.co, tracxn.com, vcbeast.com, "
+    "privateequitylist.com, vcbacked.co, pitchbook.com, cbinsights.com).\n"
+    "2. The page clearly lists multiple portfolio/investee companies.\n"
+    "3. The domain is not a large incumbent corporation (Fortune 500, "
+    "public company) unless the URL is an explicitly dedicated standalone "
+    "venture/accelerator program subdomain.\n"
+    "Set is_portfolio=false for blog posts, news articles, generic homepages, "
+    "or any third-party site listing someone else's portfolio."
 )
 
 
