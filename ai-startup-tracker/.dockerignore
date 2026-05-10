@@ -1,0 +1,31 @@
+# Local dev / virtual env
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+
+# Big local artifacts that don't belong in the image
+data/crunchbase/
+data/ai_repos*.parquet
+data/seed_pool*.parquet
+*.parquet
+*.sqlite
+*.db
+logs/
+reports/
+cookies.txt
+
+# Secrets — Railway injects env vars at runtime
+.env
+.env.*
+
+# Docs we don't need at runtime
+*.md
+docs/
