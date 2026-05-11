@@ -4,9 +4,11 @@ Single daily entry point for the local pipeline. Runs in this order:
   1. Reactivate any excluded sites whose 90-day timer has elapsed.
   2. Orchestrator.run_all_due() — scrape every site past its cooldown.
   3. Retry zero-result sites from the last 48 hours.
-  4. (Mondays only) GitHub weekly discovery.
-  5. LLM classifier batch on un-classified GitHub repos.
-  6. (Mondays only) Scout 5 new US sites.
+  4. Sync site categories from YAML files (idempotent backfill).
+  5. (Mondays only) GitHub weekly discovery.
+  6. LLM classifier batch on un-classified repos/companies.
+  7. International scout rotation — 2-3 countries per day, full rotation weekly.
+  8. (Sundays only) Dedup report — log domain duplicates to catch cross-source merges.
 
 Logs everything to logs/daily_YYYYMMDD.log so launchd output stays small and
 the operator can scroll back to a specific day.
@@ -58,9 +60,24 @@ def _run_subprocess(label: str, args: list[str]) -> int:
         return -1
 
 
+# Scout rotation: 2-3 countries per weekday so every country is covered weekly.
+# 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
+_SCOUT_ROTATION: dict[int, list[str]] = {
+    0: ["US", "UK"],
+    1: ["DE", "FR", "NL"],
+    2: ["IN", "SG", "KR"],
+    3: ["CA", "AU", "BR"],
+    4: ["IL", "SE", "AE"],
+    5: ["JP", "MX", "ID"],
+    6: ["NG", "ZA"],
+}
+
+
 def main() -> None:
     today = datetime.now()
-    is_monday = today.weekday() == 0
+    weekday = today.weekday()
+    is_monday = weekday == 0
+    is_sunday = weekday == 6
     logger.info(f"=== Daily run start ({today.isoformat()}) ===")
 
     # 1+2+3: orchestrator inline so we share the same DB session pool.
@@ -76,16 +93,28 @@ def main() -> None:
     except Exception as e:
         logger.exception(f"orchestrator crashed: {e}")
 
-    # 4. Weekly GitHub discovery (Mondays only).
+    # 4. Sync site categories from YAML files — idempotent, fast, catches new YAMLs.
+    _run_subprocess("sync_categories", [sys.executable, "scripts/sync_site_categories.py"])
+
+    # 5. Weekly GitHub discovery (Mondays only).
     if is_monday:
         _run_subprocess("github_weekly", [sys.executable, "scripts/github_weekly_discover.py", "--since-days", "7"])
 
-    # 5. LLM classifier batch — keeps daily classification queue from piling up.
+    # 6. LLM classifier batch — keeps daily classification queue from piling up.
     _run_subprocess("llm_classify", [sys.executable, "scripts/run_llm_classify.py", "--batch-limit", "200"])
 
-    # 6. Scout 5 new US sites once a week.
-    if is_monday:
-        _run_subprocess("scout", [sys.executable, "scripts/run_scout.py", "--country", "US", "--limit", "5"])
+    # 7. International scout — rotate 2-3 countries per day so all 20 countries
+    #    get scouted once a week without hammering Tavily in a single run.
+    scout_countries = _SCOUT_ROTATION.get(weekday, [])
+    for country in scout_countries:
+        _run_subprocess(
+            f"scout_{country}",
+            [sys.executable, "scripts/run_scout.py", "--country", country, "--limit", "5"],
+        )
+
+    # 8. Weekly dedup report (Sundays) — surfaces domain duplicates for review.
+    if is_sunday:
+        _run_subprocess("dedup_report", [sys.executable, "scripts/run_dedup.py", "--limit", "30"])
 
     logger.info("=== Daily run done ===")
 

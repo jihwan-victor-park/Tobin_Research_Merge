@@ -7,6 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from sqlalchemy import or_, func
 from backend.db.connection import session_scope
 from backend.db.models import Company, IncubatorSignal, IncubatorSource
 
@@ -83,7 +84,13 @@ def main() -> None:
     # Pull current DB stats
     with session_scope() as s:
         total_companies = s.query(Company).count()
-        ai_companies = s.query(Company).filter(Company.ai_score >= 0.6).count()
+        # is_ai: score >= 0.3 OR has at least one ai_tag — matches dashboard metric
+        ai_companies = s.query(Company).filter(
+            or_(
+                Company.ai_score >= 0.3,
+                func.array_length(Company.ai_tags, 1) > 0,
+            )
+        ).count()
         agentic_signals = s.query(IncubatorSignal).filter(
             IncubatorSignal.source == IncubatorSource.agentic_scrape
         ).count()
@@ -92,7 +99,7 @@ def main() -> None:
     print(f"**Total spend: ${total_cost:.2f} / $9.00 budget**")
     print(f"**Sites attempted: {total_sites}** | "
           f"Records: {total_records:,} | **New: {total_new:,}**")
-    print(f"**DB now: {total_companies:,} companies | {ai_companies:,} AI** "
+    print(f"**DB now: {total_companies:,} companies | {ai_companies:,} AI** (score≥0.3 or tagged) "
           f"({agentic_signals:,} agentic-scrape signals total)\n")
 
     print("---\n")
