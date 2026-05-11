@@ -20,13 +20,10 @@ RUN python -m playwright install chromium
 
 COPY . .
 
-ENV PORT=8080
+# Make the entrypoint executable. We rely on a script (not inline CMD) so the
+# shell can actually expand ${PORT} that Railway injects at runtime.
+RUN chmod +x /app/entrypoint.sh
+
 EXPOSE 8080
 
-# Streamlit dashboard. Override CMD in the worker service.
-CMD streamlit run frontend/pipeline_dashboard.py \
-        --server.port=$PORT \
-        --server.address=0.0.0.0 \
-        --server.headless=true \
-        --server.enableCORS=false \
-        --server.enableXsrfProtection=false
+CMD ["/app/entrypoint.sh"]
