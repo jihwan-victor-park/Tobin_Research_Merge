@@ -24,6 +24,24 @@ def get_engine():
             "DATABASE_URL",
             "postgresql://localhost:5432/ai_startup_tracker",
         )
+
+        # Visible at container boot. Helps diagnose Railway env-var issues.
+        # Mask the password so logs are still safe to share.
+        try:
+            from urllib.parse import urlparse, urlunparse
+            parsed = urlparse(database_url)
+            if parsed.password:
+                masked_netloc = (
+                    f"{parsed.username}:***@"
+                    f"{parsed.hostname}{':' + str(parsed.port) if parsed.port else ''}"
+                )
+                masked = urlunparse(parsed._replace(netloc=masked_netloc))
+            else:
+                masked = database_url
+        except Exception:
+            masked = "(unparseable)"
+        print(f"[connection] DATABASE_URL host -> {masked}", flush=True)
+
         _engine = create_engine(
             database_url,
             pool_size=5,
