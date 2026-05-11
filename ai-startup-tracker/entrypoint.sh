@@ -5,6 +5,12 @@ set -e
 
 PORT="${PORT:-8080}"
 
+# Create tables in the (likely empty) target DB before Streamlit boots,
+# otherwise the dashboard's first SELECT crashes with "relation does not exist".
+echo "[entrypoint] running init_db() to create tables if missing..."
+python -c "from backend.db.connection import init_db; init_db()" \
+    || echo "[entrypoint] init_db() failed (continuing anyway)"
+
 echo "[entrypoint] starting streamlit on port=${PORT}"
 
 exec streamlit run frontend/pipeline_dashboard.py \
