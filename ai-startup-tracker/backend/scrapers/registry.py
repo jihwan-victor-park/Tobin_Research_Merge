@@ -41,6 +41,9 @@ from backend.scrapers.easy.sparkcapital_scraper import SparkCapitalScraper
 from backend.scrapers.easy.indexventures_scraper import IndexVenturesScraper
 from backend.scrapers.easy.a16z_scraper import A16ZScraper
 from backend.scrapers.easy.khosla_scraper import KhoslaVenturesScraper
+from backend.scrapers.easy.gv_scraper import GVScraper
+from backend.scrapers.easy.lightspeed_scraper import LightspeedScraper
+from backend.scrapers.easy.ivp_scraper import IVPScraper
 
 
 @dataclass
@@ -106,6 +109,9 @@ SCRAPER_REGISTRY: Dict[str, ScraperEntry] = {
     "indexventures.com": ScraperEntry(cls=IndexVenturesScraper, difficulty="easy", pattern="bs_single", category="vc_portfolio"),
     "a16z.com": ScraperEntry(cls=A16ZScraper, difficulty="easy", pattern="js_extraction", category="vc_portfolio"),
     "khoslaventures.com": ScraperEntry(cls=KhoslaVenturesScraper, difficulty="easy", pattern="bs_single", category="vc_portfolio"),
+    "gv.com": ScraperEntry(cls=GVScraper, difficulty="easy", pattern="bs_single", category="vc_portfolio"),
+    "lsvp.com": ScraperEntry(cls=LightspeedScraper, difficulty="easy", pattern="bs_single", category="vc_portfolio"),
+    "ivp.com": ScraperEntry(cls=IVPScraper, difficulty="easy", pattern="bs_single", category="vc_portfolio"),
 
     # AI-native discovery aggregator
     "huggingface.co": ScraperEntry(cls=HuggingFaceScraper, difficulty="easy", pattern="bs_paginated", category="discovery_aggregator"),
