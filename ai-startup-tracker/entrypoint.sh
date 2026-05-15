@@ -5,6 +5,12 @@ set -e
 
 PORT="${PORT:-8080}"
 
+# If someone set STREAMLIT_SERVER_PORT=$PORT (literal) in the Railway dashboard,
+# click validates that env var before our CLI flag and crashes on the unexpanded
+# string. Force it to the expanded numeric value here.
+export STREAMLIT_SERVER_PORT="${PORT}"
+export STREAMLIT_SERVER_ADDRESS="0.0.0.0"
+
 # Create tables in the (likely empty) target DB before Streamlit boots,
 # otherwise the dashboard's first SELECT crashes with "relation does not exist".
 echo "[entrypoint] running init_db() to create tables if missing..."
