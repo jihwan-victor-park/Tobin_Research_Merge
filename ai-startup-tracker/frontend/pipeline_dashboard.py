@@ -1362,9 +1362,10 @@ def page_scraper():
     # Pending counts per category
     pending_by_cat: dict[str, int] = {}
     if not health_df.empty and "category" in health_df.columns:
-        pend = health_df[health_df.get("worker_state", pd.Series()).fillna("pending") != "working"]
-        hard_pend = pend[pend.get("difficulty", pd.Series()).fillna("hard") == "hard"]
-        for cat, grp in hard_pend.groupby(hard_pend["category"].fillna("other")):
+        ws = health_df["worker_state"] if "worker_state" in health_df.columns else pd.Series("pending", index=health_df.index)
+        diff = health_df["difficulty"] if "difficulty" in health_df.columns else pd.Series("hard", index=health_df.index)
+        pend = health_df[(ws.fillna("pending") != "working") & (diff.fillna("hard") == "hard")]
+        for cat, grp in pend.groupby(pend["category"].fillna("other")):
             pending_by_cat[cat] = len(grp)
 
     total_pending_hard = sum(pending_by_cat.values())
@@ -1407,13 +1408,12 @@ def page_scraper():
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
             )
             with st.status("Running batch…", expanded=True) as status_widget:
+                log_box = st.empty()
                 lines: list[str] = []
                 assert proc.stdout is not None
                 for line in proc.stdout:
-                    line = line.rstrip()
-                    lines.append(line)
-                    # Show only the last 40 lines to avoid flooding the UI
-                    st.code("\n".join(lines[-40:]), language="text")
+                    lines.append(line.rstrip())
+                    log_box.code("\n".join(lines[-40:]), language="text")
                 proc.wait()
                 if proc.returncode == 0:
                     status_widget.update(label="Batch complete ✓", state="complete")
