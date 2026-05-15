@@ -37,6 +37,8 @@ from backend.scrapers.easy.foundersfund_scraper import FoundersFundScraper
 from backend.scrapers.easy.usv_scraper import USVScraper
 from backend.scrapers.easy.bvp_scraper import BVPScraper
 from backend.scrapers.easy.generalcatalyst_scraper import GeneralCatalystScraper
+from backend.scrapers.easy.sparkcapital_scraper import SparkCapitalScraper
+from backend.scrapers.easy.indexventures_scraper import IndexVenturesScraper
 
 
 @dataclass
@@ -98,6 +100,8 @@ SCRAPER_REGISTRY: Dict[str, ScraperEntry] = {
     "usv.com": ScraperEntry(cls=USVScraper, difficulty="easy", pattern="bs_single", category="vc_portfolio"),
     "bvp.com": ScraperEntry(cls=BVPScraper, difficulty="easy", pattern="bs_single", category="vc_portfolio"),
     "generalcatalyst.com": ScraperEntry(cls=GeneralCatalystScraper, difficulty="easy", pattern="bs_single", category="vc_portfolio"),
+    "sparkcapital.com": ScraperEntry(cls=SparkCapitalScraper, difficulty="easy", pattern="bs_single", category="vc_portfolio"),
+    "indexventures.com": ScraperEntry(cls=IndexVenturesScraper, difficulty="easy", pattern="bs_single", category="vc_portfolio"),
 
     # AI-native discovery aggregator
     "huggingface.co": ScraperEntry(cls=HuggingFaceScraper, difficulty="easy", pattern="bs_paginated", category="discovery_aggregator"),
