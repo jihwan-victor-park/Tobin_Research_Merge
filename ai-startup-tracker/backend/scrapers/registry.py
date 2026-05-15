@@ -27,6 +27,7 @@ from backend.scrapers.easy.rice_owlspark_scraper import RiceOwlsparkScraper
 from backend.scrapers.easy.seedcamp_scraper import SeedcampScraper
 from backend.scrapers.easy.skydeck_scraper import SkydeckScraper
 from backend.scrapers.easy.startx_scraper import StartxScraper
+from backend.scrapers.easy.taaft_scraper import TaaftScraper
 from backend.scrapers.easy.techstars_scraper import TechstarsScraper
 from backend.scrapers.easy.villageglobal_scraper import VillageGlobalScraper
 from backend.scrapers.easy.yc_scraper import YCScraper
@@ -79,6 +80,7 @@ SCRAPER_REGISTRY: Dict[str, ScraperEntry] = {
 
     # AI-native discovery aggregator
     "huggingface.co": ScraperEntry(cls=HuggingFaceScraper, difficulty="easy", pattern="bs_paginated", category="discovery_aggregator"),
+    "theresanaiforthat.com": ScraperEntry(cls=TaaftScraper, difficulty="easy", pattern="bs_single", category="discovery_aggregator"),
 }
 
 
