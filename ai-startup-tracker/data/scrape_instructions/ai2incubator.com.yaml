@@ -1,0 +1,5 @@
+version: 1
+domain: ai2incubator.com
+seed_urls:
+- https://www.ai2incubator.com/companies
+updated_at: '2026-05-15T16:14:15Z'

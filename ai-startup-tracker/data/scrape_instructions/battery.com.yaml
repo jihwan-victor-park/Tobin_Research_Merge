@@ -1,0 +1,5 @@
+version: 1
+domain: battery.com
+seed_urls:
+- https://www.battery.com/list-of-all-companies/
+updated_at: '2026-05-15T16:15:48Z'

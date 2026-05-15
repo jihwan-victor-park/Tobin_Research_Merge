@@ -1,0 +1,5 @@
+version: 1
+domain: columbia.edu
+seed_urls:
+- https://labtomarket.columbia.edu/companyportfolio
+updated_at: '2026-05-15T16:18:31Z'

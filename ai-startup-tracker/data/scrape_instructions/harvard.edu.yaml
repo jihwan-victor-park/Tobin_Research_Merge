@@ -1,0 +1,5 @@
+version: 1
+domain: harvard.edu
+seed_urls:
+- https://otd.harvard.edu/impact/harvard-startups/
+updated_at: '2026-05-15T16:13:15Z'

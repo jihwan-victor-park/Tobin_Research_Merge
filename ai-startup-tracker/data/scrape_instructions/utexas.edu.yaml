@@ -1,0 +1,5 @@
+version: 1
+domain: utexas.edu
+seed_urls:
+- https://texasinnovationcenter.utexas.edu/startup-resources/our-company-portfolio
+updated_at: '2026-05-15T16:09:35Z'

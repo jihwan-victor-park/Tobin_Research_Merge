@@ -1,0 +1,5 @@
+version: 1
+domain: huji.ac.il
+seed_urls:
+- https://asper.huji.ac.il/
+updated_at: '2026-05-15T16:12:43Z'

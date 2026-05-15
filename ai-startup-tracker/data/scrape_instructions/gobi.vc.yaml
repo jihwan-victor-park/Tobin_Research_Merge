@@ -1,0 +1,5 @@
+version: 1
+domain: gobi.vc
+seed_urls:
+- https://www.gobi.vc/portfolio
+updated_at: '2026-05-15T16:18:02Z'

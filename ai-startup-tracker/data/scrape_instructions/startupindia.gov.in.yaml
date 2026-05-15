@@ -1,0 +1,5 @@
+version: 1
+domain: startupindia.gov.in
+seed_urls:
+- https://seedfund.startupindia.gov.in/startup_portfolio
+updated_at: '2026-05-15T16:10:14Z'

@@ -1,0 +1,5 @@
+version: 1
+domain: washington.edu
+seed_urls:
+- https://www.washington.edu/innovation/startups/
+updated_at: '2026-05-15T16:09:47Z'

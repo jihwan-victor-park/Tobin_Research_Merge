@@ -1,0 +1,5 @@
+version: 1
+domain: kinnevik.com
+seed_urls:
+- https://www.kinnevik.com/investments/
+updated_at: '2026-05-15T16:17:59Z'

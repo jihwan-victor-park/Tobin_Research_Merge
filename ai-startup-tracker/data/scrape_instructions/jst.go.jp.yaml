@@ -1,0 +1,5 @@
+version: 1
+domain: jst.go.jp
+seed_urls:
+- https://www.jst.go.jp/entre/en/result.html
+updated_at: '2026-05-15T16:10:00Z'

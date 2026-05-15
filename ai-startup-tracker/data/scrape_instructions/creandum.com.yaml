@@ -1,0 +1,5 @@
+version: 1
+domain: creandum.com
+seed_urls:
+- https://creandum.com/commitments/
+updated_at: '2026-05-15T16:07:23Z'

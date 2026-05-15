@@ -1,0 +1,5 @@
+version: 1
+domain: nedo.go.jp
+seed_urls:
+- https://www.nedo.go.jp/form/event.php?f=startup_english.html
+updated_at: '2026-05-15T16:10:04Z'

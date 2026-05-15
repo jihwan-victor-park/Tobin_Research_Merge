@@ -1,0 +1,5 @@
+version: 1
+domain: activate.org
+seed_urls:
+- https://activate.org/activate-companies
+updated_at: '2026-05-15T16:11:40Z'

@@ -1,0 +1,5 @@
+version: 1
+domain: kyoto-u.ac.jp
+seed_urls:
+- https://www.ihk.med.kyoto-u.ac.jp/en/companies
+updated_at: '2026-05-15T16:13:42Z'

@@ -1,0 +1,5 @@
+version: 1
+domain: nvp.com
+seed_urls:
+- https://www.nvp.com/companies/?_sft_companies_status=active
+updated_at: '2026-05-15T16:15:44Z'

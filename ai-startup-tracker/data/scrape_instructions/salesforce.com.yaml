@@ -1,0 +1,5 @@
+version: 1
+domain: salesforce.com
+seed_urls:
+- https://www.salesforce.com/company/our-brands/
+updated_at: '2026-05-15T16:14:52Z'

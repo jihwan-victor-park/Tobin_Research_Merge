@@ -1,0 +1,5 @@
+version: 1
+domain: meritechcapital.com
+seed_urls:
+- https://www.meritechcapital.com/companies
+updated_at: '2026-05-15T16:16:01Z'

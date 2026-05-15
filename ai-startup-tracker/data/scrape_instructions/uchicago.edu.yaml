@@ -1,0 +1,5 @@
+version: 1
+domain: uchicago.edu
+seed_urls:
+- https://polsky.uchicago.edu/programs-events/new-venture-challenge/portfolio/
+updated_at: '2026-05-15T16:10:25Z'

@@ -1,0 +1,5 @@
+version: 1
+domain: cam.ac.uk
+seed_urls:
+- https://founders.cam.ac.uk/portfolio/
+updated_at: '2026-05-15T16:08:05Z'

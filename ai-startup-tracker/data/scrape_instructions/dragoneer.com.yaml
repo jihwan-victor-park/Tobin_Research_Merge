@@ -1,0 +1,5 @@
+version: 1
+domain: dragoneer.com
+seed_urls:
+- https://www.dragoneer.com/companies
+updated_at: '2026-05-15T16:16:13Z'

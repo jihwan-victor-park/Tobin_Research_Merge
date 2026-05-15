@@ -1,0 +1,5 @@
+version: 1
+domain: cloudflare.com
+seed_urls:
+- https://www.cloudflare.com/lp/workers-launchpad/cohort4/
+updated_at: '2026-05-15T16:07:53Z'

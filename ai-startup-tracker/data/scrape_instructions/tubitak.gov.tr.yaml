@@ -1,0 +1,5 @@
+version: 1
+domain: tubitak.gov.tr
+seed_urls:
+- https://tubitak.gov.tr/en/funds/industrial/national-support-programs
+updated_at: '2026-05-15T16:08:59Z'

@@ -1,0 +1,5 @@
+version: 1
+domain: gv.com
+seed_urls:
+- https://www.gv.com/portfolio
+updated_at: '2026-05-15T16:15:34Z'

@@ -1,0 +1,5 @@
+version: 1
+domain: northeastern.edu
+seed_urls:
+- https://roux.northeastern.edu/portfolio/
+updated_at: '2026-05-15T16:13:18Z'

@@ -1,0 +1,5 @@
+version: 1
+domain: partechpartners.com
+seed_urls:
+- https://partechpartners.com/companies
+updated_at: '2026-05-15T16:11:20Z'
