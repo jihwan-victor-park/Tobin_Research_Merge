@@ -76,31 +76,34 @@ logger = logging.getLogger("batch_by_category")
 logging.getLogger("backend.agentic.engine").setLevel(logging.WARNING)
 
 
+ALL_CATEGORIES = [
+    "university_incubator", "accelerator", "vc_portfolio",
+    "discovery_aggregator", "government_program", "other",
+]
+
+
 def select_sites(categories: List[str], max_sites: int) -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
     with session_scope() as s:
-        rows = (
-            s.query(SiteHealth)
-            .filter(
-                SiteHealth.category.in_(categories),
-                SiteHealth.worker_state == "pending",
-                SiteHealth.difficulty == "hard",
-                SiteHealth.url.isnot(None),
-                SiteHealth.url != "",
-            )
-            .order_by(SiteHealth.category, SiteHealth.id)
-            .limit(max_sites)
-            .all()
+        q = s.query(SiteHealth).filter(
+            SiteHealth.worker_state == "pending",
+            SiteHealth.difficulty == "hard",
+            SiteHealth.url.isnot(None),
+            SiteHealth.url != "",
+            SiteHealth.status.notin_(["excluded"]),
         )
+        if categories != ALL_CATEGORIES:
+            q = q.filter(SiteHealth.category.in_(categories))
+        rows = q.order_by(SiteHealth.category, SiteHealth.id).limit(max_sites).all()
         for r in rows:
-            out.append({"id": r.id, "domain": r.domain, "url": r.url, "category": r.category})
+            out.append({"id": r.id, "domain": r.domain, "url": r.url, "category": r.category or "other"})
     return out
 
 
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("--categories", nargs="+", required=True,
-                   help="Categories to scrape (e.g. government_program university_incubator)")
+    p.add_argument("--categories", nargs="+", default=None,
+                   help="Categories to scrape. Omit or pass 'all' to run all categories.")
     p.add_argument("--max-sites", type=int, default=500, help="Max sites this run")
     p.add_argument("--budget", type=float, default=None,
                    help="Stop if cost (USD) exceeds this; default: no cap")
@@ -108,8 +111,14 @@ def main() -> None:
                    help="Path for final JSON report (default: logs/batch_<ts>.json)")
     args = p.parse_args()
 
-    sites = select_sites(args.categories, args.max_sites)
-    logger.info(f"Selected {len(sites)} pending sites in categories: {args.categories}")
+    # --categories all  →  run every category; omitting the flag also means all
+    if not args.categories or args.categories == ["all"]:
+        cats = ALL_CATEGORIES
+    else:
+        cats = args.categories
+
+    sites = select_sites(cats, args.max_sites)
+    logger.info(f"Selected {len(sites)} pending sites in categories: {cats}")
     if not sites:
         logger.info("Nothing to scrape — exiting.")
         return

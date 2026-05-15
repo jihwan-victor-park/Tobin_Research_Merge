@@ -1348,6 +1348,83 @@ def page_scraper():
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
+    # ── Batch: run all pending ────────────────────────────────────────
+    st.markdown(
+        f'<div class="section-header">Batch: Run Pending Sites</div>'
+        f'<div class="section-sub">Run the agentic engine on all hard-tier pending sites. '
+        f'Budget cap stops the run before cost overruns. Progress prints to server logs.</div>',
+        unsafe_allow_html=True,
+    )
+
+    _ALL_CATS = ["university_incubator", "accelerator", "vc_portfolio",
+                 "discovery_aggregator", "government_program", "other"]
+
+    # Pending counts per category
+    pending_by_cat: dict[str, int] = {}
+    if not health_df.empty and "category" in health_df.columns:
+        pend = health_df[health_df.get("worker_state", pd.Series()).fillna("pending") != "working"]
+        hard_pend = pend[pend.get("difficulty", pd.Series()).fillna("hard") == "hard"]
+        for cat, grp in hard_pend.groupby(hard_pend["category"].fillna("other")):
+            pending_by_cat[cat] = len(grp)
+
+    total_pending_hard = sum(pending_by_cat.values())
+    st.caption(
+        f"**{total_pending_hard}** hard-tier pending sites across all categories  ·  "
+        + "  ".join(f"{c}: {pending_by_cat.get(c, 0)}" for c in _ALL_CATS if pending_by_cat.get(c, 0))
+    )
+
+    with st.form("batch_pending_form"):
+        bc1, bc2, bc3 = st.columns([3, 1, 1])
+        with bc1:
+            sel_cats = st.multiselect(
+                "Categories",
+                options=_ALL_CATS,
+                default=_ALL_CATS,
+                label_visibility="collapsed",
+            )
+        with bc2:
+            batch_budget = st.number_input("Budget (USD)", min_value=0.5, max_value=50.0,
+                                           value=5.0, step=0.5)
+        with bc3:
+            batch_max = st.number_input("Max sites", min_value=1, max_value=500,
+                                        value=100, step=10)
+        run_batch = st.form_submit_button("Run Batch", type="primary", use_container_width=True)
+
+    if run_batch and sel_cats:
+        import subprocess
+        from pathlib import Path
+        project_root = Path(__file__).resolve().parent.parent
+        cmd = [
+            sys.executable, "scripts/run_batch_by_category.py",
+            "--categories", *sel_cats,
+            "--max-sites", str(int(batch_max)),
+            "--budget", str(batch_budget),
+        ]
+        st.info(f"Launching batch: `{' '.join(cmd[2:])}`  — output goes to server logs.")
+        try:
+            proc = subprocess.Popen(
+                cmd, cwd=project_root,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+            )
+            with st.status("Running batch…", expanded=True) as status_widget:
+                lines: list[str] = []
+                assert proc.stdout is not None
+                for line in proc.stdout:
+                    line = line.rstrip()
+                    lines.append(line)
+                    # Show only the last 40 lines to avoid flooding the UI
+                    st.code("\n".join(lines[-40:]), language="text")
+                proc.wait()
+                if proc.returncode == 0:
+                    status_widget.update(label="Batch complete ✓", state="complete")
+                else:
+                    status_widget.update(label=f"Batch exited {proc.returncode}", state="error")
+        except Exception as exc:
+            st.error(f"Failed to launch batch: {exc}")
+        st.cache_data.clear()
+
+    st.markdown("<hr/>", unsafe_allow_html=True)
+
     # ── Discovery & self-healing ─────────────────────────────────────
     st.markdown(
         f'<div class="section-header">Discovery &amp; Self-Healing</div>'

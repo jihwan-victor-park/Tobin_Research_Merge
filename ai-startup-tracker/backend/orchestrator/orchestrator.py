@@ -16,6 +16,8 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
+from sqlalchemy import or_
+
 from backend.db.connection import session_scope
 from backend.db.models import SiteHealth
 from backend.orchestrator.health import HealthMonitor
@@ -132,7 +134,10 @@ class Orchestrator:
                 session.query(SiteHealth)
                 .filter(
                     SiteHealth.status.notin_(["excluded"]),
-                    SiteHealth.next_scrape_at <= now,
+                    or_(
+                        SiteHealth.next_scrape_at.is_(None),
+                        SiteHealth.next_scrape_at <= now,
+                    ),
                 )
                 .all()
             )
