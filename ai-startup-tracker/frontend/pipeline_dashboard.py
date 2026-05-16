@@ -517,10 +517,19 @@ st.markdown(
 
 @st.cache_data(ttl=60)
 def load_startups() -> pd.DataFrame:
+    """Load companies for the dashboard.
+
+    Memory-tuned for Railway's container limit. Two changes keep us under the
+    OOM ceiling on a 125K+ row DB:
+      - LEFT(description, 240) — descriptions can be multi-KB blobs.
+      - LIMIT 15000 — newest 15K covers the visible UI; the rare "I want
+        everything" path can re-query separately.
+    """
     engine = get_engine()
     query = """
         SELECT
-            c.id, c.name, c.domain, c.description,
+            c.id, c.name, c.domain,
+            LEFT(c.description, 240) AS description,
             c.country, c.city, c.stage, c.ai_score, c.ai_tags,
             c.first_seen_at, c.incubator_source, c.verification_status,
             lf.deal_date AS last_funding_date,
@@ -551,6 +560,7 @@ def load_startups() -> pd.DataFrame:
             ORDER BY s.collected_at DESC LIMIT 1
         ) ls ON TRUE
         ORDER BY lf.deal_date DESC NULLS LAST, c.first_seen_at DESC NULLS LAST
+        LIMIT 15000
     """
     with engine.connect() as conn:
         rows = conn.execute(text(query)).mappings().all()
@@ -719,39 +729,30 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
             .agg(count=("id", "size"), ai_pct=("is_ai", "mean"))
             .reset_index()
         )
-        fig = px.scatter_geo(
-            city_agg,
-            lat="lat", lon="lon",
-            size="count",
-            color="count",
-            hover_name="city",
-            hover_data={"count": True, "lat": False, "lon": False, "ai_pct": ":.0%"},
-            color_continuous_scale=[[0, "#a8c8f0"], [0.5, ACCENT], [1, YALE_BLUE]],
-            size_max=32,
-            labels={"count": "Companies", "ai_pct": "AI %"},
-        )
-        fig.update_geos(
-            scope="usa",
-            showland=True, landcolor="#f0f2f6",
-            showlakes=True, lakecolor="#e8ecf4",
-            showcountries=False,
-            showsubunits=True, subunitcolor="#dde1ea",
-            bgcolor=BG,
-        )
-        fig.update_layout(
-            height=420,
-            margin=dict(l=0, r=0, t=10, b=0),
-            paper_bgcolor=BG,
-            coloraxis_colorbar=dict(
-                title="Count",
-                thickness=14,
-                len=0.5,
-                tickfont=dict(size=10, color=TXT3),
-                title_font=dict(size=11, color=TXT2),
-            ),
-            font=dict(family="Inter"),
-        )
-        st.plotly_chart(fig, use_container_width=True)
+        if len(city_agg) > 100:
+            city_agg = city_agg.nlargest(100, "count")
+
+        # Streamlit's native pydeck map. plotly's scatter_geo (with scope="usa"
+        # + showsubunits) ships US state geojson chunks that get truncated by
+        # Railway's response buffering and surface as "Unexpected end of input"
+        # in the browser. pydeck only sends lat/lon/size — a few KB payload.
+        map_df = city_agg.rename(columns={"count": "size"})[["lat", "lon", "size"]].copy()
+        # Scale marker size for visibility on a continental zoom.
+        map_df["size"] = (map_df["size"].astype(float) ** 0.5) * 4000
+        mc1, mc2 = st.columns([3, 1])
+        with mc1:
+            st.map(map_df, latitude="lat", longitude="lon", size="size",
+                   color="#0F4D92", zoom=3, width="stretch")
+        with mc2:
+            top_cities = (
+                city_agg.nlargest(10, "count")[["city", "count"]]
+                .rename(columns={"city": "City", "count": "Companies"})
+            )
+            st.markdown(
+                f'<div style="color:{TXT3};font-size:0.82rem;margin-bottom:4px;">Top 10 cities</div>',
+                unsafe_allow_html=True,
+            )
+            st.dataframe(top_cities, width="stretch", hide_index=True, height=380)
 
     # ── Filters ──────────────────────────────────────────────────────
     st.markdown('<div class="filter-bar">', unsafe_allow_html=True)
@@ -811,7 +812,7 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
         data=f.to_csv(index=False).encode("utf-8"),
         file_name=f"startups_{datetime.now().strftime('%Y%m%d')}.csv",
         mime="text/csv",
-        use_container_width=True,
+        width="stretch",
     )
 
     # Table — sort so AI startups appear first (by is_ai DESC, then by funding date).
@@ -864,7 +865,46 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
     if "Description" in disp.columns:
         col_cfg["Description"] = st.column_config.TextColumn("Description", width="large")
 
-    st.dataframe(disp, use_container_width=True, hide_index=True, height=560,
+    # Paginate the in-browser table. Sending tens of thousands of rows in a
+    # single response trips Railway's proxy buffer (shows up as
+    # "Unexpected end of input" + the page's plotly charts breaking too).
+    # Full data remains downloadable via the Export CSV button above.
+    PAGE_SIZE = 100
+    total_rows = len(disp)
+    total_pages = max(1, (total_rows + PAGE_SIZE - 1) // PAGE_SIZE)
+
+    pc1, pc2, pc3 = st.columns([1, 2, 1])
+    with pc2:
+        page = st.number_input(
+            "Page",
+            min_value=1,
+            max_value=total_pages,
+            value=1,
+            step=1,
+            label_visibility="collapsed",
+            help=f"{total_rows:,} rows across {total_pages:,} pages of {PAGE_SIZE}",
+        )
+    with pc1:
+        st.markdown(
+            f'<div style="color:{TXT3};font-size:0.82rem;padding-top:6px;">'
+            f"Page <b style=\"color:{TXT};\">{page:,}</b> of {total_pages:,}"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+    with pc3:
+        start_row = (page - 1) * PAGE_SIZE + 1
+        end_row = min(page * PAGE_SIZE, total_rows)
+        st.markdown(
+            f'<div style="color:{TXT3};font-size:0.82rem;padding-top:6px;text-align:right;">'
+            f"Rows <b style=\"color:{TXT};\">{start_row:,}–{end_row:,}</b> of {total_rows:,}"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+
+    start = (page - 1) * PAGE_SIZE
+    disp_view = disp.iloc[start:start + PAGE_SIZE]
+
+    st.dataframe(disp_view, width="stretch", hide_index=True, height=560,
                  column_config=col_cfg)
 
 
@@ -905,7 +945,7 @@ def page_trends(df: pd.DataFrame):
                      labels={"count": "Companies", "date": "Date"})
         fig.update_traces(marker_color=YALE_BLUE)
         fig.update_layout(**_layout(height=260))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
         preview = week.head(50)[
             ["name", "country", "stage", "last_funding_date", "first_seen_at", "domain"]
@@ -917,7 +957,7 @@ def page_trends(df: pd.DataFrame):
             "last_funding_date": "Last Funded", "first_seen_at": "First Seen",
             "domain": "Website",
         })
-        st.dataframe(preview, use_container_width=True, hide_index=True, height=280)
+        st.dataframe(preview, width="stretch", hide_index=True, height=280)
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
@@ -961,7 +1001,7 @@ def page_trends(df: pd.DataFrame):
         fig1.update_layout(**_layout(height=420,
             yaxis=dict(autorange="reversed", gridcolor=BORDER_LIGHT),
             showlegend=False))
-        st.plotly_chart(fig1, use_container_width=True)
+        st.plotly_chart(fig1, width="stretch")
 
     with t2:
         gs = mg.sort_values("growth_pct", ascending=False)
@@ -972,13 +1012,13 @@ def page_trends(df: pd.DataFrame):
         fig2.update_layout(**_layout(height=420,
             yaxis=dict(autorange="reversed", gridcolor=BORDER_LIGHT),
             showlegend=False))
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, width="stretch")
 
     md = mg[["subdomain", "total", "new_30d", "prev_30d", "growth_pct"]].copy()
     md["growth_pct"] = md["growth_pct"].apply(lambda v: f"{v:+.1f}%")
     md = md.rename(columns={"subdomain": "Subdomain", "total": "Total",
                              "new_30d": "New (30d)", "prev_30d": "Prev 30d", "growth_pct": "Growth"})
-    st.dataframe(md, use_container_width=True, hide_index=True)
+    st.dataframe(md, width="stretch", hide_index=True)
 
 
 # ── Page: Pipeline Health ────────────────────────────────────────────
@@ -1034,9 +1074,9 @@ def page_health(health_df: pd.DataFrame, runs_df: pd.DataFrame):
                 barmode="stack",
             )
             fig.update_layout(**_layout(height=260, legend_title_text=""))
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
         except Exception:
-            st.dataframe(inv, hide_index=True, use_container_width=True)
+            st.dataframe(inv, hide_index=True, width="stretch")
     else:
         st.caption("No category tags yet — run `python scripts/backfill_site_health_from_companies.py`.")
 
@@ -1079,7 +1119,7 @@ def page_health(health_df: pd.DataFrame, runs_df: pd.DataFrame):
         else:
             st.dataframe(_fmt(working_df.sort_values("last_success_at", ascending=False, na_position="last"),
                               cols_to_show_working),
-                         use_container_width=True, hide_index=True, height=320)
+                         width="stretch", hide_index=True, height=320)
 
     with p_tab:
         if pending_df.empty:
@@ -1087,7 +1127,7 @@ def page_health(health_df: pd.DataFrame, runs_df: pd.DataFrame):
         else:
             st.dataframe(_fmt(pending_df.sort_values(["consecutive_failures", "domain"], ascending=[False, True]),
                               cols_to_show_pending),
-                         use_container_width=True, hide_index=True, height=320)
+                         width="stretch", hide_index=True, height=320)
 
     st.markdown("### Recent Runs (7 days)")
     if runs_df.empty:
@@ -1101,7 +1141,7 @@ def page_health(health_df: pd.DataFrame, runs_df: pd.DataFrame):
         if "duration_seconds" in rd.columns:
             rd["duration_seconds"] = rd["duration_seconds"].apply(
                 lambda v: f"{v:.1f}s" if pd.notna(v) else "")
-        st.dataframe(rd, use_container_width=True, hide_index=True, height=340)
+        st.dataframe(rd, width="stretch", hide_index=True, height=340)
 
 
 # ── Page: GitHub Discovery ───────────────────────────────────────────
@@ -1175,7 +1215,7 @@ def page_github(df: pd.DataFrame, df_all: pd.DataFrame):
         data=f.to_csv(index=False).encode("utf-8"),
         file_name=f"github_startups_{datetime.now().strftime('%Y%m%d')}.csv",
         mime="text/csv",
-        use_container_width=True,
+        width="stretch",
         key="gh_export",
     )
 
@@ -1222,7 +1262,7 @@ def page_github(df: pd.DataFrame, df_all: pd.DataFrame):
     if "Description" in disp.columns:
         col_cfg["Description"] = st.column_config.TextColumn("Description", width="large")
 
-    st.dataframe(disp, use_container_width=True, hide_index=True, height=560,
+    st.dataframe(disp, width="stretch", hide_index=True, height=560,
                  column_config=col_cfg)
 
 
@@ -1247,7 +1287,7 @@ def page_scraper():
         with ac2:
             force = st.checkbox("Force", value=True, help="Ignore cooldown")
         submitted = st.form_submit_button("Run Agentic Scraper", type="primary",
-                                          use_container_width=True)
+                                          width="stretch")
     if submitted and url:
         with st.spinner("Running agentic scraper..."):
             result = Orchestrator().run(url, force=force)
@@ -1287,7 +1327,7 @@ def page_scraper():
                 f"&middot; {entry.pattern}{ct_text}</span>",
                 unsafe_allow_html=True,
             )
-            if row2.button("Run", key=f"easy_{domain}", use_container_width=True):
+            if row2.button("Run", key=f"easy_{domain}", width="stretch"):
                 src_url = health.get("url") or entry.cls().source_url
                 with st.spinner(f"Running {domain}..."):
                     result = Orchestrator().run(src_url, force=True)
@@ -1308,27 +1348,27 @@ def page_scraper():
 
     d1, d2, d3, d4 = st.columns(4)
     with d1:
-        if st.button("Discover new sites", use_container_width=True):
+        if st.button("Discover new sites", width="stretch"):
             from backend.discovery.feed_loader import register_new_sites
             with st.spinner("Loading feeds..."):
                 register_new_sites()
             st.success("New sites registered")
             st.cache_data.clear()
     with d2:
-        if st.button("Retry zero-result sites", use_container_width=True):
+        if st.button("Retry zero-result sites", width="stretch"):
             with st.spinner("Retrying..."):
                 results = Orchestrator().run_retries(hours=48)
             st.success(f"Retried {len(results)} sites")
             st.cache_data.clear()
     with d3:
-        if st.button("Revisit excluded sites", use_container_width=True):
+        if st.button("Revisit excluded sites", width="stretch"):
             from backend.orchestrator.health import HealthMonitor
             with st.spinner("Reactivating..."):
                 HealthMonitor().reactivate_revisit_sites()
             st.success("Excluded sites reactivated")
             st.cache_data.clear()
     with d4:
-        if st.button("Run all due sites", use_container_width=True, type="primary"):
+        if st.button("Run all due sites", width="stretch", type="primary"):
             with st.spinner("Batch scraping..."):
                 results = Orchestrator().run_all_due()
             ok = sum(1 for r in results if r.success)
