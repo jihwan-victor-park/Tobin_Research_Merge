@@ -1,0 +1,5 @@
+version: 1
+domain: imperial.ac.uk
+seed_urls:
+- https://www.imperial.ac.uk/admin-services/enterprise/about/data-and-reporting/spinout-portfolio/
+updated_at: '2026-05-15T16:10:47Z'

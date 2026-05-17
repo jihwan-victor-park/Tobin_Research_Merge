@@ -1,0 +1,5 @@
+version: 1
+domain: startupsg.gov.sg
+seed_urls:
+- https://www.startupsg.gov.sg/directory/startups/
+updated_at: '2026-05-15T16:10:07Z'

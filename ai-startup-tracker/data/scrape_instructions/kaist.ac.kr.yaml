@@ -1,0 +1,5 @@
+version: 1
+domain: kaist.ac.kr
+seed_urls:
+- https://startup.kaist.ac.kr/boards/view/board_reference_en/930
+updated_at: '2026-05-15T16:12:39Z'

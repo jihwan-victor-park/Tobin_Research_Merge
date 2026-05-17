@@ -1,0 +1,5 @@
+version: 1
+domain: utah.edu
+seed_urls:
+- https://technologylicensing.utah.edu/startup-portfolio
+updated_at: '2026-05-15T16:10:41Z'

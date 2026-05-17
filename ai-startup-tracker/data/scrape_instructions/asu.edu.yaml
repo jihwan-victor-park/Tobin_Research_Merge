@@ -1,0 +1,5 @@
+version: 1
+domain: asu.edu
+seed_urls:
+- https://entrepreneurship.asu.edu/about/our-startups/
+updated_at: '2026-05-15T16:10:44Z'

@@ -1,0 +1,5 @@
+version: 1
+domain: foundamental.com
+seed_urls:
+- https://foundamental.com/portfolio
+updated_at: '2026-05-15T16:15:16Z'

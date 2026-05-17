@@ -1,0 +1,5 @@
+version: 1
+domain: anthemis.com
+seed_urls:
+- https://www.anthemis.com/portfolio/
+updated_at: '2026-05-15T16:17:22Z'

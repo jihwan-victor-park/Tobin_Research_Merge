@@ -22,6 +22,7 @@ NON_PRODUCT_DOMAINS = frozenset({
     "t.me", "telegram.org", "slack.com",
     "arxiv.org", "papers.ssrn.com", "scholar.google.com",
     "huggingface.co", "kaggle.com",
+    "producthunt.com", "theresanaiforthat.com",
     "notion.so", "notion.site",
     "google.com", "amazonaws.com", "azure.com",
     "wikipedia.org", "stackoverflow.com",

@@ -1,0 +1,5 @@
+version: 1
+domain: cornell.edu
+seed_urls:
+- http://ctl.cornell.edu/new-ventures/cornell-startups/
+updated_at: '2026-05-15T16:10:18Z'

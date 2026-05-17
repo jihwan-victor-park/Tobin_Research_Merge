@@ -1,0 +1,5 @@
+version: 1
+domain: vanderbilt.edu
+seed_urls:
+- http://www.vanderbilt.edu/cttc/portfolio-companies
+updated_at: '2026-05-15T16:11:57Z'

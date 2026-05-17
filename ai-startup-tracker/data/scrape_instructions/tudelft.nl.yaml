@@ -1,0 +1,5 @@
+version: 1
+domain: tudelft.nl
+seed_urls:
+- https://www.tudelft.nl/en/ae/business-portal/innovation/tu-delft-start-up-companies
+updated_at: '2026-05-15T16:08:12Z'

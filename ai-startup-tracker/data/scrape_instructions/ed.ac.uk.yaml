@@ -1,0 +1,5 @@
+version: 1
+domain: ed.ac.uk
+seed_urls:
+- https://edinburgh-innovations.ed.ac.uk/venture-investment/university-portfolio
+updated_at: '2026-05-15T16:12:36Z'

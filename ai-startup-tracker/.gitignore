@@ -48,6 +48,8 @@ env/
 # Database
 *.db
 *.sqlite
+*.dump
+*.sql.gz
 
 # Large data files (use local copies, not tracked in git)
 data/pitchbook_other_glob_deal.parquet

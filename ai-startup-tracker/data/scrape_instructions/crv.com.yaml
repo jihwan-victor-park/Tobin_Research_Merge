@@ -1,19 +1,5 @@
 version: 1
 domain: crv.com
-category: vc_portfolio
-created_at: '2026-05-07T21:46:37.543367+00:00'
-updated_at: '2026-05-07T21:46:37.543367+00:00'
 seed_urls:
-- https://www.crv.com/portfolio/
-preferred_strategy: single_page_extract
-fallback_order:
-- single_page_extract
-- subpage_discovery
-- pagination_probe
-subpage_hints: []
-pagination_hints: []
-quality_expectation_min_records: 1
-probe_result: easy_candidate
-probe_reason: static HTML (HTTP 200) (found at https://www.crv.com/companies)
-last_success: null
-notes: null
+- https://www.crv.com/companies
+updated_at: '2026-05-15T16:18:35Z'

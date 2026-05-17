@@ -1,0 +1,5 @@
+version: 1
+domain: miami.edu
+seed_urls:
+- https://news.miami.edu/alumni/stories/2025/10/taking-their-ideas-to-market.html
+updated_at: '2026-05-15T16:12:00Z'

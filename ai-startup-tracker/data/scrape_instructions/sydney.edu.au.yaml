@@ -1,0 +1,5 @@
+version: 1
+domain: sydney.edu.au
+seed_urls:
+- https://www.sydney.edu.au/engage/industry-business-partnerships/sydney-knowledge-hub/the-team/our-members.html
+updated_at: '2026-05-15T16:13:46Z'

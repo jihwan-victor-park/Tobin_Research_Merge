@@ -1,0 +1,5 @@
+version: 1
+domain: uconn.edu
+seed_urls:
+- https://ehub.engr.uconn.edu/engage/startups/
+updated_at: '2026-05-15T16:12:16Z'

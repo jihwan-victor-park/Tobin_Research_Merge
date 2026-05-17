@@ -1,0 +1,5 @@
+version: 1
+domain: microsoft.com
+seed_urls:
+- https://www.microsoft.com/en-us/startups/ai
+updated_at: '2026-05-15T16:14:49Z'

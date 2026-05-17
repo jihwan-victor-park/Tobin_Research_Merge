@@ -1,0 +1,5 @@
+version: 1
+domain: ucla.edu
+seed_urls:
+- https://www.anderson.ucla.edu/about/centers/price-center-for-entrepreneurship-and-innovation/anderson-venture-accelerator/our-companies
+updated_at: '2026-05-15T16:09:43Z'

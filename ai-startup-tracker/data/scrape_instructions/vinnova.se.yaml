@@ -1,0 +1,5 @@
+version: 1
+domain: vinnova.se
+seed_urls:
+- https://www.vinnova.se/en/topics-and-areas-of-expertise/incubation-startups-and-scaleups/
+updated_at: '2026-05-15T16:09:57Z'

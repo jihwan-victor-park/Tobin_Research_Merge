@@ -1,0 +1,5 @@
+version: 1
+domain: rice.edu
+seed_urls:
+- https://research.rice.edu/ott/startups
+updated_at: '2026-05-15T16:18:25Z'

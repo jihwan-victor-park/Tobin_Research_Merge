@@ -1,0 +1,5 @@
+version: 1
+domain: iisc.ac.in
+seed_urls:
+- https://aero.iisc.ac.in/startups/
+updated_at: '2026-05-15T16:13:39Z'

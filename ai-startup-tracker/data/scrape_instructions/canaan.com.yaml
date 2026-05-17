@@ -1,0 +1,5 @@
+version: 1
+domain: canaan.com
+seed_urls:
+- https://www.canaan.com/companies
+updated_at: '2026-05-15T16:07:42Z'

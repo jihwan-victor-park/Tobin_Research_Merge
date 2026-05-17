@@ -1,0 +1,5 @@
+version: 1
+domain: brandery.org
+seed_urls:
+- https://www.brandery.org/Brandery2015.pdf
+updated_at: '2026-05-15T16:10:34Z'

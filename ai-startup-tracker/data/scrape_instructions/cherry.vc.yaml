@@ -1,0 +1,5 @@
+version: 1
+domain: cherry.vc
+seed_urls:
+- https://cherry.vc/about
+updated_at: '2026-05-15T16:11:11Z'

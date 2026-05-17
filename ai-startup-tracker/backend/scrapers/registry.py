@@ -23,10 +23,12 @@ from backend.scrapers.easy.harvard_scraper import HarvardScraper
 from backend.scrapers.easy.huggingface_scraper import HuggingFaceScraper
 from backend.scrapers.easy.mit_deltav_scraper import MitDeltavScraper
 from backend.scrapers.easy.princeton_scraper import PrincetonScraper
+from backend.scrapers.easy.producthunt_scraper import ProductHuntScraper
 from backend.scrapers.easy.rice_owlspark_scraper import RiceOwlsparkScraper
 from backend.scrapers.easy.seedcamp_scraper import SeedcampScraper
 from backend.scrapers.easy.skydeck_scraper import SkydeckScraper
 from backend.scrapers.easy.startx_scraper import StartxScraper
+from backend.scrapers.easy.taaft_scraper import TaaftScraper
 from backend.scrapers.easy.techstars_scraper import TechstarsScraper
 from backend.scrapers.easy.villageglobal_scraper import VillageGlobalScraper
 from backend.scrapers.easy.yc_scraper import YCScraper
@@ -115,6 +117,8 @@ SCRAPER_REGISTRY: Dict[str, ScraperEntry] = {
 
     # AI-native discovery aggregator
     "huggingface.co": ScraperEntry(cls=HuggingFaceScraper, difficulty="easy", pattern="bs_paginated", category="discovery_aggregator"),
+    "theresanaiforthat.com": ScraperEntry(cls=TaaftScraper, difficulty="easy", pattern="bs_single", category="discovery_aggregator"),
+    "producthunt.com": ScraperEntry(cls=ProductHuntScraper, difficulty="easy", pattern="bs_single", category="discovery_aggregator"),
 }
 
 

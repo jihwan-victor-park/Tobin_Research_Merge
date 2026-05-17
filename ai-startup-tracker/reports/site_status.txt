@@ -1,0 +1,344 @@
+==============================================================================
+  AI Startup Tracker — Site Inventory Status
+  Generated: 2026-05-10 23:44 UTC
+==============================================================================
+
+  Total sources tracked         : 562
+  WORKING (producing data)      : 102  -> 19,620 startup rows pulled across them
+  NOT WORKING / pending         : 460
+
+  NOTE: URLs are omitted on purpose — only the domain identity, the
+        category bucket, and the signal that matters per row.
+
+==============================================================================
+  WORKING SITES — 102 total
+==============================================================================
+
+  [discovery_aggregator]  (10 sites)
+  --------------------------------------------------------------------------
+    news.ycombinator.com                     1,606 rows   runs=  1 ok=  1 (easy)
+    cbinsights.com                             814 rows   runs=  1 ok=  1 (hard)
+    wellfound.com                              395 rows   runs=  1 ok=  1 (easy)
+    theresanaiforthat.com                      101 rows   runs=  0 ok=  0 (hard)
+    betalist.com                                53 rows   runs=  1 ok=  1 (hard)
+    producthunt.com                             48 rows   runs=  0 ok=  0 (hard)
+    dealroom.co                                 23 rows   runs=  1 ok=  1 (hard)
+    eu-startups.com                             11 rows   runs=  1 ok=  1 (hard)
+    futurepedia.io                               7 rows   runs=  0 ok=  0 (hard)
+    techcrunch.com                               2 rows   runs=  1 ok=  1 (easy)
+
+  [accelerator]  (29 sites)
+  --------------------------------------------------------------------------
+    ycombinator.com                          5,363 rows   runs=  2 ok=  2 (easy)
+    gener8tor.com                            1,784 rows   runs=  1 ok=  1 (easy)
+    capitalfactory.com                         880 rows   runs=  1 ok=  1 (easy)
+    startupbootcamp.org                        542 rows   runs=  1 ok=  1 (easy)
+    alchemistaccelerator.com                   488 rows   runs=  1 ok=  1 (easy)
+    eranyc.com                                 362 rows   runs=  1 ok=  1 (easy)
+    seedcamp.com                               316 rows   runs=  1 ok=  1 (easy)
+    rockstart.com                              228 rows   runs=  1 ok=  1 (easy)
+    fi.co                                      104 rows   runs=  1 ok=  1 (easy)
+    kickstartfund.com                          104 rows   runs=  0 ok=  0 (hard)
+    techstars.com                               64 rows   runs=  1 ok=  1 (easy)
+    joinef.com                                  49 rows   runs=  1 ok=  1 (easy)
+    dreamit.com                                 27 rows   runs=  1 ok=  1 (easy)
+    sting.co                                    23 rows   runs=  1 ok=  1 (easy)
+    flat6labs.com                               14 rows   runs=  1 ok=  1 (easy)
+    seedstars.com                               14 rows   runs=  1 ok=  1 (easy)
+    sparklabs.co.kr                             13 rows   runs=  1 ok=  1 (easy)
+    surgeahead.com                              12 rows   runs=  1 ok=  1 (easy)
+    numa.co                                      9 rows   runs=  2 ok=  1 (hard)
+    launch.co                                    6 rows   runs=  0 ok=  0 (hard)
+    alphalab.org                                 5 rows   runs=  2 ok=  1 (hard)
+    astrolabs.com                                5 rows   runs=  1 ok=  1 (easy)
+    wayra.com                                    4 rows   runs=  1 ok=  1 (easy)
+    hax.co                                       3 rows   runs=  1 ok=  1 (easy)
+    nextai.com                                   3 rows   runs=  2 ok=  1 (hard)
+    stationf.co                                  3 rows   runs=  1 ok=  1 (easy)
+    plugandplaytechcenter.com                    2 rows   runs=  2 ok=  1 (hard)
+    500.co                                       1 rows   runs=  1 ok=  1 (hard)
+    disneyaccelerator.com                        1 rows   runs=  2 ok=  1 (hard)
+
+  [vc_portfolio]  (47 sites)
+  --------------------------------------------------------------------------
+    antler.co                                1,220 rows   runs=  1 ok=  1 (easy)
+    indexventures.com                          371 rows   runs=  0 ok=  0 (hard)
+    felicis.com                                263 rows   runs=  0 ok=  0 (hard)
+    gradient.com                               127 rows   runs=  0 ok=  0 (hard)
+    bvp.com                                    122 rows   runs=  0 ok=  0 (hard)
+    menlovc.com                                119 rows   runs=  0 ok=  0 (hard)
+    madrona.com                                105 rows   runs=  0 ok=  0 (hard)
+    greylock.com                               103 rows   runs=  0 ok=  0 (hard)
+    foundersfund.com                           102 rows   runs=  1 ok=  1 (hard)
+    craftventures.com                          100 rows   runs=  0 ok=  0 (hard)
+    signalfire.com                             100 rows   runs=  0 ok=  0 (hard)
+    aigrant.com                                 92 rows   runs=  0 ok=  0 (hard)
+    paradigm.xyz                                89 rows   runs=  2 ok=  1 (hard)
+    villageglobal.com                           76 rows   runs=  1 ok=  1 (easy)
+    venturesplatform.com                        75 rows   runs=  1 ok=  1 (easy)
+    defy.vc                                     72 rows   runs=  0 ok=  0 (hard)
+    sequoiacap.com                              70 rows   runs=  0 ok=  0 (hard)
+    airstreet.com                               68 rows   runs=  0 ok=  0 (hard)
+    greycroft.com                               65 rows   runs=  2 ok=  1 (hard)
+    generalcatalyst.com                         64 rows   runs=  0 ok=  0 (hard)
+    compound.vc                                 63 rows   runs=  0 ok=  0 (hard)
+    nxtp.vc                                     61 rows   runs=  1 ok=  1 (easy)
+    radical.vc                                  52 rows   runs=  0 ok=  0 (hard)
+    1confirmation.com                           51 rows   runs=  2 ok=  1 (hard)
+    luxcapital.com                              48 rows   runs=  1 ok=  1 (easy)
+    contrarycap.com                             42 rows   runs=  0 ok=  0 (hard)
+    m12.vc                                      40 rows   runs=  0 ok=  0 (hard)
+    obvious.com                                 30 rows   runs=  2 ok=  1 (hard)
+    scalevp.com                                 29 rows   runs=  0 ok=  0 (hard)
+    foundationcap.com                           19 rows   runs=  0 ok=  0 (hard)
+    baincapitalventures.com                     14 rows   runs=  0 ok=  0 (hard)
+    a16z.com                                    13 rows   runs=  0 ok=  0 (hard)
+    kindredventures.com                         12 rows   runs=  2 ok=  1 (hard)
+    beenext.com                                 10 rows   runs=  1 ok=  1 (easy)
+    ggvc.com                                     7 rows   runs=  2 ok=  1 (hard)
+    dnvgroup.com                                 5 rows   runs=  2 ok=  1 (hard)
+    tcv.com                                      4 rows   runs=  2 ok=  1 (hard)
+    foundrygroup.com                             3 rows   runs=  2 ok=  1 (hard)
+    spark.capital                                3 rows   runs=  2 ok=  1 (hard)
+    balderton.com                                1 rows   runs=  2 ok=  1 (hard)
+    bondcap.com                                  1 rows   runs=  2 ok=  1 (hard)
+    cowboy.vc                                    1 rows   runs=  2 ok=  1 (hard)
+    forerunnerventures.com                       1 rows   runs=  2 ok=  1 (hard)
+    muckercapital.com                            1 rows   runs=  2 ok=  1 (hard)
+    nfx.com                                      1 rows   runs=  2 ok=  1 (hard)
+    thirdrock.com                                1 rows   runs=  2 ok=  1 (hard)
+    thirdsphere.com                              1 rows   runs=  2 ok=  1 (hard)
+
+  [university_incubator]  (12 sites)
+  --------------------------------------------------------------------------
+    zli.umich.edu                              715 rows   runs=  1 ok=  1 (easy)
+    researchpark.illinois.edu                  461 rows   runs=  1 ok=  1 (easy)
+    atdc.org                                   440 rows   runs=  1 ok=  1 (easy)
+    innovationlabs.harvard.edu                 276 rows   runs=  1 ok=  1 (easy)
+    web.startx.com                              52 rows   runs=  1 ok=  1 (easy)
+    skydeck.berkeley.edu                        47 rows   runs=  1 ok=  1 (easy)
+    princeton.edu                               24 rows   runs=  2 ok=  1 (hard)
+    engine.xyz                                  15 rows   runs=  1 ok=  1 (easy)
+    cmu.edu                                     13 rows   runs=  1 ok=  1 (easy)
+    mit.edu                                      4 rows   runs=  2 ok=  1 (hard)
+    chicagobooth.edu                             3 rows   runs=  2 ok=  1 (hard)
+    umd.edu                                      1 rows   runs=  2 ok=  1 (hard)
+
+  [government_program]  (4 sites)
+  --------------------------------------------------------------------------
+    nsf.gov                                    127 rows   runs=  1 ok=  1 (hard)
+    parallel18.com                              21 rows   runs=  1 ok=  1 (easy)
+    energy.gov                                  12 rows   runs=  2 ok=  1 (hard)
+    startupchile.org                             3 rows   runs=  1 ok=  1 (easy)
+
+==============================================================================
+  NOT WORKING SITES — 460 total
+==============================================================================
+
+  Grouped by failure reason (most common first).
+  These sites are registered but currently produce 0 rows.
+
+
+  >> untried (never run)  (332 sites)
+  --------------------------------------------------------------------------
+    [discovery_aggregator]
+      github.com                         indiehackers.com                   startups.com
+      thenextweb.com                     crunchbase.com                     huggingface.co
+    [accelerator]
+      50partners.fr                      activate.org                       afore.com
+      amaesgroup.com                     beondeck.com                       bertelsmannfoundation.org
+      bethnalgreenventures.com           bluepoint.partners                 blueprint.kr
+      bolt.io                            bonangels.com                      boomtownaccelerator.com
+      brandery.org                       cambridgeseedfund.com              capitalinnovators.com
+      climate-kic.org                    cloudflare.com                     cogniva.com
+      collider.no                        dayoneventures.com                 dcamp.kr
+      dmzaccelerator.com                 elemental.org                      entrepreneurfirst.com
+      entrepreneurfirst.org.uk           fastforward.org                    fasttrackmalmo.com
+      fastventures.co.kr                 foundersinc.com                    founderzbasic.com
+      googleforstartups.com              greatpoint.com                     greenrubinoinc.com
+      greentown.com                      hcl.com                            intel.com
+      iter8.com                          kakaoinvestment.co.kr              kibo-ventures.com
+      kinglobal.com                      kreutz.de                          l-marks.com
+      lacite.fr                          launchhouse.com                    line-ventures.com
+      maru180.com                        matterchicago.com                  musinsa-partners.com
+      ncsoft.com                         newchip.com                        nvidia.com
+      nvidiainception.com                nvidiainceptioneco.com             oncedeck.com
+      oracle.com                         oxfordseedfund.com                 petri.bio
+      primer.kr                          scaling-africa.com                 shiftbio.kr
+      smileventures.co.kr                softbank-ventures.com              spaccelerator.com
+      spaceshift.io                      startup-alliance.or.kr             startupinresidence.com
+      startuplab.no                      startuplisboa.com                  startupschoolwm.com
+      stripe.com                         thefoundry.com                     theventures.co.kr
+      thirdderivative.org                urban-x.com                        vala.org
+      venturesforamerica.org             workday.com                        zaffire.com
+      zerokr.org                         zinclaunch.com                     zwhq.com
+    [vc_portfolio]
+      8vc.com                            altimetercapital.com               andreessen-horowitz.com
+      andreessen.com                     archvp.com                         basisset.vc
+      benchmark.com                      bowerycapital.com                  boxgroup.com
+      brent-hoberman.com                 breyer.com                         canaan.com
+      cherry.vc                          citi-ventures.com                  commerce-ventures.com
+      conviction.com                     cota-capital.com                   creandum.com
+      crv.com                            drago.capital                      earlybird.com
+      elaiacap.com                       elevation.cap                      emcap.com
+      eqtventures.com                    financialventureslab.com           floodgate.com
+      frst.capital                       gigafund.com                       gobiventures.com
+      gradientventures.com               gsr.vc                             hackvc.com
+      iconiqcapital.com                  initialized.com                    ivp.com
+      kap.kr                             kholsaventures.com                 khoslaventures.com
+      kompasvc.com                       lightboxvc.com                     lightspeedvp.com
+      matrixpartners.com                 menloventures.com                  mirae-asset.com
+      naverd2.com                        newtheoryvc.com                    nexusvp.com
+      nordicninjavc.com                  norwestvp.com                      nuventures.com
+      openai.fund                        partechpartners.com                pearvc.com
+      pi.capital                         pointnine.com                      pradaria.com
+      primary.vc                         redpoint.com                       ribbitcapital.com
+      scaleai.com                        scout-vc.com                       section32.com
+      socialcapital.com                  softbank.com                       thrive.cm
+      thrivecap.com                      tigerglobal.com                    true.vc
+      union-square-ventures.com          upfront.com                        workbench.vc
+      zettavp.com
+    [university_incubator]
+      berkeley.edu                       aalto.fi                           asu.edu
+      blackstonelaunchpad.org            brown.edu                          bu.edu
+      byu.edu                            cam.ac.uk                          case.edu
+      cdtm.com                           colorado.edu                       columbia.edu
+      cornell.edu                        dartmouth.edu                      duke.edu
+      ed.ac.uk                           gatech.edu                         gmu.edu
+      gw-ileg.org                        harvard.edu                        huji.ac.il
+      iitm.ac.in                         illinois.edu                       imperial.ac.uk
+      indiana.edu                        iu.edu                             jhu.edu
+      kaist.ac.kr                        kcl.ac.uk                          kennesaw.edu
+      kentstateaccelerator.com           lse.ac.uk                          miami.edu
+      monash.edu                         northeastern.edu                   northwestern.edu
+      ntu.edu.sg                         nus.edu.sg                         nyuentrepreneur.org
+      osu.edu                            ox.ac.uk                           pku.edu.cn
+      psu.edu                            purdueresearchpark.com             stanford.edu
+      startupucsd.com                    tamu.edu                           technion.ac.il
+      tsinghua.edu.cn                    tudelft.nl                         ubc.ca
+      uchicago.edu                       uci.edu                            ucla.edu
+      uconn.edu                          ucsd.edu                           ucsf.edu
+      ufl.edu                            uic.edu                            uiowa.edu
+      umich.edu                          umn.edu                            unc.edu
+      unimelb.edu.au                     uoft.me                            upenn.edu
+      usc.edu                            utah.edu                           utexas.edu
+      utokyo.ac.jp                       uw.edu                             vanderbilt.edu
+      virginia.edu                       washington.edu                     weizmann.ac.il
+      wisconsin.edu                      wustl.edu                          yale.edu
+      alliance.rice.edu                  entrepreneurship.mit.edu           kellercenter.princeton.edu
+      startups.columbia.edu
+    [government_program]
+      aria.org.uk                        bmbf.de                            businessfinland.fi
+      canada.ca                          cdti.es                            csiro.au
+      darpa.mil                          dst.gov.in                         europa.eu
+      gov.uk                             horizon-europe.eu                  innovateuk.gov.uk
+      innovation.gov.au                  innovationisrael.org.il            jst.go.jp
+      k-startup.go.kr                    kised.or.kr                        kistiportfolio.kr
+      kstartup.go.kr                     kvic.or.kr                         nedo.go.jp
+      nrc-cnrc.gc.ca                     nrf.gov.sg                         sba.gov
+      sbir.gov                           startupindia.gov.in                startupsg.gov.sg
+      tipa.or.kr                         tubitak.gov.tr                     vinnova.se
+    [other]
+      aef.hk                             ai-startups.org                    aitoolhunt.com
+      aitools.fyi                        allvp.vc                           alternativeto.net
+      appsruntheworld.com                capterra.com                       crozdesk.com
+      dang.ai                            eitdigital.eu                      endeavor.org
+      feedmyapp.com                      g2.com                             getapp.com
+      getworm.com                        greenhousecapital.co.za            grindstoneaccelerator.co.za
+      h-farm.com                         iceaddis.com                       innovate360.co
+      insidr.ai                          jfdi.asia                          killerstartups.com
+      launched.io                        launchingnext.com                  lmarks.com
+      microlaunch.net                    nationalstartupsdirectory.com      neo.com
+      openvc.app                         pioneerfund.vc                     saasaitools.com
+      saasworthy.com                     sheraa.ae                          softwareworld.co
+      sosv.com                           sourceforge.net                    stackshare.io
+      startup88.com                      startupbase.io                     startupbuffer.com
+      startupguys.net                    startupinspire.com                 startupjohn.com
+      startuplift.com                    startupnationcentral.org           startupranking.com
+      startups.gallery                   startupstash.com                   startuptabs.com
+      startx.com                         technation.io                      the-catalyst.io
+      thehub.io                          toolify.ai                         topai.tools
+      topstartups.io                     tracxn.com                         turn8.co
+
+  >> blocked: Anthropic credits exhausted  (120 sites)
+  --------------------------------------------------------------------------
+    [accelerator]
+      1871.com                           ai2incubator.com                   amazon.com
+      bigbang.no                         bootcampventures.com               born2global.com
+      bpifrance.com                      brinc.io                           cic.com
+      cohere.com                         creativedestructionlab.com         databricks.com
+      disney.com                         expa.com                           flatironschool.com
+      foundamental.com                   foundercentric.com                 foundersfactory.com
+      galvanize.com                      google.com                         greentownlabs.com
+      hubspot.com                        hubspotventures.com                iccelerate.com
+      ihub.co.ke                         indiebio.co                        kima.vc
+      lemnos.vc                          masschallenge.org                  microsoft.com
+      newlab.com                         nexusgrowth.com                    pioneer.app
+      preferredbynature.org              qualcomm.com                       salesforce.com
+      shopify.engineering                snowflake.com                      spacex.com
+      startupreserve.com                 tampabaywave.org                   thefamily.co
+      theventures.com                    twilio.org                         zoom.us
+    [vc_portfolio]
+      a16zcrypto.com                     accel.com                          altos.vc
+      anthemis.com                       anthropic.com                      atomico.com
+      battery.com                        bevc.com                           chaivc.com
+      coatue.com                         connectventures.co                 costanoa.vc
+      dcm.com                            dcvc.com                           dragoneer.com
+      eclipse.vc                         emergencecapital.com               energizecapital.com
+      essence.vc                         firstround.com                     flagshippioneering.com
+      glasswing.vc                       gobi.vc                            gv.com
+      hashed.com                         hawksridge.com                     hmlt.com
+      holtzbrinckventures.com            innovationendeavors.com            insightpartners.com
+      kakaoventures.com                  kinnevik.com                       kleinerperkins.com
+      lakestar.com                       leadedge.com                       lererhippeau.com
+      localglobe.vc                      lookoutvc.com                      lsvp.com
+      matrixpartners.in                  mayfield.com                       meritechcapital.com
+      multicoin.capital                  nea.com                            northzone.com
+      nvp.com                            peakxv.com                         placeholder.vc
+      polarispartners.com                qedinvestors.com                   sandhillangels.com
+      sapphireventures.com               shasta.vc                          smilegate.com
+      southparkcommons.com               sozocap.com                        speedinvest.com
+      uphonest.com                       usv.com                            variant.fund
+    [university_incubator]
+      dtu.dk                             epfl.ch                            ethz.ch
+      iisc.ac.in                         iitb.ac.in                         kth.se
+      kyoto-u.ac.jp                      mcgill.ca                          snu.ac.kr
+      sydney.edu.au                      tau.ac.il                          toronto.ca
+      tum.de                             ucl.ac.uk                          uwaterloo.ca
+
+  >> timeout / slow page  (4 sites)
+  --------------------------------------------------------------------------
+    [accelerator]
+      startupwiseguys.com
+    [vc_portfolio]
+      amplifypartners.com                lowercarboncapital.com
+    [university_incubator]
+      rice.edu
+
+  >> page not found / no portfolio listing  (2 sites)
+  --------------------------------------------------------------------------
+    [discovery_aggregator]
+      f6s.com                            startupgrind.com
+
+  >> blocked: login / auth required  (1 sites)
+  --------------------------------------------------------------------------
+    [discovery_aggregator]
+      pitchbook.com
+
+  >> blocked: Tavily extract 400  (1 sites)
+  --------------------------------------------------------------------------
+    [other]
+      agentic_engine
+
+==============================================================================
+  How to read this:
+    - 'untried (never run)'        => domain seeded but orchestrator hasn't
+                                     visited it yet. Just needs a run.
+    - 'blocked: Anthropic credits' => agentic engine attempt died because
+                                     Claude API had no balance. Top up + retry.
+    - 'JS-rendered'                => needs Playwright path; agentic engine
+                                     can do it but only with credit.
+    - 'login / auth required'      => structurally inaccessible without an
+                                     account or paid API. Consider replacing
+                                     with the bulk-export path (PitchBook/CB).
+==============================================================================

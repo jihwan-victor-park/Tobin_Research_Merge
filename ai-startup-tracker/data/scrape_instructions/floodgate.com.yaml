@@ -1,0 +1,5 @@
+version: 1
+domain: floodgate.com
+seed_urls:
+- https://www.floodgate.com/companies
+updated_at: '2026-05-15T16:07:39Z'

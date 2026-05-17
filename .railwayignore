@@ -1,0 +1,32 @@
+# Railway CLI upload ignore — keeps `railway up` payload small.
+# Patterns are relative to the directory where `railway up` runs (repo root).
+
+# Heavy local artifacts (regenerated on Railway, not needed for build/runtime)
+ai-startup-tracker/.venv/
+ai-startup-tracker/venv/
+ai-startup-tracker/data/crunchbase/
+ai-startup-tracker/data/*.parquet
+ai-startup-tracker/logs/
+ai-startup-tracker/reports/
+ai-startup-tracker/__pycache__/
+ai-startup-tracker/.pytest_cache/
+ai-startup-tracker/*.dump
+ai-startup-tracker/*.sql.gz
+
+# Python bytecode anywhere
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+
+# macOS / IDE noise
+**/.DS_Store
+.idea/
+.vscode/
+.claude/
+
+# VCS metadata (Railway builder doesn't need git history)
+.git/
+
+# Secrets — Railway injects env vars at runtime
+ai-startup-tracker/.env
+ai-startup-tracker/.env.*

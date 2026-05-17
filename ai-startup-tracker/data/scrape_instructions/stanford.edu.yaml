@@ -1,0 +1,5 @@
+version: 1
+domain: stanford.edu
+seed_urls:
+- https://otl.stanford.edu/news/hit-fund-announces-2025-26-awardee-cohort
+updated_at: '2026-05-15T16:10:31Z'

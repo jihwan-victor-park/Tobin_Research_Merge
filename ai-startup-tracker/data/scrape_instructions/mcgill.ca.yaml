@@ -1,0 +1,5 @@
+version: 1
+domain: mcgill.ca
+seed_urls:
+- https://www.mcgill.ca/dobson/ourstartups
+updated_at: '2026-05-15T16:13:50Z'

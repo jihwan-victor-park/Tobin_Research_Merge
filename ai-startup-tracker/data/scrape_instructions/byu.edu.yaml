@@ -1,0 +1,5 @@
+version: 1
+domain: byu.edu
+seed_urls:
+- https://marriott.byu.edu/ent/careers/companies/
+updated_at: '2026-05-15T16:12:29Z'

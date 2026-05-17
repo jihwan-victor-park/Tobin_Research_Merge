@@ -1,0 +1,5 @@
+version: 1
+domain: startups.com
+seed_urls:
+- https://www.startups.com/founders
+updated_at: '2026-05-15T16:13:08Z'

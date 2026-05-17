@@ -1,0 +1,5 @@
+version: 1
+domain: bpifrance.com
+seed_urls:
+- https://www.bpifrance.com/products/startups-accelerator/
+updated_at: '2026-05-15T16:15:19Z'
