@@ -1,0 +1,19 @@
+version: 1
+domain: onesixone.ventures
+created_at: '2026-05-16T00:00:00.000000Z'
+updated_at: '2026-05-16T00:00:00.000000Z'
+seed_urls:
+- https://www.onesixone.ventures/
+preferred_strategy: single_page_extract
+fallback_order:
+- single_page_extract
+- subpage_discovery
+subpage_hints: []
+pagination_hints: []
+quality_expectation_min_records: 20
+last_success: null
+notes: >
+  JS-rendered Webflow site. All ~28 portfolio companies load on the homepage
+  via client-side rendering. Uses Playwright (OneSixOneScraper). Each card
+  contains company name, industry label, short description, and website domain.
+  No pagination or load-more needed.

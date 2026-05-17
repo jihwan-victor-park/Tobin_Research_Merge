@@ -46,6 +46,7 @@ from backend.scrapers.easy.khosla_scraper import KhoslaVenturesScraper
 from backend.scrapers.easy.gv_scraper import GVScraper
 from backend.scrapers.easy.lightspeed_scraper import LightspeedScraper
 from backend.scrapers.easy.ivp_scraper import IVPScraper
+from backend.scrapers.easy.onesixone_scraper import OneSixOneScraper
 
 
 @dataclass
@@ -114,6 +115,7 @@ SCRAPER_REGISTRY: Dict[str, ScraperEntry] = {
     "gv.com": ScraperEntry(cls=GVScraper, difficulty="easy", pattern="bs_single", category="vc_portfolio"),
     "lsvp.com": ScraperEntry(cls=LightspeedScraper, difficulty="easy", pattern="bs_single", category="vc_portfolio"),
     "ivp.com": ScraperEntry(cls=IVPScraper, difficulty="easy", pattern="bs_single", category="vc_portfolio"),
+    "onesixone.ventures": ScraperEntry(cls=OneSixOneScraper, difficulty="easy", pattern="playwright", category="vc_portfolio"),
 
     # AI-native discovery aggregator
     "huggingface.co": ScraperEntry(cls=HuggingFaceScraper, difficulty="easy", pattern="bs_paginated", category="discovery_aggregator"),
