@@ -105,7 +105,7 @@ class YCScraper(BaseScraper):
                 hit.get("long_description", ""),
                 " ".join(hit.get("tags", [])),
             ]))
-            is_ai = self.detect_ai(text)
+            is_ai = self.detect_ai(text, keyword_only=True)
 
             location = hit.get("all_locations")
             country = None

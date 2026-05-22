@@ -78,7 +78,7 @@ class HarvardScraper(BaseScraper):
                 company.get("description", ""),
                 company.get("lab", ""),
             ]))
-            is_ai = self.detect_ai(text)
+            is_ai = self.detect_ai(text, keyword_only=True)
 
             results.append(ScrapedCompany(
                 name=company["name"],

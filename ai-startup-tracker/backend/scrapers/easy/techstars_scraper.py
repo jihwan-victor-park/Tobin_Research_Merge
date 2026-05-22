@@ -49,7 +49,7 @@ class TechstarsScraper(BaseScraper):
                 doc.get("brief_description", ""),
                 " ".join(doc.get("industry_vertical", [])),
             ]))
-            is_ai = self.detect_ai(text)
+            is_ai = self.detect_ai(text, keyword_only=True)
 
             # Combine city + country for location
             city = doc.get("city")
