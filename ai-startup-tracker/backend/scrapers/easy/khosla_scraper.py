@@ -66,7 +66,7 @@ class KhoslaVenturesScraper(BaseScraper):
                 p = info.find("p")
                 description = p.get_text(strip=True) if p else None
 
-            is_ai = self.detect_ai(f"{name} {description or ''}")
+            is_ai = self.detect_ai(f"{name} {description or ''}", keyword_only=True)
 
             results.append(ScrapedCompany(
                 name=name,

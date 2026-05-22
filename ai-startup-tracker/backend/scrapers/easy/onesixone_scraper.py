@@ -117,7 +117,7 @@ class OneSixOneScraper(BaseScraper):
                     break
 
             seen.add(name)
-            is_ai = self.detect_ai(f"{name} {description or ''} {industry or ''}")
+            is_ai = self.detect_ai(f"{name} {description or ''} {industry or ''}", keyword_only=True)
 
             results.append(ScrapedCompany(
                 name=name,

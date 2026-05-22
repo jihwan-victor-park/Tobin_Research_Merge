@@ -76,7 +76,7 @@ class USVScraper(BaseScraper):
             desc_el = row.find(class_="m__list-row__excerpt")
             description = desc_el.get_text(strip=True) if desc_el else None
 
-            is_ai = self.detect_ai(f"{name} {description or ''}")
+            is_ai = self.detect_ai(f"{name} {description or ''}", keyword_only=True)
 
             results.append(ScrapedCompany(
                 name=name,

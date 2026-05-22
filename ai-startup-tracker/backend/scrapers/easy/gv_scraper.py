@@ -55,7 +55,7 @@ class GVScraper(BaseScraper):
                 continue
             seen.add(name)
 
-            is_ai = self.detect_ai(name)
+            is_ai = self.detect_ai(name, keyword_only=True)
 
             results.append(ScrapedCompany(
                 name=name,

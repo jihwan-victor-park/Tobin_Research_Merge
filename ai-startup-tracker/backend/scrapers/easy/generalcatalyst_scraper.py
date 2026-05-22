@@ -61,7 +61,7 @@ class GeneralCatalystScraper(BaseScraper):
             href = card.get("href", "")
             profile_url = (BASE_URL + href) if href.startswith("/") else (href or SOURCE_URL)
 
-            is_ai = self.detect_ai(name)
+            is_ai = self.detect_ai(name, keyword_only=True)
 
             results.append(ScrapedCompany(
                 name=name,
