@@ -103,6 +103,29 @@ class IncubatorSource(str, enum.Enum):
     h_farm = "h_farm"
     sting_stockholm = "sting_stockholm"
     rockstart = "rockstart"
+    # International expansion — South Korea, Israel, China
+    # For existing DBs, run for each new value:
+    #   ALTER TYPE incubator_source_enum ADD VALUE '<value>';
+    # South Korea
+    strong_ventures = "strong_ventures"
+    bon_angels = "bon_angels"
+    kakao_ventures = "kakao_ventures"
+    primer_sazze = "primer_sazze"
+    naver_d2sf = "naver_d2sf"
+    tips_program = "tips_program"
+    # Israel
+    ourcrowd = "ourcrowd"
+    jvp = "jvp"
+    pitango = "pitango"
+    team8 = "team8"
+    grove_ventures = "grove_ventures"
+    viola_ventures = "viola_ventures"
+    # China
+    miracleplus = "miracleplus"
+    sinovation = "sinovation"
+    zhenfund = "zhenfund"
+    idg_capital = "idg_capital"
+    innospring = "innospring"
     # University Accelerators (added to DB via migrations)
     yc = "yc"
     rice_owlspark = "rice_owlspark"
