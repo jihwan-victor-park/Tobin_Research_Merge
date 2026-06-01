@@ -43,6 +43,8 @@ from typing import Dict, Set
 
 import pandas as pd
 from dotenv import load_dotenv
+from sqlalchemy import case, func
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -161,28 +163,16 @@ def load_and_filter(
     return orgs
 
 
-BATCH_SIZE = 500  # rows per DB transaction
+BATCH_SIZE = 500  # rows per INSERT ... ON CONFLICT statement
 
 
-def _load_existing(db) -> tuple[Set[str], Dict[str, int]]:
-    existing_domains: Set[str] = set()
-    existing_norm_names: Dict[str, int] = {}
-    for c in db.query(Company.domain, Company.normalized_name, Company.id).all():
-        if c.domain:
-            existing_domains.add(c.domain.lower())
-        if c.normalized_name:
-            existing_norm_names[c.normalized_name.lower()] = c.id
-    return existing_domains, existing_norm_names
-
-
-def _process_row(row, country_map, existing_domains, existing_norm_names, db, stats, now):
+def _build_record(row, country_map, now) -> dict | None:
     name = str(row.get("name", "") or "").strip()
     if not name:
-        return
+        return None
 
     raw_domain = str(row.get("domain", "") or row.get("homepage_url", "") or "")
-    domain = canonicalize_domain(raw_domain)
-    norm = normalize_company_name(name)
+    domain = canonicalize_domain(raw_domain) or None
 
     country_3 = str(row.get("country_code", "") or "")
     country_code = country_map.get(country_3)
@@ -199,90 +189,81 @@ def _process_row(row, country_map, existing_domains, existing_norm_names, db, st
     status = str(row.get("status", "") or "").strip()
     operating_status = "operating" if status in ACTIVE_STATUSES else "closed"
 
-    existing = None
-    if domain and domain.lower() in existing_domains:
-        existing = db.query(Company).filter(Company.domain == domain).first()
-    elif norm and norm.lower() in existing_norm_names:
-        existing = db.query(Company).filter(Company.id == existing_norm_names[norm.lower()]).first()
-
-    if existing:
-        changed = False
-        if not existing.country and country_code:
-            existing.country = country_code
-            existing.location_source = LocationSource.crunchbase
-            changed = True
-        if not existing.city and city:
-            existing.city = city
-            changed = True
-        if not existing.description and description:
-            existing.description = description
-            changed = True
-        if not existing.founded_year and founded_year:
-            existing.founded_year = founded_year
-            changed = True
-        if (existing.ai_score or 0) < ai_score:
-            existing.ai_score = ai_score
-            changed = True
-        if existing.verification_status == VerificationStatus.emerging_github:
-            existing.verification_status = VerificationStatus.verified_cb
-            changed = True
-        if changed:
-            existing.updated_at = now
-            stats["updated"] += 1
-        else:
-            stats["skipped"] += 1
-    else:
-        company = Company(
-            name=name,
-            domain=domain,
-            normalized_name=norm,
-            country=country_code,
-            city=city,
-            description=description,
-            founded_year=founded_year,
-            operating_status=operating_status,
-            ai_score=ai_score,
-            verification_status=VerificationStatus.verified_cb,
-            location_source=LocationSource.crunchbase if country_code else None,
-            first_seen_at=now,
-            last_seen_at=now,
-            created_at=now,
-            updated_at=now,
-        )
-        db.add(company)
-        if domain:
-            existing_domains.add(domain.lower())
-        if norm:
-            existing_norm_names[norm.lower()] = -1
-        stats["new"] += 1
+    return {
+        "name": name,
+        "domain": domain,
+        "normalized_name": normalize_company_name(name),
+        "country": country_code,
+        "city": city,
+        "description": description,
+        "founded_year": founded_year,
+        "operating_status": operating_status,
+        "ai_score": ai_score,
+        "verification_status": VerificationStatus.verified_cb.value,
+        "location_source": (LocationSource.crunchbase if country_code else LocationSource.unknown).value,
+        "first_seen_at": now,
+        "last_seen_at": now,
+        "created_at": now,
+        "updated_at": now,
+    }
 
 
 def import_companies(df: pd.DataFrame, country_map: Dict[str, str], dry_run: bool) -> Dict[str, int]:
-    stats = {"new": 0, "updated": 0, "skipped": 0}
-    now = datetime.now(timezone.utc)
-
     if dry_run:
         return {"new": len(df), "updated": 0, "skipped": 0}
 
-    # Load existing dedup sets once
-    with session_scope() as db:
-        existing_domains, existing_norm_names = _load_existing(db)
-    logger.info(f"  Loaded {len(existing_domains):,} existing domains for dedup")
+    now = datetime.now(timezone.utc)
+    records = [r for _, row in df.iterrows() if (r := _build_record(row, country_map, now))]
 
-    # Process in batches to avoid connection timeouts
-    rows = list(df.iterrows())
-    total = len(rows)
-    for batch_start in range(0, total, BATCH_SIZE):
-        batch = rows[batch_start: batch_start + BATCH_SIZE]
+    # Only bulk-upsert records with a domain — ON CONFLICT requires the unique key
+    # Deduplicate by domain within the batch (keep highest ai_score) to avoid
+    # "ON CONFLICT DO UPDATE command cannot affect row a second time" error
+    seen: dict[str, dict] = {}
+    for r in records:
+        if not r["domain"]:
+            continue
+        key = r["domain"].lower()
+        if key not in seen or r["ai_score"] > seen[key]["ai_score"]:
+            seen[key] = r
+    with_domain = list(seen.values())
+    skipped = len(records) - len(with_domain)
+    logger.info(f"  {len(with_domain):,} unique-domain records → bulk upsert, {skipped:,} no domain/dupes → skipped")
+
+    total_batches = (len(with_domain) + BATCH_SIZE - 1) // BATCH_SIZE
+    t = Company.__table__
+
+    for i in range(0, len(with_domain), BATCH_SIZE):
+        batch = with_domain[i: i + BATCH_SIZE]
         with session_scope() as db:
-            for _, row in batch:
-                _process_row(row, country_map, existing_domains, existing_norm_names, db, stats, now)
-        logger.info(
-            f"  Batch {batch_start // BATCH_SIZE + 1}/{(total + BATCH_SIZE - 1) // BATCH_SIZE} committed "
-            f"— new={stats['new']} updated={stats['updated']} skipped={stats['skipped']}"
-        )
+            stmt = pg_insert(t).values(batch)
+            # Gap-filling upsert: COALESCE keeps existing value when already set
+            stmt = stmt.on_conflict_do_update(
+                index_elements=["domain"],
+                index_where=t.c.domain.isnot(None),
+                set_={
+                    "country":             func.coalesce(t.c.country,      stmt.excluded.country),
+                    "city":                func.coalesce(t.c.city,         stmt.excluded.city),
+                    "description":         func.coalesce(t.c.description,  stmt.excluded.description),
+                    "founded_year":        func.coalesce(t.c.founded_year, stmt.excluded.founded_year),
+                    "ai_score":            func.greatest(func.coalesce(t.c.ai_score, 0), stmt.excluded.ai_score),
+                    "verification_status": case(
+                        (t.c.verification_status == VerificationStatus.emerging_github.value,
+                         VerificationStatus.verified_cb.value),
+                        else_=t.c.verification_status,
+                    ),
+                    "updated_at": stmt.excluded.updated_at,
+                },
+            )
+            db.execute(stmt)
+        logger.info(f"  Batch {i // BATCH_SIZE + 1}/{total_batches} committed")
 
-    return stats
+    with session_scope() as db:
+        from sqlalchemy import text
+        new_count = db.execute(text(
+            "SELECT COUNT(*) FROM companies WHERE location_source = 'crunchbase' AND created_at >= :since"
+        ), {"since": now}).scalar() or 0
+
+    return {"new": new_count, "updated": len(with_domain) - new_count, "skipped": skipped}
 
 
 def main():
