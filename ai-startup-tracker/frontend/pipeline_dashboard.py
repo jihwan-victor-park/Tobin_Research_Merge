@@ -26,6 +26,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from backend.db.connection import get_engine
 from backend.orchestrator.orchestrator import Orchestrator
 from backend.scrapers.registry import SCRAPER_REGISTRY
+from backend.utils.country import count_distinct_countries, normalize_country, GLOBE_COUNTRIES
 from backend.utils.denylist import BIG_TECH_DENYLIST
 
 load_dotenv()
@@ -471,9 +472,11 @@ _engine = get_engine()
 with _engine.connect() as _conn:
     _total = _conn.execute(text("SELECT COUNT(*) FROM companies")).scalar() or 0
     _sources = _conn.execute(text("SELECT COUNT(*) FROM site_health")).scalar() or 0
-    _countries = _conn.execute(text(
-        "SELECT COUNT(DISTINCT country) FROM companies WHERE country IS NOT NULL"
-    )).scalar() or 0
+    _raw_countries = _conn.execute(text(
+        "SELECT DISTINCT country FROM companies"
+        " WHERE country IS NOT NULL AND country != '' AND country NOT ILIKE '%remote%'"
+    )).scalars().all()
+    _countries = count_distinct_countries(_raw_countries)
 
 _logo_img = (
     f'<img src="data:image/png;base64,{_logo_b64}" class="topnav-logo" alt="Yale SOM"/>'
@@ -700,7 +703,7 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
     is_ai_col = df["is_ai"] if "is_ai" in df.columns else (df["ai_score"].fillna(0) >= 0.3)
     ai_n = int(is_ai_col.sum())
     funded = int(df["last_funding_date"].notna().sum())
-    countries = df["country"].dropna().nunique()
+    countries = count_distinct_countries(df["country"].dropna().tolist())
 
     st.markdown(
         '<div class="section-header" style="margin-top:24px;">Companies</div>'
