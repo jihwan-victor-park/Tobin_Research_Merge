@@ -205,6 +205,7 @@ def get_founding_years():
 
 # Normalize messy country strings to standard names
 _COUNTRY_ALIASES = {
+    # Full-name aliases
     "usa": "United States",
     "us": "United States",
     "united states": "United States",
@@ -217,6 +218,70 @@ _COUNTRY_ALIASES = {
     "south korea": "South Korea",
     "republic of korea": "South Korea",
     "korea": "South Korea",
+    "china, people's republic of": "China",
+    "israel (state of)": "Israel",
+    # ISO 2-letter codes → full names (for PitchBook/Crunchbase imports)
+    "us": "United States",
+    "gb": "United Kingdom",
+    "in": "India",
+    "de": "Germany",
+    "ca": "Canada",
+    "fr": "France",
+    "sg": "Singapore",
+    "au": "Australia",
+    "il": "Israel",
+    "kr": "South Korea",
+    "se": "Sweden",
+    "nl": "Netherlands",
+    "br": "Brazil",
+    "cn": "China",
+    "jp": "Japan",
+    "ch": "Switzerland",
+    "es": "Spain",
+    "it": "Italy",
+    "ie": "Ireland",
+    "dk": "Denmark",
+    "no": "Norway",
+    "fi": "Finland",
+    "be": "Belgium",
+    "at": "Austria",
+    "pl": "Poland",
+    "pt": "Portugal",
+    "hk": "Hong Kong",
+    "tw": "Taiwan",
+    "ae": "United Arab Emirates",
+    "ru": "Russia",
+    "tr": "Turkey",
+    "ua": "Ukraine",
+    "mx": "Mexico",
+    "ar": "Argentina",
+    "co": "Colombia",
+    "cl": "Chile",
+    "ng": "Nigeria",
+    "za": "South Africa",
+    "ke": "Kenya",
+    "eg": "Egypt",
+    "id": "Indonesia",
+    "my": "Malaysia",
+    "th": "Thailand",
+    "vn": "Vietnam",
+    "ph": "Philippines",
+    "nz": "New Zealand",
+    "ee": "Estonia",
+    "lv": "Latvia",
+    "lt": "Lithuania",
+    "cz": "Czech Republic",
+    "hu": "Hungary",
+    "ro": "Romania",
+    "gr": "Greece",
+    "bg": "Bulgaria",
+    "hr": "Croatia",
+    "rs": "Serbia",
+    "sa": "Saudi Arabia",
+    "qa": "Qatar",
+    "kw": "Kuwait",
+    "pk": "Pakistan",
+    "bd": "Bangladesh",
 }
 
 def _normalize_country(raw: str) -> str:
@@ -237,7 +302,7 @@ def get_locations():
             text("""
                 SELECT country, COUNT(*) AS count
                 FROM companies
-                WHERE ai_score >= 0.6
+                WHERE ai_score >= 0.1
                   AND country IS NOT NULL AND country != ''
                   AND country NOT ILIKE '%remote%'
                 GROUP BY country
