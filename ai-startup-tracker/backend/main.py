@@ -43,6 +43,111 @@ app.add_middleware(
 )
 
 
+# ── Country normalization (shared by /api/stats and /api/stats/locations) ──────
+
+_COUNTRY_ALIASES: dict[str, str] = {
+    # Full-name aliases
+    "usa": "United States",
+    "us": "United States",
+    "united states": "United States",
+    "united states of america": "United States",
+    "uk": "United Kingdom",
+    "united kingdom": "United Kingdom",
+    "great britain": "United Kingdom",
+    "england": "United Kingdom",
+    "uae": "United Arab Emirates",
+    "south korea": "South Korea",
+    "republic of korea": "South Korea",
+    "korea": "South Korea",
+    "china, people's republic of": "China",
+    "israel (state of)": "Israel",
+    # ISO 2-letter codes → full names (for PitchBook/Crunchbase imports)
+    "us": "United States",
+    "gb": "United Kingdom",
+    "in": "India",
+    "de": "Germany",
+    "ca": "Canada",
+    "fr": "France",
+    "sg": "Singapore",
+    "au": "Australia",
+    "il": "Israel",
+    "kr": "South Korea",
+    "se": "Sweden",
+    "nl": "Netherlands",
+    "br": "Brazil",
+    "cn": "China",
+    "jp": "Japan",
+    "ch": "Switzerland",
+    "es": "Spain",
+    "it": "Italy",
+    "ie": "Ireland",
+    "dk": "Denmark",
+    "no": "Norway",
+    "fi": "Finland",
+    "be": "Belgium",
+    "at": "Austria",
+    "pl": "Poland",
+    "pt": "Portugal",
+    "hk": "Hong Kong",
+    "tw": "Taiwan",
+    "ae": "United Arab Emirates",
+    "ru": "Russia",
+    "tr": "Turkey",
+    "ua": "Ukraine",
+    "mx": "Mexico",
+    "ar": "Argentina",
+    "co": "Colombia",
+    "cl": "Chile",
+    "ng": "Nigeria",
+    "za": "South Africa",
+    "ke": "Kenya",
+    "eg": "Egypt",
+    "id": "Indonesia",
+    "my": "Malaysia",
+    "th": "Thailand",
+    "vn": "Vietnam",
+    "ph": "Philippines",
+    "nz": "New Zealand",
+    "ee": "Estonia",
+    "lv": "Latvia",
+    "lt": "Lithuania",
+    "cz": "Czech Republic",
+    "hu": "Hungary",
+    "ro": "Romania",
+    "gr": "Greece",
+    "bg": "Bulgaria",
+    "hr": "Croatia",
+    "rs": "Serbia",
+    "sa": "Saudi Arabia",
+    "qa": "Qatar",
+    "kw": "Kuwait",
+    "pk": "Pakistan",
+    "bd": "Bangladesh",
+}
+
+# Matches COUNTRY_COORDS keys in GlobeView.jsx — used to count distinct real countries
+GLOBE_COUNTRIES: set[str] = {
+    "United States", "United Kingdom", "Canada", "India", "Israel",
+    "Germany", "France", "Australia", "Singapore", "Netherlands",
+    "Sweden", "Switzerland", "Brazil", "Spain", "Finland", "Denmark",
+    "Norway", "Japan", "South Korea", "China", "Estonia", "Poland",
+    "Ireland", "Mexico", "Colombia", "Nigeria", "South Africa", "Kenya",
+    "Egypt", "United Arab Emirates", "Pakistan", "Bangladesh", "Indonesia",
+    "Portugal", "Italy", "Austria", "Belgium", "Czech Republic", "Romania",
+    "Ukraine", "Turkey", "Argentina", "Chile", "New Zealand", "Philippines",
+    "Vietnam", "Thailand", "Malaysia", "Hong Kong", "Taiwan", "Greece",
+    "Hungary", "Latvia", "Lithuania",
+}
+
+
+def _normalize_country(raw: str) -> str | None:
+    if not raw:
+        return None
+    cleaned = raw.split(";")[0].split("/")[0].strip()
+    lower = cleaned.lower()
+    return _COUNTRY_ALIASES.get(lower, cleaned)
+
+
 # ── /api/stats ────────────────────────────────────────────────────────────────
 
 @app.get("/api/stats")
@@ -83,11 +188,22 @@ def get_stats():
             for r in rows
         ]
 
+        raw_country_rows = db.execute(text("""
+            SELECT DISTINCT country FROM companies
+            WHERE country IS NOT NULL AND country != ''
+              AND country NOT ILIKE '%remote%'
+        """)).fetchall()
+        country_count = sum(
+            1 for r in raw_country_rows
+            if _normalize_country(r.country) in GLOBE_COUNTRIES
+        )
+
         return {
             "total_companies": total,
             "ai_flagged": ai_flagged,
             "ai_pct": round(ai_flagged / total * 100, 1) if total else 0,
             "with_domain": with_domain,
+            "countries": country_count,
             "sources": sources,
         }
     finally:
@@ -202,96 +318,6 @@ def get_founding_years():
 
 
 # ── /api/stats/locations ──────────────────────────────────────────────────────
-
-# Normalize messy country strings to standard names
-_COUNTRY_ALIASES = {
-    # Full-name aliases
-    "usa": "United States",
-    "us": "United States",
-    "united states": "United States",
-    "united states of america": "United States",
-    "uk": "United Kingdom",
-    "united kingdom": "United Kingdom",
-    "great britain": "United Kingdom",
-    "england": "United Kingdom",
-    "uae": "United Arab Emirates",
-    "south korea": "South Korea",
-    "republic of korea": "South Korea",
-    "korea": "South Korea",
-    "china, people's republic of": "China",
-    "israel (state of)": "Israel",
-    # ISO 2-letter codes → full names (for PitchBook/Crunchbase imports)
-    "us": "United States",
-    "gb": "United Kingdom",
-    "in": "India",
-    "de": "Germany",
-    "ca": "Canada",
-    "fr": "France",
-    "sg": "Singapore",
-    "au": "Australia",
-    "il": "Israel",
-    "kr": "South Korea",
-    "se": "Sweden",
-    "nl": "Netherlands",
-    "br": "Brazil",
-    "cn": "China",
-    "jp": "Japan",
-    "ch": "Switzerland",
-    "es": "Spain",
-    "it": "Italy",
-    "ie": "Ireland",
-    "dk": "Denmark",
-    "no": "Norway",
-    "fi": "Finland",
-    "be": "Belgium",
-    "at": "Austria",
-    "pl": "Poland",
-    "pt": "Portugal",
-    "hk": "Hong Kong",
-    "tw": "Taiwan",
-    "ae": "United Arab Emirates",
-    "ru": "Russia",
-    "tr": "Turkey",
-    "ua": "Ukraine",
-    "mx": "Mexico",
-    "ar": "Argentina",
-    "co": "Colombia",
-    "cl": "Chile",
-    "ng": "Nigeria",
-    "za": "South Africa",
-    "ke": "Kenya",
-    "eg": "Egypt",
-    "id": "Indonesia",
-    "my": "Malaysia",
-    "th": "Thailand",
-    "vn": "Vietnam",
-    "ph": "Philippines",
-    "nz": "New Zealand",
-    "ee": "Estonia",
-    "lv": "Latvia",
-    "lt": "Lithuania",
-    "cz": "Czech Republic",
-    "hu": "Hungary",
-    "ro": "Romania",
-    "gr": "Greece",
-    "bg": "Bulgaria",
-    "hr": "Croatia",
-    "rs": "Serbia",
-    "sa": "Saudi Arabia",
-    "qa": "Qatar",
-    "kw": "Kuwait",
-    "pk": "Pakistan",
-    "bd": "Bangladesh",
-}
-
-def _normalize_country(raw: str) -> str:
-    if not raw:
-        return None
-    # Strip suffixes like "; Remote", "/ Remote"
-    cleaned = raw.split(";")[0].split("/")[0].strip()
-    lower = cleaned.lower()
-    return _COUNTRY_ALIASES.get(lower, cleaned)
-
 
 @app.get("/api/stats/locations")
 def get_locations():

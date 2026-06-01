@@ -30,6 +30,7 @@ export default function Dashboard() {
         <StatCard label="AI-Flagged" value={stats.ai_flagged.toLocaleString()} sub="ai_score ≥ 0.6" />
         <StatCard label="AI Percentage" value={`${stats.ai_pct}%`} />
         <StatCard label="Have Domain" value={stats.with_domain.toLocaleString()} />
+        <StatCard label="Countries" value={(stats.countries ?? 0).toLocaleString()} sub="on the globe" />
       </div>
 
       {/* Row 2: Source charts */}

@@ -119,7 +119,7 @@ export default function GlobeView() {
         AI Startup Locations
       </div>
       <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 16 }}>
-        Companies with ai_score ≥ 0.6 · point size scales with count · drag to rotate
+        Companies with ai_score ≥ 0.1 · point size scales with count · drag to rotate
       </div>
       {error && <p style={{ color: '#dc2626', fontSize: 13 }}>Failed to load: {error}</p>}
       {!error && locations.length === 0 && (
