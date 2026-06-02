@@ -221,6 +221,124 @@ _QUERIES_BY_COUNTRY: dict[str, list[str]] = {
         "India AI startup ecosystem directory companies 2025",
     ],
 
+    # ── Brazil ─────────────────────────────────────────────────────────────
+    "BR": [
+        "Kaszek Ventures portfolio companies Brazil AI startups",
+        "Monashees portfolio companies Brazil AI",
+        "Canary Ventures portfolio companies Brazil AI",
+        "Astella Investimentos portfolio companies Brazil AI",
+        "Valor Capital Group portfolio companies Brazil AI",
+        "Redpoint eventures Brazil portfolio companies AI",
+        "DOMO Invest portfolio companies Brazil AI startups",
+        "ACE Cortex portfolio companies Brazil AI accelerator",
+        "InovAtiva Brasil portfolio companies AI startups",
+        "Cubo Itaú innovation hub portfolio companies Brazil AI",
+        "USP InovaUSP startup portfolio companies Brazil AI",
+        "Unicamp Inova startup portfolio companies Brazil AI",
+        "BNDES Garagem portfolio companies Brazil AI startups",
+        "FINEP startup portfolio companies Brazil AI technology",
+        "Brazil AI startup ecosystem directory companies 2026",
+    ],
+
+    # ── Mexico ─────────────────────────────────────────────────────────────
+    "MX": [
+        "ALLVP portfolio companies Mexico Latin America AI",
+        "Cometa portfolio companies Mexico AI startups",
+        "Mountain Nazca portfolio companies Mexico AI",
+        "Dalus Capital portfolio companies Mexico AI",
+        "Variv Capital portfolio companies Mexico AI",
+        "500 Global LatAm portfolio companies Mexico AI",
+        "MassChallenge Mexico portfolio companies AI",
+        "Wayra Mexico portfolio companies AI startups",
+        "Endeavor Mexico portfolio companies AI",
+        "Tec de Monterrey EGADE startup portfolio companies Mexico AI",
+        "UNAM startup incubator portfolio companies Mexico AI",
+        "INADEM Mexico startup portfolio companies AI",
+        "Mexico AI startup ecosystem directory companies 2026",
+    ],
+
+    # ── Nigeria ────────────────────────────────────────────────────────────
+    "NG": [
+        "Ventures Platform portfolio companies Nigeria Africa AI",
+        "Future Africa portfolio companies Nigeria AI startups",
+        "Microtraction portfolio companies Nigeria AI",
+        "Co-Creation Hub CcHub portfolio companies Nigeria AI",
+        "Ingressive Capital portfolio companies Nigeria Africa AI",
+        "Lateral Capital portfolio companies Nigeria AI",
+        "GreenHouse Capital portfolio companies Nigeria AI",
+        "Norrsken Africa portfolio companies Nigeria AI startups",
+        "Google for Startups Africa portfolio companies Nigeria AI",
+        "Y Combinator African batch portfolio companies AI",
+        "Techstars Lagos portfolio companies Nigeria AI",
+        "Nigeria AI startup ecosystem directory companies 2026",
+    ],
+
+    # ── South Africa ───────────────────────────────────────────────────────
+    "ZA": [
+        "Knife Capital portfolio companies South Africa AI",
+        "Newtown Partners portfolio companies South Africa AI",
+        "4Di Capital portfolio companies South Africa AI startups",
+        "Naspers Foundry portfolio companies South Africa AI",
+        "Kalon Venture Partners portfolio companies South Africa AI",
+        "Savant Venture Fund portfolio companies South Africa AI",
+        "AlphaCode incubator portfolio companies South Africa AI",
+        "Startupbootcamp Cape Town portfolio companies AI",
+        "University of Cape Town UCT startup portfolio companies AI",
+        "Wits University startup portfolio companies South Africa AI",
+        "South Africa AI startup ecosystem directory companies 2026",
+    ],
+
+    # ── United Arab Emirates / MENA ────────────────────────────────────────
+    "AE": [
+        "Mubadala Capital portfolio companies UAE Middle East AI",
+        "Wamda Capital portfolio companies MENA UAE AI startups",
+        "BECO Capital portfolio companies UAE AI",
+        "Shorooq Partners portfolio companies UAE MENA AI",
+        "MEVP Middle East Venture Partners portfolio companies AI",
+        "ADQ portfolio companies UAE AI startups",
+        "Hub71 Abu Dhabi portfolio companies UAE AI",
+        "DIFC Fintech Hive portfolio companies Dubai AI",
+        "in5 Dubai incubator portfolio companies UAE AI startups",
+        "Sheraa Sharjah Entrepreneurship Center portfolio AI companies",
+        "Astrolabs portfolio companies UAE MENA AI",
+        "Saudi Arabia STV portfolio companies MENA AI startups",
+        "Saudi Aramco Wa'ed portfolio companies AI",
+        "UAE MENA AI startup ecosystem directory companies 2026",
+    ],
+
+    # ── Indonesia / Southeast Asia overflow ────────────────────────────────
+    "ID": [
+        "East Ventures portfolio companies Indonesia Southeast Asia AI",
+        "AC Ventures portfolio companies Indonesia AI startups",
+        "Alpha JWC Ventures portfolio companies Indonesia AI",
+        "Intudo Ventures portfolio companies Indonesia AI",
+        "MDI Ventures Telkom portfolio companies Indonesia AI",
+        "BRI Ventures portfolio companies Indonesia AI",
+        "Mandiri Capital portfolio companies Indonesia AI startups",
+        "Antler Indonesia portfolio companies AI",
+        "Endeavor Indonesia portfolio companies AI",
+        "Indigo Ventures Telkom incubator portfolio companies Indonesia AI",
+        "Indonesia AI startup ecosystem directory companies 2026",
+    ],
+
+    # ── Australia / New Zealand ────────────────────────────────────────────
+    "AU": [
+        "Blackbird Ventures portfolio companies Australia AI startups",
+        "AirTree Ventures portfolio companies Australia AI",
+        "Square Peg Capital portfolio companies Australia AI",
+        "Main Sequence Ventures portfolio companies Australia deep tech AI",
+        "OneVentures portfolio companies Australia AI",
+        "Folklore Ventures portfolio companies Australia AI startups",
+        "Tidal Ventures portfolio companies Australia AI",
+        "Startmate accelerator portfolio companies Australia AI",
+        "BlueChilli portfolio companies Australia AI startups",
+        "CSIRO ON program portfolio companies Australia AI deep tech",
+        "University of Sydney INCUBATE portfolio companies Australia AI",
+        "UNSW Founders portfolio companies Australia AI startups",
+        "Icehouse Ventures portfolio companies New Zealand AI",
+        "Australia New Zealand AI startup ecosystem directory companies 2026",
+    ],
+
     # ── US ─────────────────────────────────────────────────────────────────
     "US": [
         "Pioneer Fund portfolio companies AI startups",
