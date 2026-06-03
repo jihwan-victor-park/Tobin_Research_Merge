@@ -46,11 +46,15 @@ class BaseScraper(ABC):
         """Fetch and parse companies. Returns Pydantic models, NO DB writes."""
         ...
 
-    def detect_ai(self, text: str) -> bool:
-        """Backwards-compatible wrapper around `classify_ai` for free-form text."""
+    def detect_ai(self, text: str, keyword_only: bool = False) -> bool:
+        """Backwards-compatible wrapper around `classify_ai` for free-form text.
+
+        keyword_only=True avoids the per-record LLM escalation — high-volume
+        scrapers should pass it so a multi-thousand-row fetch doesn't stall on
+        sequential LLM calls (see classify_ai docstring)."""
         if not text:
             return False
-        is_ai, _conf, _src = classify_ai(name="", description=text)
+        is_ai, _conf, _src = classify_ai(name="", description=text, keyword_only=keyword_only)
         return is_ai
 
     def run(self, save_to_db: bool = True) -> ScrapeRunResult:

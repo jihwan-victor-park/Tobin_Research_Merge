@@ -90,7 +90,7 @@ class A16ZScraper(BaseScraper):
             if founded_raw and founded_raw.isdigit():
                 founded_year = int(founded_raw)
 
-            is_ai = self.detect_ai(f"{name} {description or ''}")
+            is_ai = self.detect_ai(f"{name} {description or ''}", keyword_only=True)
 
             results.append(ScrapedCompany(
                 name=name,

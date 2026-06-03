@@ -97,7 +97,7 @@ class AntlerScraper(BaseScraper):
                 company.get("description", ""),
                 company.get("sector", ""),
             ]))
-            is_ai = self.detect_ai(text)
+            is_ai = self.detect_ai(text, keyword_only=True)
 
             results.append(ScrapedCompany(
                 name=company["name"],

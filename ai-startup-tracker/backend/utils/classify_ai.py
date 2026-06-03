@@ -61,12 +61,21 @@ def classify_ai(
     name: str,
     description: Optional[str] = None,
     tags: Optional[str] = None,
+    keyword_only: bool = False,
 ) -> Tuple[bool, float, str]:
     """Return (is_ai, confidence, source).
 
     source ∈ {'keyword', 'llm', 'fallback'}.
     Confidence is 1.0 for keyword decisions, 0.0–1.0 for LLM, and 0.5 for
     fallback (LLM unavailable on an ambiguous case → defaults to False).
+
+    keyword_only=True skips the per-record LLM escalation entirely: ambiguous
+    cases (tech but no explicit AI marker) return a conservative (False, 0.5,
+    'keyword_only') instead of making a network call. This is what high-volume
+    scrapers should use — paying one LLM round-trip per company turns a 5k-row
+    portfolio fetch into thousands of sequential API calls, which times out and
+    leaves the run only partially saved. The bulk pass
+    (`scripts/reclassify_ai_with_llm.py`) re-resolves the ambiguous rows later.
     """
     text = " ".join(filter(None, [name, description, tags])).strip()
     if not text:
@@ -78,6 +87,11 @@ def classify_ai(
     # Strong miss: no tech hints anywhere → almost certainly not AI.
     if not _TECH_PATTERN.search(text):
         return (False, 1.0, "keyword")
+
+    # Ambiguous. Without LLM escalation, default to a conservative miss and
+    # let the bulk reclassifier resolve it later.
+    if keyword_only:
+        return (False, 0.5, "keyword_only")
 
     # Ambiguous → ask the LLM.
     decision = _llm_decide(name=name, description=description, tags=tags)

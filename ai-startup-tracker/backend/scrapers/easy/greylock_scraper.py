@@ -54,7 +54,7 @@ class GreylockScraper(BaseScraper):
                 profile_url=profile_url or self.source_url,
                 program="Greylock",
                 source_url=self.source_url,
-                is_ai_startup=self.detect_ai(f"{name} {description or ''}"),
+                is_ai_startup=self.detect_ai(f"{name} {description or ''}", keyword_only=True),
                 confidence=0.85,
             ))
         return results

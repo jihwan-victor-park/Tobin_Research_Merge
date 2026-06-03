@@ -69,7 +69,7 @@ class SparkCapitalScraper(BaseScraper):
             link_el = card.find("a", class_="company-link")
             website = link_el["href"] if link_el and link_el.get("href", "").startswith("http") else None
 
-            is_ai = self.detect_ai(f"{name} {description or ''}")
+            is_ai = self.detect_ai(f"{name} {description or ''}", keyword_only=True)
 
             results.append(ScrapedCompany(
                 name=name,

@@ -84,7 +84,7 @@ class LightspeedScraper(BaseScraper):
 
         results = []
         for slug, (name, description) in seen.items():
-            is_ai = self.detect_ai(f"{name} {description or ''}")
+            is_ai = self.detect_ai(f"{name} {description or ''}", keyword_only=True)
             results.append(ScrapedCompany(
                 name=name,
                 description=description,

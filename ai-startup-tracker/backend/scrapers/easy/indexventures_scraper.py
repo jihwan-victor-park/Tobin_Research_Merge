@@ -81,7 +81,7 @@ class IndexVenturesScraper(BaseScraper):
             country = regions[0].replace("-", " ").title() if regions else None
 
             # Sector-based AI detection first; fall back to name heuristic
-            is_ai = bool(_AI_SECTORS & set(sectors)) or self.detect_ai(name)
+            is_ai = bool(_AI_SECTORS & set(sectors)) or self.detect_ai(name, keyword_only=True)
 
             results.append(ScrapedCompany(
                 name=name,

@@ -72,7 +72,7 @@ class IVPScraper(BaseScraper):
                 name = _slug_to_name(slug)
 
             profile_url = f"https://www.ivp.com{href}" if href.startswith("/") else href
-            is_ai = self.detect_ai(name)
+            is_ai = self.detect_ai(name, keyword_only=True)
 
             results.append(ScrapedCompany(
                 name=name,

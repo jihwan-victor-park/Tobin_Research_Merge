@@ -97,7 +97,7 @@ class BVPScraper(BaseScraper):
                     sectors.append(s)
             industry = ", ".join(sectors[:2]) if sectors else None
 
-            is_ai = self.detect_ai(f"{name} {description or ''} {industry or ''}")
+            is_ai = self.detect_ai(f"{name} {description or ''} {industry or ''}", keyword_only=True)
 
             results.append(ScrapedCompany(
                 name=name,

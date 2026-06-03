@@ -126,7 +126,7 @@ class BaldertonScraper(BaseScraper):
             stage_el = card.select_one("span.label-m.fw-medium")
             batch = stage_el.get_text(strip=True) if stage_el else None
 
-            is_ai = self.detect_ai(f"{name} {description or ''} {sector or ''}")
+            is_ai = self.detect_ai(f"{name} {description or ''} {sector or ''}", keyword_only=True)
 
             results.append(ScrapedCompany(
                 name=name,

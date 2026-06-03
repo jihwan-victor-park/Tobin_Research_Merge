@@ -130,4 +130,4 @@ class SeedcampScraper(BaseScraper):
             company.get("description", ""),
             " ".join(company.get("sector_tags", [])),
         ]))
-        return self.detect_ai(text)
+        return self.detect_ai(text, keyword_only=True)

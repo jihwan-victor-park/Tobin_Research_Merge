@@ -62,7 +62,7 @@ class EFScraper(BaseScraper):
                 company.get("description", ""),
                 " ".join(company.get("tags", [])),
             ]))
-            is_ai = self.detect_ai(text)
+            is_ai = self.detect_ai(text, keyword_only=True)
 
             tags = company.get("tags", [])
             results.append(ScrapedCompany(
