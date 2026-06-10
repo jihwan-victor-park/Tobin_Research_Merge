@@ -90,6 +90,16 @@ _QUERIES_BY_COUNTRY: dict[str, list[str]] = {
         "Seoul National University SNU startup venture companies AI",
         "Yonsei University startup incubator portfolio companies Korea AI",
         "KAIST ICC startup companies Korea AI technology",
+        # Native-language queries — surfaces Korean-only portfolio pages
+        "본엔젤스 포트폴리오 스타트업 인공지능",
+        "카카오벤처스 투자기업 인공지능 스타트업",
+        "알토스벤처스 포트폴리오 AI 스타트업",
+        "스파크랩 포트폴리오 스타트업 인공지능",
+        "팁스 프로그램 선정기업 인공지능 스타트업",
+        "본투글로벌 참여기업 AI 스타트업",
+        "KAIST 창업 인큐베이터 포트폴리오 기업 AI",
+        "포스텍 창업 스타트업 인공지능 기업",
+        "서울대 창업 벤처 기업 인공지능",
     ],
 
     # ── Israel ─────────────────────────────────────────────────────────────
@@ -161,6 +171,17 @@ _QUERIES_BY_COUNTRY: dict[str, list[str]] = {
         "Shanghai Jiao Tong SJTU startup incubator companies AI",
         "Fudan University startup incubator portfolio companies AI",
         "Zhejiang University startup incubator portfolio companies AI",
+        # Native-language queries — surfaces Chinese-only portfolio pages
+        "红杉中国 被投企业 人工智能 创业公司",
+        "真格基金 投资组合 人工智能 创业公司",
+        "经纬创投 投资组合 人工智能 AI",
+        "源码资本 投资组合 人工智能 创业",
+        "高榕资本 投资组合 AI 企业",
+        "奇绩创坛 孵化企业 人工智能 创业公司",
+        "中关村科技园 人工智能企业 创业公司 名录",
+        "清华大学 x-lab 创业企业 人工智能",
+        "北京大学 创业孵化器 企业名录 AI",
+        "浙江大学 创业孵化 人工智能 企业",
     ],
 
     # ── Singapore ──────────────────────────────────────────────────────────
@@ -200,6 +221,15 @@ _QUERIES_BY_COUNTRY: dict[str, list[str]] = {
         "Japan Science Technology Agency JST startup portfolio AI",
         "Tokyo AI startup accelerator cohort companies 2025 2026",
         "Japan AI startup ecosystem companies directory 2025",
+        # Native-language queries — surfaces Japanese-only portfolio pages
+        "ジャフコ ポートフォリオ企業 AI スタートアップ",
+        "グローバル・ブレイン 投資先企業 人工知能 スタートアップ",
+        "インキュベイトファンド ポートフォリオ AI 企業",
+        "Plug and Play Japan 採択企業 人工知能 スタートアップ",
+        "J-Startup 選定企業 人工知能 AI",
+        "東京大学IPC ポートフォリオ企業 AI スタートアップ",
+        "京都大学 スタートアップ インキュベーター 企業 AI",
+        "KDDI ∞ Labo 採択企業 スタートアップ AI",
     ],
 
     # ── India ──────────────────────────────────────────────────────────────
@@ -270,7 +300,7 @@ def scout(country: str = "US", limit: int = 20) -> List[ScoutCandidate]:
         hits = _tavily_search(api_key, q, max_results=10)
         raw_hits.extend(hits)
         logger.debug(f"scout: query '{q[:60]}' → {len(hits)} hits")
-        if len(raw_hits) >= limit * 8:
+        if len(raw_hits) >= limit * 12:
             break
 
     # Dedup by canonical domain + drop sites already tracked
@@ -319,7 +349,9 @@ def scout(country: str = "US", limit: int = 20) -> List[ScoutCandidate]:
             continue
 
         confidence = float(verdict.get("confidence") or 0.6)
-        if confidence < 0.5:
+        _JS_HEAVY_COUNTRIES = {"CN", "KR", "JP", "TW", "VN", "TH", "ID"}
+        min_conf = 0.4 if country_upper in _JS_HEAVY_COUNTRIES else 0.5
+        if confidence < min_conf:
             logger.debug(f"scout: low confidence ({confidence:.2f}) for {c['domain']}, skipping")
             continue
 
@@ -382,8 +414,10 @@ def _tavily_search(api_key: str, query: str, max_results: int = 10) -> list[dict
 def _fetch_page_snippet(url: str) -> str:
     """Fetch the page and return visible text (first _PAGE_SNIPPET_CHARS chars).
 
-    Returns empty string on any failure — validation still proceeds without it.
+    Falls back to headless Playwright when requests returns empty content (JS-rendered
+    SPAs common on Chinese/Korean VC sites). Returns empty string on total failure.
     """
+    text = ""
     try:
         resp = requests.get(
             url,
@@ -399,16 +433,30 @@ def _fetch_page_snippet(url: str) -> str:
             },
             allow_redirects=True,
         )
-        if resp.status_code != 200:
-            return ""
-        soup = BeautifulSoup(resp.text, "lxml")
-        # Remove boilerplate tags
-        for tag in soup(["script", "style", "nav", "footer", "header", "noscript"]):
-            tag.decompose()
-        text = " ".join(soup.get_text(" ", strip=True).split())
-        return text[:_PAGE_SNIPPET_CHARS]
+        if resp.status_code == 200:
+            soup = BeautifulSoup(resp.text, "lxml")
+            for tag in soup(["script", "style", "nav", "footer", "header", "noscript"]):
+                tag.decompose()
+            text = " ".join(soup.get_text(" ", strip=True).split())
     except Exception:
-        return ""
+        pass
+
+    if len(text) >= 100:
+        return text[:_PAGE_SNIPPET_CHARS]
+
+    # Fallback: Playwright for JS-rendered pages (React/Vue/Angular SPAs)
+    try:
+        from backend.agentic.engine import _playwright_extract_urls
+        results = _playwright_extract_urls([url], max_urls=1)
+        if results and results[0].get("raw_content"):
+            pw_text = str(results[0]["raw_content"])
+            if len(pw_text) > len(text):
+                logger.debug(f"scout: playwright fallback got {len(pw_text)} chars for {url}")
+                return pw_text[:_PAGE_SNIPPET_CHARS]
+    except Exception:
+        pass
+
+    return text[:_PAGE_SNIPPET_CHARS]
 
 
 _VALIDATE_SYSTEM = """\

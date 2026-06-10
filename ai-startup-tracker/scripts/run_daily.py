@@ -8,7 +8,8 @@ Single daily entry point for the local pipeline. Runs in this order:
   5. (Mondays only) GitHub weekly discovery.
   6. LLM classifier batch on un-classified repos/companies.
   7. International scout rotation — 2-3 countries per day, full rotation weekly.
-  8. (Sundays only) Dedup report — log domain duplicates to catch cross-source merges.
+  8. (Sundays only) International incubator scrape — explicit KR/IL/CN/SG/IL scrapers.
+  9. (Sundays only) Dedup report — log domain duplicates to catch cross-source merges.
 
 Logs everything to logs/daily_YYYYMMDD.log so launchd output stays small and
 the operator can scroll back to a specific day.
@@ -109,10 +110,14 @@ def main() -> None:
     for country in scout_countries:
         _run_subprocess(
             f"scout_{country}",
-            [sys.executable, "scripts/run_scout.py", "--country", country, "--limit", "5"],
+            [sys.executable, "scripts/run_scout.py", "--country", country, "--limit", "15"],
         )
 
-    # 8. Weekly dedup report (Sundays) — surfaces domain duplicates for review.
+    # 8. Weekly international incubator scrape (Sundays) — explicit KR/IL/CN/SG scrapers.
+    if is_sunday:
+        _run_subprocess("international_incubators", [sys.executable, "scripts/scrape_international_incubators.py"])
+
+    # 9. Weekly dedup report (Sundays) — surfaces domain duplicates for review.
     if is_sunday:
         _run_subprocess("dedup_report", [sys.executable, "scripts/run_dedup.py", "--limit", "30"])
 
