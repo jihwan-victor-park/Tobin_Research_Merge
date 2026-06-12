@@ -621,6 +621,52 @@ def load_recent_runs(hours: int = 168) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+@st.cache_data(ttl=300)
+def _load_site_countries() -> dict[str, str]:
+    """Returns domain → canonical country mapping.
+
+    Priority: companies.incubator_source match > TLD inference > None.
+    """
+    engine = get_engine()
+    mapping: dict[str, str] = {}
+
+    # Pull country from already-scraped sites via companies table
+    with engine.connect() as conn:
+        rows = conn.execute(text(
+            "SELECT DISTINCT incubator_source, country FROM companies "
+            "WHERE incubator_source IS NOT NULL AND country IS NOT NULL AND country != ''"
+        )).mappings().all()
+    for row in rows:
+        norm = normalize_country(row["country"])
+        if norm and norm in GLOBE_COUNTRIES:
+            mapping[row["incubator_source"]] = norm
+
+    # For remaining domains, infer from TLD (longer patterns first)
+    with engine.connect() as conn:
+        domain_rows = conn.execute(text("SELECT DISTINCT domain FROM site_health")).mappings().all()
+    _TLD_MAP = [
+        (".co.kr", "South Korea"), (".com.au", "Australia"), (".co.uk", "United Kingdom"),
+        (".com.br", "Brazil"), (".co.il", "Israel"), (".co.in", "India"),
+        (".kr", "South Korea"), (".jp", "Japan"), (".de", "Germany"),
+        (".fr", "France"), (".il", "Israel"), (".sg", "Singapore"),
+        (".au", "Australia"), (".se", "Sweden"), (".nl", "Netherlands"),
+        (".in", "India"), (".ae", "United Arab Emirates"), (".cn", "China"),
+        (".tw", "Taiwan"), (".br", "Brazil"), (".ca", "Canada"),
+        (".uk", "United Kingdom"), (".dk", "Denmark"), (".fi", "Finland"),
+        (".no", "Norway"), (".ch", "Switzerland"), (".be", "Belgium"),
+        (".es", "Spain"), (".it", "Italy"), (".pl", "Poland"), (".ee", "Estonia"),
+    ]
+    for row in domain_rows:
+        domain = row["domain"]
+        if domain not in mapping:
+            for suffix, country in _TLD_MAP:
+                if domain.endswith(suffix):
+                    mapping[domain] = country
+                    break
+
+    return mapping
+
+
 # ── Plotly helpers ───────────────────────────────────────────────────
 
 def _layout(**kw):
@@ -1194,6 +1240,63 @@ def page_health(health_df: pd.DataFrame, runs_df: pd.DataFrame):
             rd["duration_seconds"] = rd["duration_seconds"].apply(
                 lambda v: f"{v:.1f}s" if pd.notna(v) else "")
         st.dataframe(rd, width="stretch", hide_index=True, height=340)
+
+    # ── Coverage by Country ──────────────────────────────────────────
+    st.markdown("---")
+    st.markdown("### Coverage by Country")
+
+    country_map = _load_site_countries()
+    hdf = health_df.copy()
+    hdf["country"] = hdf["domain"].map(country_map)
+    intl_df = hdf[hdf["country"].notna()].copy()
+
+    if intl_df.empty:
+        st.info("No country data available yet — scrape some sites or check TLD coverage.")
+    else:
+        by_country = (
+            intl_df.groupby("country")
+            .agg(
+                total=("domain", "count"),
+                healthy=("status", lambda x: (x == "healthy").sum()),
+                pending=("status", lambda x: (x == "pending").sum()),
+                broken=("status", lambda x: (x == "broken").sum()),
+                last_scraped=("last_success_at", "max"),
+            )
+            .reset_index()
+            .sort_values("total", ascending=False)
+        )
+
+        fig = go.Figure()
+        for state, color in [("pending", "#f59e0b"), ("healthy", "#22c55e"), ("broken", "#ef4444")]:
+            fig.add_bar(
+                y=by_country["country"],
+                x=by_country[state],
+                name=state.capitalize(),
+                marker_color=color,
+                orientation="h",
+            )
+        fig.update_layout(
+            barmode="stack",
+            height=max(300, len(by_country) * 28),
+            xaxis_title="Sites",
+            legend_title_text="Status",
+            title_text="",
+            **_layout(),
+        )
+        fig.update_yaxes(autorange="reversed")
+        st.plotly_chart(fig, use_container_width=True)
+
+        display = by_country.copy()
+        display["last_scraped"] = pd.to_datetime(display["last_scraped"], errors="coerce").dt.strftime("%Y-%m-%d")
+        st.dataframe(
+            display.rename(columns={
+                "country": "Country", "total": "Total",
+                "healthy": "Healthy", "pending": "Pending", "broken": "Broken",
+                "last_scraped": "Last Scraped",
+            }),
+            use_container_width=True,
+            hide_index=True,
+        )
 
 
 # ── Page: GitHub Discovery ───────────────────────────────────────────
@@ -2013,16 +2116,16 @@ def page_ai_analysis(df: pd.DataFrame):
             .reset_index()
             .tail(24)
         )
-        fig_time = px.bar(
-            monthly,
-            x="month",
-            y=["ai", "total"],
+        fig_time = go.Figure()
+        fig_time.add_bar(x=monthly["month"], y=monthly["total"], name="All", marker_color="#e3e7ee")
+        fig_time.add_bar(x=monthly["month"], y=monthly["ai"], name="AI", marker_color="#286dc0")
+        fig_time.update_layout(
             barmode="overlay",
-            color_discrete_map={"ai": "#286dc0", "total": "#e3e7ee"},
-            labels={"month": "", "value": "Companies", "variable": ""},
-            title="Monthly Company Discovery (AI in blue, all in grey)",
+            title_text="Monthly Company Discovery (AI in blue, all in grey)",
+            xaxis_title="",
+            yaxis_title="Companies",
+            **_layout(height=280),
         )
-        fig_time.update_layout(**_layout(height=280))
         st.plotly_chart(fig_time, use_container_width=True)
 
     # ── Recently discovered AI companies ────────────────────────────
