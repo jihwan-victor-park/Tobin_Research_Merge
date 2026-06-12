@@ -23,6 +23,14 @@ _COUNTRY_ALIASES: dict[str, str] = {
     "korea": "South Korea",
     "china, people's republic of": "China",
     "israel (state of)": "Israel",
+    "czechia": "Czech Republic",
+    "czech republic": "Czech Republic",
+    "taiwan, province of china": "Taiwan",
+    "hong kong sar": "Hong Kong",
+    "viet nam": "Vietnam",
+    "south africa": "South Africa",
+    "saudi arabia": "Saudi Arabia",
+    "new zealand": "New Zealand",
     # ISO 2-letter codes → full names (for PitchBook/Crunchbase imports)
     "us": "United States",
     "gb": "United Kingdom",
@@ -100,6 +108,15 @@ GLOBE_COUNTRIES: frozenset[str] = frozenset({
     "Ukraine", "Turkey", "Argentina", "Chile", "New Zealand", "Philippines",
     "Vietnam", "Thailand", "Malaysia", "Hong Kong", "Taiwan", "Greece",
     "Hungary", "Latvia", "Lithuania", "Russia",
+    "Peru", "Ghana", "Panama", "Uganda", "Ecuador", "Morocco",
+    "Croatia", "Jamaica", "Senegal", "Tanzania", "Uruguay",
+    "Armenia", "Jordan", "Bolivia", "Ethiopia", "Luxembourg",
+    "Venezuela", "Saudi Arabia", "Qatar", "Kuwait", "Georgia",
+    "North Macedonia", "Montenegro", "Iceland", "Belarus",
+    "Sri Lanka", "Nepal", "Mongolia", "Lebanon", "Cyprus",
+    "Kosovo", "Slovakia", "Bulgaria", "South Africa", "Egypt",
+    "Algeria", "Namibia", "Benin", "Cameroon", "Zambia",
+    "Slovenia", "Serbia", "Hong Kong", "Taiwan",
 })
 
 
