@@ -625,21 +625,37 @@ def load_recent_runs(hours: int = 168) -> pd.DataFrame:
 def _load_site_countries() -> dict[str, str]:
     """Returns domain → canonical country mapping.
 
-    Priority: companies.incubator_source match > TLD inference > None.
+    Priority: source_domain cross-ref > incubator_source cross-ref > TLD inference.
     """
     engine = get_engine()
     mapping: dict[str, str] = {}
 
-    # Pull country from already-scraped sites via companies table
+    # Primary: source_domain set by agentic scraper (arbitrary sites)
     with engine.connect() as conn:
         rows = conn.execute(text(
-            "SELECT DISTINCT incubator_source, country FROM companies "
+            "SELECT source_domain, country FROM companies "
+            "WHERE source_domain IS NOT NULL AND country IS NOT NULL AND country != '' "
+            "GROUP BY source_domain, country ORDER BY COUNT(*) DESC"
+        )).mappings().all()
+    for row in rows:
+        domain = row["source_domain"]
+        if domain and domain not in mapping:
+            norm = normalize_country(row["country"])
+            if norm and norm in GLOBE_COUNTRIES:
+                mapping[domain] = norm
+
+    # Fallback: incubator_source enum for legacy hard-coded sources
+    with engine.connect() as conn:
+        rows = conn.execute(text(
+            "SELECT DISTINCT incubator_source::text, country FROM companies "
             "WHERE incubator_source IS NOT NULL AND country IS NOT NULL AND country != ''"
         )).mappings().all()
     for row in rows:
-        norm = normalize_country(row["country"])
-        if norm and norm in GLOBE_COUNTRIES:
-            mapping[row["incubator_source"]] = norm
+        src = row["incubator_source"]
+        if src and src not in mapping:
+            norm = normalize_country(row["country"])
+            if norm and norm in GLOBE_COUNTRIES:
+                mapping[src] = norm
 
     # For remaining domains, infer from TLD (longer patterns first)
     with engine.connect() as conn:

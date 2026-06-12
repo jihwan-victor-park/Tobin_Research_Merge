@@ -191,6 +191,9 @@ class Company(Base):
         Enum(IncubatorSource, name="incubator_source_enum", create_type=True),
         nullable=True,
     )
+    # Free-text source domain — set by agentic scraper for arbitrary sites in site_health.
+    # Allows linking companies back to site_health domains without needing an enum entry.
+    source_domain = Column(String(256), nullable=True, index=True)
 
     # Relationships
     github_signals = relationship("GithubSignal", back_populates="company", cascade="all, delete-orphan")

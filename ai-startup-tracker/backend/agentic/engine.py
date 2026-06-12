@@ -874,6 +874,7 @@ def _save_to_db(records: List[Dict[str, Any]], source_url: str = "") -> Tuple[in
     new_count = 0
     updated_count = 0
     now = datetime.now(timezone.utc)
+    src_domain = domain_for_url(source_url) if source_url else None
 
     with session_scope() as session:
         for r in records:
@@ -895,6 +896,7 @@ def _save_to_db(records: List[Dict[str, Any]], source_url: str = "") -> Tuple[in
                     name=name,
                     domain=domain,
                     normalized_name=norm_name,
+                    source_domain=src_domain,
                     verification_status=VerificationStatus.emerging_github,
                     location_source=LocationSource.unknown,
                     first_seen_at=now,
@@ -911,6 +913,8 @@ def _save_to_db(records: List[Dict[str, Any]], source_url: str = "") -> Tuple[in
                     company.domain = domain
                 if not company.normalized_name and norm_name:
                     company.normalized_name = norm_name
+                if not company.source_domain and src_domain:
+                    company.source_domain = src_domain
                 updated_count += 1
 
             # Update location if extracted
