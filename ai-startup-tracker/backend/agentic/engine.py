@@ -14,7 +14,7 @@ import re
 from collections import Counter
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional, Tuple
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import requests
 
@@ -326,8 +326,56 @@ def _playwright_browser_enabled() -> bool:
         return False
 
 
+_PORTFOLIO_PATH_PATTERNS = frozenset({
+    "/portfolio", "/companies", "/investments", "/startups",
+    "/cohort", "/batch", "/portfolio-companies", "/our-companies",
+    "/ventures", "/investees", "/our-portfolio",
+})
+
+
+def _is_portfolio_url(url: str) -> bool:
+    """True when a URL path looks like a VC/accelerator portfolio listing."""
+    path = urlparse(url).path.lower().rstrip("/")
+    return any(pat in path for pat in _PORTFOLIO_PATH_PATTERNS)
+
+
+def _extract_pagination_links(html: str, base_url: str) -> List[str]:
+    """Extract next-page links from rendered HTML using BeautifulSoup."""
+    try:
+        from bs4 import BeautifulSoup
+    except ImportError:
+        return []
+    soup = BeautifulSoup(html, "html.parser")
+    seen: set = set()
+    found: List[str] = []
+    for a in soup.find_all("a", href=True):
+        href = (a.get("href") or "").strip()
+        if not href or href.startswith("#") or href.startswith("javascript"):
+            continue
+        text = (a.get_text() or "").strip()
+        rel = a.get("rel") or []
+        classes = " ".join(a.get("class") or []).lower()
+        is_next = (
+            "next" in rel
+            or bool(re.search(r"\bnext\b|›|→|»", text, re.I))
+            or bool(re.search(r"next|pagination.?next", classes, re.I))
+            or bool(re.search(r"[?&]page=\d+|[?&]p=\d+|/page/\d+", href, re.I))
+        )
+        if not is_next:
+            continue
+        full_url = urljoin(base_url, href)
+        if full_url not in seen:
+            seen.add(full_url)
+            found.append(full_url)
+    return found[:5]
+
+
 def _playwright_extract_urls(urls: List[str], *, max_urls: int = 3) -> List[Dict[str, Any]]:
-    """Headless Chromium; same shape as Tavily ``{url, raw_content}`` for SPAs / lazy lists."""
+    """Headless Chromium; same shape as Tavily ``{url, raw_content}`` for SPAs / lazy lists.
+
+    Each returned chunk may also contain ``_pagination_links`` — a list of next-page
+    URLs extracted from the rendered HTML, for use by the main scrape loop.
+    """
     if not _playwright_browser_enabled():
         return []
     try:
@@ -358,7 +406,12 @@ def _playwright_extract_urls(urls: List[str], *, max_urls: int = 3) -> List[Dict
                         page.goto(url, wait_until="domcontentloaded", timeout=90000)
                         page.wait_for_timeout(wait_ms)
                         text = page.inner_text("body")
-                        out.append({"url": url, "raw_content": text or ""})
+                        html = page.content()
+                        pagination = _extract_pagination_links(html, url)
+                        chunk: Dict[str, Any] = {"url": url, "raw_content": text or ""}
+                        if pagination:
+                            chunk["_pagination_links"] = pagination
+                        out.append(chunk)
                     except Exception as e:
                         out.append({"url": url, "raw_content": f"[playwright error on {url}: {e}]"})
                 ctx.close()
@@ -377,14 +430,24 @@ def _maybe_enrich_chunks_playwright(
     chunks: List[Dict[str, Any]],
     candidate_urls: List[str],
     thin_threshold: int = 900,
+    force: bool = False,
 ) -> List[Dict[str, Any]]:
-    """If Tavily returned almost nothing, retry top URLs with a real browser."""
-    if not chunks or _chunks_text_total(chunks) >= thin_threshold:
+    """Retry top URLs with a real browser.
+
+    Fires when Tavily returned thin content OR when force=True (portfolio/SPA pages
+    where Tavily returns shell HTML that looks large but contains no company data).
+    """
+    if not chunks:
+        return chunks
+    if not force and _chunks_text_total(chunks) >= thin_threshold:
         return chunks
     if not _playwright_browser_enabled():
         return chunks
     pw = _playwright_extract_urls(candidate_urls[:3], max_urls=3)
-    if pw and _chunks_text_total(pw) > _chunks_text_total(chunks):
+    if not pw:
+        return chunks
+    # force=True: always prefer Playwright (portfolio SPAs fool Tavily with shell HTML)
+    if force or _chunks_text_total(pw) > _chunks_text_total(chunks):
         return pw
     return chunks
 
@@ -1327,13 +1390,22 @@ def run_agentic_scrape(
         else:
             candidate_urls = _derive_retry_urls(url, strategy, instr)
 
-        # 4. Tavily extract
+        # 4. Tavily extract + optional Playwright enrichment
         _notify(progress_callback, f"[{idx}/{len(strategies)}] Tavily extracting ({len(candidate_urls[:6])} URLs)…")
         chunks = _tavily_extract(tavily_api_key, candidate_urls[:6])
         before_pw = _chunks_text_total(chunks)
-        chunks = _maybe_enrich_chunks_playwright(chunks, candidate_urls[:6])
+        force_pw = any(_is_portfolio_url(u) for u in candidate_urls[:6])
+        chunks = _maybe_enrich_chunks_playwright(chunks, candidate_urls[:6], force=force_pw)
         if _chunks_text_total(chunks) > before_pw:
-            _notify(progress_callback, f"[{idx}/{len(strategies)}] Playwright fallback added richer text ({before_pw} → {_chunks_text_total(chunks)} chars)…")
+            _notify(progress_callback, f"[{idx}/{len(strategies)}] Playwright {'(forced portfolio)' if force_pw else 'fallback'} added richer text ({before_pw} → {_chunks_text_total(chunks)} chars)…")
+
+        # Follow pagination links found in rendered HTML
+        pagination_links = [lnk for c in chunks for lnk in c.get("_pagination_links", [])]
+        if pagination_links:
+            _notify(progress_callback, f"[{idx}/{len(strategies)}] Following {len(pagination_links)} pagination link(s)…")
+            extra = _playwright_extract_urls(pagination_links[:3], max_urls=3)
+            if extra:
+                chunks = chunks + extra
 
         if not chunks:
             attempts.append(RetryAttempt(
