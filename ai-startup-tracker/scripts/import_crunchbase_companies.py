@@ -62,22 +62,93 @@ logging.basicConfig(
 )
 logger = logging.getLogger("import_cb_companies")
 
-# 3-letter Crunchbase ISO → 2-letter DB ISO
+# 3-letter Crunchbase ISO → canonical full country name (matches normalize_country output)
 TARGET_COUNTRIES: Dict[str, str] = {
-    "GBR": "GB",  # United Kingdom
-    "IND": "IN",  # India
-    "DEU": "DE",  # Germany
-    "CAN": "CA",  # Canada
-    "FRA": "FR",  # France
-    "SGP": "SG",  # Singapore
-    "AUS": "AU",  # Australia
-    "ISR": "IL",  # Israel
-    "KOR": "KR",  # South Korea
-    "SWE": "SE",  # Sweden
-    "NLD": "NL",  # Netherlands
-    "BRA": "BR",  # Brazil
-    "CHN": "CN",  # China
-    "JPN": "JP",  # Japan
+    "USA": "United States",
+    "GBR": "United Kingdom",
+    "IND": "India",
+    "DEU": "Germany",
+    "CAN": "Canada",
+    "FRA": "France",
+    "SGP": "Singapore",
+    "AUS": "Australia",
+    "ISR": "Israel",
+    "KOR": "South Korea",
+    "SWE": "Sweden",
+    "NLD": "Netherlands",
+    "BRA": "Brazil",
+    "CHN": "China",
+    "JPN": "Japan",
+    "ESP": "Spain",
+    "ITA": "Italy",
+    "NGA": "Nigeria",
+    "KEN": "Kenya",
+    "ZAF": "South Africa",
+    "IDN": "Indonesia",
+    "MEX": "Mexico",
+    "ARG": "Argentina",
+    "CHL": "Chile",
+    "COL": "Colombia",
+    "EST": "Estonia",
+    "POL": "Poland",
+    "DNK": "Denmark",
+    "FIN": "Finland",
+    "NOR": "Norway",
+    "CHE": "Switzerland",
+    "BEL": "Belgium",
+    "AUT": "Austria",
+    "IRL": "Ireland",
+    "PRT": "Portugal",
+    "HKG": "Hong Kong",
+    "TWN": "Taiwan",
+    "ARE": "United Arab Emirates",
+    "SAU": "Saudi Arabia",
+    "TUR": "Turkey",
+    "UKR": "Ukraine",
+    "PAK": "Pakistan",
+    "BGD": "Bangladesh",
+    "MYS": "Malaysia",
+    "THA": "Thailand",
+    "VNM": "Vietnam",
+    "PHL": "Philippines",
+    "NZL": "New Zealand",
+    "EGY": "Egypt",
+    "MAR": "Morocco",
+    "GHA": "Ghana",
+    "SEN": "Senegal",
+    "ETH": "Ethiopia",
+    "ROU": "Romania",
+    "CZE": "Czech Republic",
+    "HUN": "Hungary",
+    "GRC": "Greece",
+    "BGR": "Bulgaria",
+    "HRV": "Croatia",
+    "SRB": "Serbia",
+    "SVN": "Slovenia",
+    "LVA": "Latvia",
+    "LTU": "Lithuania",
+    "QAT": "Qatar",
+    "KWT": "Kuwait",
+    "JOR": "Jordan",
+    "LBN": "Lebanon",
+    "RUS": "Russia",
+    "PER": "Peru",
+    "URY": "Uruguay",
+    "ECU": "Ecuador",
+    "BOL": "Bolivia",
+    "PAN": "Panama",
+    "JAM": "Jamaica",
+    "TZA": "Tanzania",
+    "UGA": "Uganda",
+    "ZMB": "Zambia",
+    "CMR": "Cameroon",
+    "CIV": "Ivory Coast",
+    "MNG": "Mongolia",
+    "KAZ": "Kazakhstan",
+    "UZB": "Uzbekistan",
+    "AZE": "Azerbaijan",
+    "GEO": "Georgia",
+    "ARM": "Armenia",
 }
 
 # Companies with this tag are always included (Crunchbase's own AI classification)
@@ -183,6 +254,7 @@ def _build_record(row, country_map, now) -> dict | None:
     description = (short_desc + " " + long_desc).strip() or None
 
     ai_score = float(row["_ai_score"])
+    cb_ai_tagged = bool(row.get("_cb_ai_tagged", False))
     founded_year_raw = row.get("_founded_year")
     founded_year = int(founded_year_raw) if pd.notna(founded_year_raw) else None
 
@@ -199,6 +271,7 @@ def _build_record(row, country_map, now) -> dict | None:
         "founded_year": founded_year,
         "operating_status": operating_status,
         "ai_score": ai_score,
+        "cb_ai_tagged": cb_ai_tagged,
         "verification_status": VerificationStatus.verified_cb.value,
         "location_source": (LocationSource.crunchbase if country_code else LocationSource.unknown).value,
         "first_seen_at": now,
@@ -246,6 +319,8 @@ def import_companies(df: pd.DataFrame, country_map: Dict[str, str], dry_run: boo
                     "description":         func.coalesce(t.c.description,  stmt.excluded.description),
                     "founded_year":        func.coalesce(t.c.founded_year, stmt.excluded.founded_year),
                     "ai_score":            func.greatest(func.coalesce(t.c.ai_score, 0), stmt.excluded.ai_score),
+                    # Once true, always true — CB AI tag is authoritative
+                    "cb_ai_tagged":        t.c.cb_ai_tagged | stmt.excluded.cb_ai_tagged,
                     "verification_status": case(
                         (t.c.verification_status == VerificationStatus.emerging_github.value,
                          VerificationStatus.verified_cb.value),
@@ -274,8 +349,8 @@ def main():
         "--countries", nargs="+", default=list(TARGET_COUNTRIES.keys()),
         help="3-letter ISO country codes to import (default: all 14 target countries)",
     )
-    parser.add_argument("--min-founded", type=int, default=2010, help="Min founding year (default: 2010)")
-    parser.add_argument("--min-ai-score", type=float, default=0.15, help="Min AI score (default: 0.15)")
+    parser.add_argument("--min-founded", type=int, default=2000, help="Min founding year (default: 2000)")
+    parser.add_argument("--min-ai-score", type=float, default=0.0, help="Min AI score for broad-tech companies (default: 0.0 — import all; CB-AI-tagged always included)")
     parser.add_argument("--dry-run", action="store_true", help="Preview without writing to DB")
     parser.add_argument("--init-db", action="store_true", help="Create DB tables before running")
     args = parser.parse_args()

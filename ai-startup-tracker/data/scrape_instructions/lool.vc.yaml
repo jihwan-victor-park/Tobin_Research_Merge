@@ -1,9 +1,9 @@
 version: 1
 domain: lool.vc
-category: vc_portfolio
 created_at: '2026-05-08T19:41:05.946001+00:00'
-updated_at: '2026-05-08T19:41:05.946001+00:00'
+updated_at: '2026-06-12T14:28:04.223293Z'
 seed_urls:
+- https://www.lool.vc/portfolio
 - https://lool.vc/portfolio/
 preferred_strategy: single_page_extract
 fallback_order:
@@ -13,7 +13,13 @@ fallback_order:
 subpage_hints: []
 pagination_hints: []
 quality_expectation_min_records: 1
-probe_result: easy_candidate
-probe_reason: static HTML (HTTP 200)
-last_success: null
+last_success:
+  run_id: agentic_run_20260612_142652
+  at: '2026-06-12T14:28:04.223293Z'
+  input_url: https://www.lool.vc/portfolio
+  strategy: single_page_extract
+  record_count: 37
+  valid_name_ratio: 1.0
+  duplicate_ratio: 0.0
+  completeness_score: 1.0
 notes: null

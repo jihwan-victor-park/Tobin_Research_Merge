@@ -173,12 +173,14 @@ class Company(Base):
     founded_year = Column(Integer, nullable=True)
     team_size = Column(Integer, nullable=True)
     stage = Column(String(64), nullable=True)  # pre-seed, seed, series_a, etc.
+    total_raised = Column(Float, nullable=True)  # USD, from PitchBook
     operating_status = Column(String(64), nullable=True)  # operating, acquired, closed
 
     # Scores
     ai_score = Column(Float, nullable=True)
     startup_score = Column(Float, nullable=True)
     ai_tags = Column(ARRAY(Text), nullable=True)
+    cb_ai_tagged = Column(Boolean, nullable=False, default=False, server_default="false")
 
     # Timestamps
     first_seen_at = Column(DateTime, nullable=True, default=datetime.utcnow)
