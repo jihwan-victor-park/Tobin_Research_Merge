@@ -1278,7 +1278,8 @@ def page_trends(df: pd.DataFrame):
         unsafe_allow_html=True,
     )
 
-    ai_df = df[(df["ai_score"].fillna(0) >= 0.5) & df["ai_tags"].notna()].copy()
+    is_ai_sig = (df["ai_score"].fillna(0) >= 0.5) | df.get("cb_ai_tagged", pd.Series(False, index=df.index)).fillna(False)
+    ai_df = df[is_ai_sig & df["ai_tags"].notna()].copy()
     ai_df = ai_df[ai_df["ai_tags"].apply(lambda x: isinstance(x, list) and len(x) > 0)]
 
     if ai_df.empty:
