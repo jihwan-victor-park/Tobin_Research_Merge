@@ -13,6 +13,7 @@ Usage:
 from __future__ import annotations
 
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
@@ -124,7 +125,7 @@ class Orchestrator:
             cooldown_until = health.last_success_at + timedelta(days=self.cooldown_days)
             return datetime.now(timezone.utc) < cooldown_until
 
-    def run_all_due(self) -> List[ScrapeRunResult]:
+    def run_all_due(self, workers: int = 3) -> List[ScrapeRunResult]:
         """Run all sites that are due for scraping (past cooldown, not excluded)."""
         results = []
         now = datetime.now(timezone.utc)
@@ -141,30 +142,38 @@ class Orchestrator:
                 )
                 .all()
             )
-            # Materialize before closing session
             sites_to_run = [(s.domain, s.url, s.difficulty) for s in due_sites]
 
-        logger.info(f"Found {len(sites_to_run)} sites due for scraping")
+        sites_to_run = [(d, u, diff) for d, u, diff in sites_to_run if u]
+        skipped = len(due_sites) - len(sites_to_run)
+        if skipped:
+            logger.warning(f"Skipping {skipped} sites with no URL")
+        logger.info(f"Found {len(sites_to_run)} sites due for scraping (workers={workers})")
 
-        for domain, url, difficulty in sites_to_run:
-            if not url:
-                logger.warning(f"No URL for {domain}, skipping")
-                continue
+        def _run_one(domain: str, url: str) -> ScrapeRunResult:
             try:
-                result = self.run(url, force=True)
-                results.append(result)
+                return self.run(url, force=True)
             except Exception as e:
                 logger.error(f"Orchestrator error for {domain}: {e}", exc_info=True)
-                results.append(ScrapeRunResult(
+                return ScrapeRunResult(
                     scraper_name="orchestrator",
                     domain=domain,
                     status="error",
                     error_message=str(e),
                     started_at=now,
                     finished_at=datetime.now(timezone.utc),
-                ))
+                )
 
-        # Summary
+        completed = 0
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = {pool.submit(_run_one, d, u): d for d, u, _ in sites_to_run}
+            for future in as_completed(futures):
+                result = future.result()
+                results.append(result)
+                completed += 1
+                status = "OK" if result.success else "FAIL"
+                logger.info(f"[{completed}/{len(sites_to_run)}] [{status}] {result.domain} — {result.records_found or 0} companies")
+
         success_count = sum(1 for r in results if r.success)
         logger.info(f"Batch complete: {success_count}/{len(results)} succeeded")
         return results

@@ -293,6 +293,7 @@ def _call_claude_json(
 # ── Tavily ───────────────────────────────────────────────────────────────
 
 def _tavily_extract(api_key: str, urls: List[str]) -> List[Dict[str, Any]]:
+    import time
     payload = {
         "api_key": api_key,
         "urls": urls,
@@ -301,11 +302,19 @@ def _tavily_extract(api_key: str, urls: List[str]) -> List[Dict[str, Any]]:
         "format": "text",
         "timeout": 60,
     }
-    resp = requests.post(TAVILY_EXTRACT_URL, json=payload, timeout=120)
-    resp.raise_for_status()
-    body = resp.json()
-    results = body.get("results", [])
-    return results if isinstance(results, list) else []
+    for attempt in range(4):
+        resp = requests.post(TAVILY_EXTRACT_URL, json=payload, timeout=120)
+        if resp.status_code == 429:
+            wait = 10 * (2 ** attempt)
+            logger.warning(f"Tavily rate limit (429); retrying in {wait}s (attempt {attempt + 1}/4)")
+            time.sleep(wait)
+            continue
+        resp.raise_for_status()
+        body = resp.json()
+        results = body.get("results", [])
+        return results if isinstance(results, list) else []
+    resp.raise_for_status()  # last attempt — let it propagate
+    return []
 
 
 def _playwright_wait_ms() -> int:

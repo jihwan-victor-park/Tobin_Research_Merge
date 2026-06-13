@@ -730,6 +730,99 @@ def _load_research_export() -> pd.DataFrame:
 
 
 @st.cache_data(ttl=300)
+def _load_vc_deal_volume() -> pd.DataFrame:
+    """Deal count by stage bucket × year (2010-2024)."""
+    engine = get_engine()
+    query = """
+        SELECT
+            EXTRACT(year FROM deal_date)::int AS year,
+            CASE round_type
+                WHEN 'Accelerator/Incubator' THEN 'Pre-Seed / Accel'
+                WHEN 'Grant'                 THEN 'Pre-Seed / Accel'
+                WHEN 'Seed Round'            THEN 'Seed'
+                WHEN 'Angel (individual)'    THEN 'Seed'
+                WHEN 'Equity Crowdfunding'   THEN 'Seed'
+                WHEN 'Early Stage VC'        THEN 'Early VC'
+                WHEN 'Later Stage VC'        THEN 'Growth'
+                WHEN 'PE Growth/Expansion'   THEN 'Growth'
+                WHEN 'Corporate'             THEN 'Corporate / Other'
+                WHEN 'PIPE'                  THEN 'Corporate / Other'
+            END AS stage_bucket,
+            COUNT(*) AS deals
+        FROM funding_signals
+        WHERE deal_date IS NOT NULL
+          AND EXTRACT(year FROM deal_date) BETWEEN 2010 AND 2024
+          AND round_type IN (
+              'Accelerator/Incubator', 'Grant',
+              'Seed Round', 'Angel (individual)', 'Equity Crowdfunding',
+              'Early Stage VC', 'Later Stage VC', 'PE Growth/Expansion',
+              'Corporate', 'PIPE'
+          )
+        GROUP BY year, stage_bucket
+        ORDER BY year, stage_bucket
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(query)).mappings().all()
+    return pd.DataFrame(rows)
+
+
+@st.cache_data(ttl=300)
+def _load_deal_size_trend() -> pd.DataFrame:
+    """Median deal size ($M) by year and stage bucket (2010-2024)."""
+    engine = get_engine()
+    query = """
+        SELECT
+            EXTRACT(year FROM deal_date)::int AS year,
+            CASE round_type
+                WHEN 'Seed Round'         THEN 'Seed'
+                WHEN 'Angel (individual)' THEN 'Seed'
+                WHEN 'Early Stage VC'     THEN 'Early VC'
+                WHEN 'Later Stage VC'     THEN 'Growth'
+                WHEN 'PE Growth/Expansion' THEN 'Growth'
+            END AS stage_bucket,
+            PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY deal_size / 1e6) AS median_m
+        FROM funding_signals
+        WHERE deal_date IS NOT NULL
+          AND deal_size > 0
+          AND EXTRACT(year FROM deal_date) BETWEEN 2010 AND 2024
+          AND round_type IN (
+              'Seed Round', 'Angel (individual)',
+              'Early Stage VC', 'Later Stage VC', 'PE Growth/Expansion'
+          )
+        GROUP BY year, stage_bucket
+        ORDER BY year, stage_bucket
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(query)).mappings().all()
+    return pd.DataFrame(rows)
+
+
+@st.cache_data(ttl=300)
+def _load_ai_first_financing() -> pd.DataFrame:
+    """First financing year distribution for AI vs non-AI companies (2010-2024)."""
+    engine = get_engine()
+    query = """
+        SELECT first_year, company_type, COUNT(*) AS companies
+        FROM (
+            SELECT
+                EXTRACT(year FROM MIN(fs.deal_date))::int AS first_year,
+                CASE WHEN c.cb_ai_tagged = TRUE OR c.ai_score >= 0.3
+                     THEN 'AI' ELSE 'Non-AI' END AS company_type
+            FROM funding_signals fs
+            JOIN companies c ON c.id = fs.company_id
+            WHERE fs.deal_date IS NOT NULL
+            GROUP BY c.id, c.cb_ai_tagged, c.ai_score
+        ) sub
+        WHERE first_year BETWEEN 2010 AND 2024
+        GROUP BY first_year, company_type
+        ORDER BY first_year, company_type
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(query)).mappings().all()
+    return pd.DataFrame(rows)
+
+
+@st.cache_data(ttl=300)
 def _load_site_countries() -> dict[str, str]:
     """Returns domain → canonical country mapping.
 
@@ -2276,6 +2369,9 @@ def page_research():
     curve = _load_ai_adoption_curve()
     country_stats = _load_country_ai_stats(min_companies=100)
     matrix = _load_country_year_matrix(top_n=25)
+    deal_volume = _load_vc_deal_volume()
+    deal_sizes = _load_deal_size_trend()
+    first_fin = _load_ai_first_financing()
 
     total_cos = stats["total"]
     total_ai = stats["ai"]
@@ -2390,7 +2486,99 @@ def page_research():
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
-    # ── Section 4: Data Export ───────────────────────────────────────
+    # ── Section 4: VC Deal Intelligence ─────────────────────────────
+    st.markdown(
+        '<div class="section-header">VC Deal Intelligence</div>'
+        '<div class="section-sub">268K funding events from PitchBook — deal volume, size trends, and AI vs non-AI first financing</div>',
+        unsafe_allow_html=True,
+    )
+
+    if not deal_volume.empty:
+        col_vol, col_size = st.columns(2)
+
+        with col_vol:
+            st.markdown("**Deal volume by stage (2010–2024)**")
+            STAGE_COLORS = {
+                "Pre-Seed / Accel": "#a8c8e8",
+                "Seed":             "#286dc0",
+                "Early VC":         "#00356b",
+                "Growth":           "#0d9668",
+                "Corporate / Other":"#888888",
+            }
+            bucket_order = ["Pre-Seed / Accel", "Seed", "Early VC", "Growth", "Corporate / Other"]
+            fig_vol = go.Figure()
+            for bucket in bucket_order:
+                sub = deal_volume[deal_volume["stage_bucket"] == bucket]
+                if sub.empty:
+                    continue
+                fig_vol.add_trace(go.Bar(
+                    x=sub["year"], y=sub["deals"],
+                    name=bucket,
+                    marker_color=STAGE_COLORS.get(bucket, "#999"),
+                ))
+            fig_vol.update_layout(
+                **_layout(height=340),
+                barmode="stack",
+                legend=dict(orientation="h", y=1.08, font=dict(size=11)),
+                xaxis=dict(title="", tickformat="d"),
+                yaxis=dict(title="Deals", gridcolor=BORDER_LIGHT),
+                hovermode="x unified",
+            )
+            st.plotly_chart(fig_vol, use_container_width=True)
+
+        with col_size:
+            st.markdown("**Median deal size by stage ($M, 2010–2024)**")
+            SIZE_COLORS = {"Seed": "#286dc0", "Early VC": "#00356b", "Growth": "#0d9668"}
+            fig_size = go.Figure()
+            for bucket, color in SIZE_COLORS.items():
+                sub = deal_sizes[deal_sizes["stage_bucket"] == bucket]
+                if sub.empty:
+                    continue
+                fig_size.add_trace(go.Scatter(
+                    x=sub["year"], y=sub["median_m"].round(1),
+                    name=bucket, mode="lines+markers",
+                    line=dict(color=color, width=2),
+                    marker=dict(size=6),
+                ))
+            fig_size.update_layout(
+                **_layout(height=340),
+                legend=dict(orientation="h", y=1.08, font=dict(size=11)),
+                xaxis=dict(title="", tickformat="d"),
+                yaxis=dict(title="Median deal size ($M)", gridcolor=BORDER_LIGHT),
+                hovermode="x unified",
+            )
+            st.plotly_chart(fig_size, use_container_width=True)
+
+    if not first_fin.empty:
+        st.markdown("**First financing year: AI vs non-AI companies**")
+        ai_df = first_fin[first_fin["company_type"] == "AI"]
+        non_df = first_fin[first_fin["company_type"] == "Non-AI"]
+        # Normalise to % within each group so scale difference doesn't dominate
+        ai_total = ai_df["companies"].sum()
+        non_total = non_df["companies"].sum()
+        fig_ff = go.Figure()
+        fig_ff.add_trace(go.Scatter(
+            x=ai_df["first_year"], y=(ai_df["companies"] / ai_total * 100).round(2),
+            name="AI companies", mode="lines+markers",
+            line=dict(color="#0d9668", width=2), marker=dict(size=6),
+        ))
+        fig_ff.add_trace(go.Scatter(
+            x=non_df["first_year"], y=(non_df["companies"] / non_total * 100).round(2),
+            name="Non-AI companies", mode="lines+markers",
+            line=dict(color="#286dc0", width=2, dash="dot"), marker=dict(size=6),
+        ))
+        fig_ff.update_layout(
+            **_layout(height=300),
+            legend=dict(orientation="h", y=1.08),
+            xaxis=dict(title="Year of first financing", tickformat="d"),
+            yaxis=dict(title="Share of cohort (%)", ticksuffix="%", gridcolor=BORDER_LIGHT),
+            hovermode="x unified",
+        )
+        st.plotly_chart(fig_ff, use_container_width=True)
+
+    st.markdown("<hr/>", unsafe_allow_html=True)
+
+    # ── Section 5: Data Export ───────────────────────────────────────
     st.markdown(
         '<div class="section-header">Export Research Data</div>',
         unsafe_allow_html=True,
