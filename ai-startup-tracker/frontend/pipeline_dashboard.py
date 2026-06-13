@@ -534,7 +534,7 @@ def load_startups() -> pd.DataFrame:
             c.id, c.name, c.domain,
             LEFT(c.description, 240) AS description,
             c.country, c.city, c.stage, c.ai_score, c.ai_tags,
-            c.cb_ai_tagged, c.founded_year,
+            c.cb_ai_tagged, c.founded_year, c.categories,
             c.first_seen_at, c.incubator_source, c.verification_status,
             lf.deal_date AS last_funding_date,
             lf.deal_size AS last_funding_amount,
@@ -727,6 +727,28 @@ def _load_research_export() -> pd.DataFrame:
     with engine.connect() as conn:
         rows = conn.execute(text(query)).mappings().all()
     return pd.DataFrame(rows)
+
+
+@st.cache_data(ttl=300)
+def _load_vertical_ai_stats() -> pd.DataFrame:
+    """AI share per industry vertical (canonical categories)."""
+    engine = get_engine()
+    query = """
+        SELECT
+            unnest(categories) AS vertical,
+            COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE cb_ai_tagged = TRUE OR ai_score >= 0.3) AS ai
+        FROM companies
+        WHERE categories IS NOT NULL AND array_length(categories, 1) > 0
+        GROUP BY vertical
+        ORDER BY total DESC
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(query)).mappings().all()
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        df["ai_pct"] = (df["ai"] / df["total"] * 100).round(1)
+    return df
 
 
 @st.cache_data(ttl=300)
@@ -1060,7 +1082,7 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
         "government_program": "Government Program", "discovery_aggregator": "Discovery Aggregator",
     }
 
-    ff1, ff2, ff3, ff4 = st.columns(4)
+    ff1, ff2, ff3, ff4, ff5 = st.columns(5)
     stages = sorted(df["stage"].dropna().unique().tolist())
     sel_stages = ff1.multiselect("Stage", options=stages, placeholder="All stages")
     ctries = sorted(df["country"].dropna().unique().tolist())
@@ -1070,6 +1092,8 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
     sel_cats = ff4.multiselect("Source type", options=list(_CAT_LABELS.keys()),
                                 format_func=lambda x: _CAT_LABELS.get(x, x),
                                 placeholder="All types")
+    from backend.utils.industry import CANONICAL_VERTICALS
+    sel_verticals = ff5.multiselect("Vertical", options=CANONICAL_VERTICALS, placeholder="All verticals")
 
     if "founded_year" in df.columns and df["founded_year"].notna().any():
         valid_yrs = df["founded_year"].dropna().astype(int)
@@ -1100,6 +1124,10 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
     if sel_cats:
         src_cat = f["incubator_source"].astype(str).map(_SOURCE_CATEGORY).fillna("discovery_aggregator")
         f = f[src_cat.isin(sel_cats)]
+    if sel_verticals and "categories" in f.columns:
+        f = f[f["categories"].apply(
+            lambda cats: isinstance(cats, list) and any(v in cats for v in sel_verticals)
+        )]
     if yr_range and "founded_year" in f.columns:
         f = f[f["founded_year"].isna() | f["founded_year"].between(yr_range[0], yr_range[1])]
     if search:
@@ -2370,6 +2398,7 @@ def page_research():
     curve = _load_ai_adoption_curve()
     country_stats = _load_country_ai_stats(min_companies=100)
     matrix = _load_country_year_matrix(top_n=25)
+    vertical_stats = _load_vertical_ai_stats()
     deal_volume = _load_vc_deal_volume()
     deal_sizes = _load_deal_size_trend()
     first_fin = _load_ai_first_financing()
@@ -2460,7 +2489,36 @@ def page_research():
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
-    # ── Section 3: Country × Year Heatmap ───────────────────────────
+    # ── Section 3: AI Adoption by Industry Vertical ──────────────────
+    st.markdown(
+        '<div class="section-header">AI Adoption by Industry Vertical</div>'
+        '<div class="section-sub">AI share of startup formation per industry — unified taxonomy across Crunchbase and PitchBook (98% coverage)</div>',
+        unsafe_allow_html=True,
+    )
+
+    if not vertical_stats.empty:
+        col_vl, col_vr = st.columns([3, 2])
+        with col_vl:
+            sorted_v = vertical_stats.sort_values("ai_pct")
+            fig_vert = px.bar(
+                sorted_v, x="ai_pct", y="vertical", orientation="h",
+                labels={"ai_pct": "AI share (%)", "vertical": ""},
+                color="ai_pct",
+                color_continuous_scale=[[0, "#e3e7ee"], [0.5, "#286dc0"], [1, "#00356b"]],
+            )
+            fig_vert.update_coloraxes(showscale=False)
+            fig_vert.update_layout(**_layout(height=max(380, len(sorted_v) * 26)))
+            st.plotly_chart(fig_vert, use_container_width=True)
+        with col_vr:
+            tbl_v = vertical_stats[["vertical", "total", "ai", "ai_pct"]].copy()
+            tbl_v = tbl_v.sort_values("ai_pct", ascending=False)
+            tbl_v.columns = ["Vertical", "Total", "AI", "AI %"]
+            tbl_v["AI %"] = tbl_v["AI %"].apply(lambda v: f"{v:.1f}%")
+            st.dataframe(tbl_v, hide_index=True, use_container_width=True, height=500)
+
+    st.markdown("<hr/>", unsafe_allow_html=True)
+
+    # ── Section 4: Country × Year Heatmap ───────────────────────────
     st.markdown(
         '<div class="section-header">AI Adoption by Country × Year</div>'
         '<div class="section-sub">AI share (%) per country per founding year — top 25 countries by total size</div>',
