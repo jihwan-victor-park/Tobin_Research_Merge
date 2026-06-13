@@ -151,81 +151,20 @@ def _parse_llm_json(raw: str) -> Any:
     )
 
 
-_TOGETHER_API_URL = "https://api.together.xyz/v1/chat/completions"
-_TOGETHER_DEFAULT_MODEL = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
-
-# Cache the Anthropic credit-out signal so we stop spamming Anthropic once
-# we've seen the wallet is empty in this process.
-_ANTHROPIC_DEAD: bool = False
-
-# Substrings (lower-case) we treat as "permanent" Anthropic failures that
-# mean we should switch to Together immediately and stay there for the run.
-_ANTHROPIC_OUT_MARKERS = (
+_ANTHROPIC_BILLING_MARKERS = (
     "credit balance is too low",
-    "insufficient",
+    "insufficient_quota",
     "billing",
     "payment",
-    "quota",
-    "401",
-    "402",
-    "403",
-    "unauthorized",
-    "forbidden",
+    "overloaded",
 )
 
+_HAIKU_FALLBACK_MODEL = "claude-haiku-4-5-20251001"
 
-def _looks_like_anthropic_dead(err: BaseException) -> bool:
+
+def _looks_like_billing_error(err: BaseException) -> bool:
     msg = str(err).lower()
-    return any(m in msg for m in _ANTHROPIC_OUT_MARKERS)
-
-
-def _call_together_json(
-    system_prompt: str,
-    user_prompt: str,
-    model: Optional[str] = None,
-    max_tokens: int = 4000,
-) -> Dict[str, Any]:
-    """Together.ai chat-completions wrapper that returns a parsed JSON dict.
-    Used as the agentic engine's fallback whenever Anthropic refuses (credit-
-    out, auth, etc.). Same contract as `_call_claude_json`."""
-    api_key = (os.getenv("TOGETHER_API_KEY") or "").strip()
-    if not api_key:
-        raise RuntimeError(
-            "TOGETHER_API_KEY not set; cannot fall back from Anthropic."
-        )
-    model_id = (model or os.getenv("LLM_MODEL") or _TOGETHER_DEFAULT_MODEL).strip()
-    payload = {
-        "model": model_id,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-        "temperature": 0.0,
-        "max_tokens": max_tokens,
-        "response_format": {"type": "json_object"},
-    }
-    resp = requests.post(
-        _TOGETHER_API_URL,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        json=payload,
-        timeout=120,
-    )
-    if resp.status_code != 200:
-        raise RuntimeError(
-            f"Together.ai error ({resp.status_code}): {resp.text[:300]}"
-        )
-    body = resp.json()
-    raw = (body.get("choices", [{}])[0].get("message", {}).get("content") or "").strip()
-    parsed = _parse_llm_json(raw)
-    if not isinstance(parsed, dict):
-        raise RuntimeError(
-            f"Expected a JSON object from Together, got {type(parsed).__name__}. "
-            f"First 400 chars: {raw[:400]!r}"
-        )
-    return parsed
+    return any(m in msg for m in _ANTHROPIC_BILLING_MARKERS)
 
 
 def _call_claude_json(
@@ -237,18 +176,11 @@ def _call_claude_json(
 ) -> Dict[str, Any]:
     """Call Claude via official SDK; response must be a JSON object.
 
-    Auto-fallback: if Anthropic returns a credit-out / billing / auth error,
-    we swap to Together (Llama-3.3-70B by default) for the rest of this
-    process so the agentic engine keeps producing data. The fallback is
-    flagged via `_ANTHROPIC_DEAD` so we don't keep retrying Anthropic on
-    every call within the same run.
+    On billing/credit errors, retries once with Haiku (same API key, ~20x
+    cheaper) rather than failing the entire orchestrator run.
     """
-    global _ANTHROPIC_DEAD
-
-    # If we've already proven Anthropic is dead this process, skip straight
-    # to Together — saves time and avoids burning user-visible tracebacks.
-    if _ANTHROPIC_DEAD or not anthropic_api_key or anthropic is None:
-        return _call_together_json(system_prompt, user_prompt, max_tokens=max_tokens)
+    if not anthropic_api_key or anthropic is None:
+        raise RuntimeError("ANTHROPIC_API_KEY not set; cannot call Claude.")
 
     model_id = (model or _anthropic_model()).strip()
     client = anthropic.Anthropic(api_key=anthropic_api_key)
@@ -260,21 +192,28 @@ def _call_claude_json(
             messages=[{"role": "user", "content": user_prompt}],
         )
     except anthropic.APIError as e:
-        if _looks_like_anthropic_dead(e):
-            _ANTHROPIC_DEAD = True
+        if _looks_like_billing_error(e) and model_id != _HAIKU_FALLBACK_MODEL:
+            logger.warning(
+                f"Anthropic billing/quota error on {model_id!r}; "
+                f"retrying with {_HAIKU_FALLBACK_MODEL}"
+            )
             try:
-                return _call_together_json(system_prompt, user_prompt, max_tokens=max_tokens)
-            except Exception as together_err:
-                code = getattr(e, "status_code", None) or getattr(getattr(e, "response", None), "status_code", None)
+                msg = client.messages.create(
+                    model=_HAIKU_FALLBACK_MODEL,
+                    max_tokens=min(max_tokens, 2000),
+                    system=system_prompt,
+                    messages=[{"role": "user", "content": user_prompt}],
+                )
+            except Exception as haiku_err:
                 raise RuntimeError(
-                    f"Anthropic ({code}) credit-out and Together fallback also failed: "
-                    f"{together_err}"
+                    f"Anthropic billing error and Haiku fallback also failed: {haiku_err}"
                 ) from e
-        code = getattr(e, "status_code", None) or getattr(getattr(e, "response", None), "status_code", None)
-        raise RuntimeError(
-            f"Anthropic API error ({code}): {e}. "
-            f"Model={model_id!r}. Set ANTHROPIC_MODEL to a valid model id, e.g. {DEFAULT_CLAUDE_MODEL!r}."
-        ) from e
+        else:
+            code = getattr(e, "status_code", None) or getattr(getattr(e, "response", None), "status_code", None)
+            raise RuntimeError(
+                f"Anthropic API error ({code}): {e}. "
+                f"Model={model_id!r}. Set ANTHROPIC_MODEL to a valid model id, e.g. {DEFAULT_CLAUDE_MODEL!r}."
+            ) from e
 
     raw_parts: List[str] = []
     for block in msg.content:
@@ -1479,44 +1418,30 @@ def run_agentic_scrape(
             new_count, updated_count = _save_to_db(cleaned, source_url=url)
     else:
         # ── Fast path failed → Agent fallback ──
-        # The tool-use agent loop relies on Anthropic's native tool API, which
-        # has no Together equivalent. If Anthropic is dead this run, skip it
-        # and just save whatever fast-path produced (often non-empty).
-        if _ANTHROPIC_DEAD:
-            _notify(progress_callback,
-                    f"Anthropic credit-out: skipping tool-use agent, "
-                    f"saving fast-path records ({len(best_records)}).")
+        _notify(progress_callback,
+                f"Fast path got {best_validation.record_count} records "
+                f"({best_validation.reason}). Switching to Agent mode…")
+        try:
+            agent_records, new_count, updated_count = _run_tool_use_agent(
+                url=url,
+                initial_records=best_records,
+                tavily_api_key=tavily_api_key,
+                anthropic_api_key=anthropic_api_key,
+                save_to_db_flag=save_to_db,
+                progress_callback=progress_callback,
+            )
+            raw_before_post = len(agent_records)
+            cleaned = _postprocess_records(agent_records)
+            cleaned = _enrich_records(anthropic_api_key, cleaned, progress_callback)
+            preview = cleaned[:EXTRACTED_PREVIEW_CAP]
+        except Exception as e:
+            _notify(progress_callback, f"Agent failed: {e}. Using fast path results.")
             raw_before_post = len(best_records)
             cleaned = _postprocess_records(best_records)
             cleaned = _enrich_records(anthropic_api_key, cleaned, progress_callback)
             preview = cleaned[:EXTRACTED_PREVIEW_CAP]
             if save_to_db and cleaned:
                 new_count, updated_count = _save_to_db(cleaned, source_url=url)
-        else:
-            _notify(progress_callback,
-                    f"Fast path got {best_validation.record_count} records "
-                    f"({best_validation.reason}). Switching to Agent mode…")
-            try:
-                agent_records, new_count, updated_count = _run_tool_use_agent(
-                    url=url,
-                    initial_records=best_records,
-                    tavily_api_key=tavily_api_key,
-                    anthropic_api_key=anthropic_api_key,
-                    save_to_db_flag=save_to_db,
-                    progress_callback=progress_callback,
-                )
-                raw_before_post = len(agent_records)
-                cleaned = _postprocess_records(agent_records)
-                cleaned = _enrich_records(anthropic_api_key, cleaned, progress_callback)
-                preview = cleaned[:EXTRACTED_PREVIEW_CAP]
-            except Exception as e:
-                _notify(progress_callback, f"Agent failed: {e}. Using fast path results.")
-                raw_before_post = len(best_records)
-                cleaned = _postprocess_records(best_records)
-                cleaned = _enrich_records(anthropic_api_key, cleaned, progress_callback)
-                preview = cleaned[:EXTRACTED_PREVIEW_CAP]
-                if save_to_db and cleaned:
-                    new_count, updated_count = _save_to_db(cleaned, source_url=url)
 
     # Align final_validation + instruction YAML with deduped rows (matches Done! / DB)
     best_validation = _validate_records(

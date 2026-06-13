@@ -144,10 +144,13 @@ class Orchestrator:
             )
             sites_to_run = [(s.domain, s.url, s.difficulty) for s in due_sites]
 
-        sites_to_run = [(d, u, diff) for d, u, diff in sites_to_run if u]
+        sites_to_run = [
+            (d, u, diff) for d, u, diff in sites_to_run
+            if u and u.startswith("http")
+        ]
         skipped = len(due_sites) - len(sites_to_run)
         if skipped:
-            logger.warning(f"Skipping {skipped} sites with no URL")
+            logger.warning(f"Skipping {skipped} sites with no valid HTTP URL")
         logger.info(f"Found {len(sites_to_run)} sites due for scraping (workers={workers})")
 
         def _run_one(domain: str, url: str) -> ScrapeRunResult:
