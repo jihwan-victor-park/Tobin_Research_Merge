@@ -1,5 +1,26 @@
 version: 1
 domain: google.com
+created_at: '2026-06-13T15:22:57.405020Z'
+updated_at: '2026-06-13T15:23:08.318742Z'
 seed_urls:
+- https://startup.google.com/
 - https://developers.google.com/community/accelerators/climate/meet-the-startups
-updated_at: '2026-05-15T16:14:11Z'
+preferred_strategy: single_page_extract
+fallback_order:
+- single_page_extract
+- subpage_discovery
+- pagination_probe
+- search_probe
+subpage_hints: []
+pagination_hints: []
+quality_expectation_min_records: 1
+last_success:
+  run_id: agentic_run_20260613_152255
+  at: '2026-06-13T15:23:08.318742Z'
+  input_url: https://startup.google.com/
+  strategy: single_page_extract
+  record_count: 13
+  valid_name_ratio: 1.0
+  duplicate_ratio: 0.0
+  completeness_score: 1.0
+notes: null

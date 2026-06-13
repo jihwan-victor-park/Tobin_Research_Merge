@@ -1,0 +1,25 @@
+version: 1
+domain: aicjitf.org
+created_at: '2026-06-13T15:19:43.749828Z'
+updated_at: '2026-06-13T15:19:43.749828Z'
+seed_urls:
+- https://www.aicjitf.org
+preferred_strategy: single_page_extract
+fallback_order:
+- single_page_extract
+- subpage_discovery
+- pagination_probe
+- search_probe
+subpage_hints: []
+pagination_hints: []
+quality_expectation_min_records: 1
+last_success:
+  run_id: agentic_run_20260613_151705
+  at: '2026-06-13T15:19:43.749828Z'
+  input_url: https://www.aicjitf.org
+  strategy: single_page_extract
+  record_count: 60
+  valid_name_ratio: 1.0
+  duplicate_ratio: 0.0
+  completeness_score: 1.0
+notes: null

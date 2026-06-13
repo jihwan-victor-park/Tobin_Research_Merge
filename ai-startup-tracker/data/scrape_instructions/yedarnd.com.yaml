@@ -1,0 +1,25 @@
+version: 1
+domain: yedarnd.com
+created_at: '2026-06-13T14:02:23.222108Z'
+updated_at: '2026-06-13T14:02:23.222108Z'
+seed_urls:
+- https://www.yedarnd.com/about
+preferred_strategy: single_page_extract
+fallback_order:
+- single_page_extract
+- subpage_discovery
+- pagination_probe
+- search_probe
+subpage_hints: []
+pagination_hints: []
+quality_expectation_min_records: 1
+last_success:
+  run_id: agentic_run_20260613_140219
+  at: '2026-06-13T14:02:23.222108Z'
+  input_url: https://www.yedarnd.com/about
+  strategy: single_page_extract
+  record_count: 1
+  valid_name_ratio: 1.0
+  duplicate_ratio: 0.0
+  completeness_score: 1.0
+notes: null

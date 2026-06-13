@@ -30,11 +30,13 @@ STRONG_AI_TEXT_KEYWORDS = re.compile(
 )
 
 MODERATE_AI_TEXT_KEYWORDS = re.compile(
-    r"\b(machine learning|deep learning|neural net|computer vision|"
-    r"natural language|object detection|image classification|"
+    r"\b(artificial intelligence|machine learning|deep learning|neural net|"
+    r"computer vision|natural language|object detection|image classification|"
     r"sentiment analysis|recommendation engine|"
     r"model training|model serving|mlops|"
-    r"pytorch|tensorflow|jax|hugging\s?face)\b",
+    r"pytorch|tensorflow|jax|hugging\s?face|"
+    r"generative ai|gen ai|ai.powered|ai-driven|ai-enabled|"
+    r"predictive analytics|data science)\b",
     re.IGNORECASE,
 )
 
