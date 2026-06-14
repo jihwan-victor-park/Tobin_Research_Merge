@@ -1,9 +1,9 @@
 version: 1
-domain: neo.com
-created_at: '2026-04-07T02:36:40.211165Z'
-updated_at: '2026-06-13T22:10:34.020140Z'
+domain: nus.edu.sg
+created_at: '2026-06-13T23:52:02.317298Z'
+updated_at: '2026-06-13T23:52:02.317298Z'
 seed_urls:
-- https://neo.com/
+- https://enterprise.nus.edu.sg/portfolio
 preferred_strategy: single_page_extract
 fallback_order:
 - single_page_extract
@@ -14,11 +14,11 @@ subpage_hints: []
 pagination_hints: []
 quality_expectation_min_records: 1
 last_success:
-  run_id: agentic_run_20260613_220732
-  at: '2026-06-13T22:10:34.020140Z'
-  input_url: https://neo.com/
+  run_id: agentic_run_20260613_221728
+  at: '2026-06-13T23:52:02.317298Z'
+  input_url: https://enterprise.nus.edu.sg/portfolio
   strategy: single_page_extract
-  record_count: 5
+  record_count: 1
   valid_name_ratio: 1.0
   duplicate_ratio: 0.0
   completeness_score: 1.0

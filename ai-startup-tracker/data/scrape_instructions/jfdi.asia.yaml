@@ -1,7 +1,7 @@
 version: 1
 domain: jfdi.asia
 created_at: '2026-04-07T03:42:11.823044Z'
-updated_at: '2026-04-07T03:42:11.823044Z'
+updated_at: '2026-06-13T22:04:46.972662Z'
 seed_urls:
 - http://jfdi.asia/
 preferred_strategy: single_page_extract
@@ -14,8 +14,8 @@ subpage_hints: []
 pagination_hints: []
 quality_expectation_min_records: 1
 last_success:
-  run_id: agentic_run_20260407_034207
-  at: '2026-04-07T03:42:11.823044Z'
+  run_id: agentic_run_20260613_220434
+  at: '2026-06-13T22:04:46.972662Z'
   input_url: http://jfdi.asia/
   strategy: single_page_extract
   record_count: 4
@@ -23,4 +23,3 @@ last_success:
   duplicate_ratio: 0.0
   completeness_score: 1.0
 notes: null
-category: accelerator
