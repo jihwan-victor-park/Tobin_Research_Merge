@@ -731,6 +731,76 @@ def _load_research_export() -> pd.DataFrame:
 
 
 @st.cache_data(ttl=300)
+def _load_company_filter_options() -> tuple:
+    """Distinct countries, stages, and verticals for the Company Explorer filters."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        countries = [r[0] for r in conn.execute(text(
+            "SELECT DISTINCT country FROM companies WHERE country IS NOT NULL ORDER BY country"
+        )).all()]
+        stages = [r[0] for r in conn.execute(text(
+            "SELECT stage FROM companies WHERE stage IS NOT NULL GROUP BY stage ORDER BY COUNT(*) DESC"
+        )).all()]
+        verticals = sorted({r[0] for r in conn.execute(text(
+            "SELECT DISTINCT unnest(categories) AS v FROM companies WHERE categories IS NOT NULL"
+        )).all()})
+    return countries, stages, verticals
+
+
+@st.cache_data(ttl=300)
+def _load_filtered_companies(
+    countries_t: tuple,
+    year_min: int,
+    year_max: int,
+    stages_t: tuple,
+    min_raised_m: float,
+    ai_only: bool,
+    verticals_t: tuple,
+    limit: int = 1000,
+) -> pd.DataFrame:
+    engine = get_engine()
+    conditions = ["founded_year BETWEEN :year_min AND :year_max"]
+    params: dict = {"year_min": year_min, "year_max": year_max, "limit": limit}
+
+    if countries_t:
+        conditions.append("country = ANY(:countries)")
+        params["countries"] = list(countries_t)
+    if stages_t:
+        conditions.append("stage = ANY(:stages)")
+        params["stages"] = list(stages_t)
+    if min_raised_m > 0:
+        conditions.append("total_raised >= :min_raised")
+        params["min_raised"] = min_raised_m
+    if ai_only:
+        conditions.append("(cb_ai_tagged = TRUE OR ai_score >= 0.5 OR ai_mentioned = TRUE)")
+    if verticals_t:
+        conditions.append("categories && :verticals")
+        params["verticals"] = list(verticals_t)
+
+    where = " AND ".join(conditions)
+    query = f"""
+        SELECT
+            name, domain, country, city, founded_year, stage,
+            ROUND(total_raised::numeric, 1) AS total_raised_m,
+            ai_score,
+            cb_ai_tagged,
+            ai_mentioned,
+            COALESCE(array_to_string(categories, ', '), '') AS verticals,
+            verification_status
+        FROM companies
+        WHERE {where}
+        ORDER BY total_raised DESC NULLS LAST, founded_year DESC NULLS LAST
+        LIMIT :limit
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(query), params).mappings().all()
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        df["ai_score"] = df["ai_score"].round(2)
+    return df
+
+
+@st.cache_data(ttl=300)
 def _load_vertical_ai_stats() -> pd.DataFrame:
     """AI share per industry vertical (canonical categories)."""
     engine = get_engine()
@@ -2638,7 +2708,67 @@ def page_research():
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
-    # ── Section 5: Data Export ───────────────────────────────────────
+    # ── Section 5: Company Explorer ──────────────────────────────────
+    st.markdown(
+        '<div class="section-header">Company Explorer</div>'
+        '<div class="section-sub">Filter across all companies by country, year, stage, and funding — results capped at 1,000 rows; apply filters to narrow</div>',
+        unsafe_allow_html=True,
+    )
+
+    cfe_countries_opts, cfe_stages_opts, cfe_verticals_opts = _load_company_filter_options()
+
+    cfe_c1, cfe_c2, cfe_c3, cfe_c4, cfe_c5 = st.columns([1.2, 2.5, 2, 2, 1.8])
+    with cfe_c1:
+        cfe_ai_only = st.toggle("AI only", value=False, key="cfe_ai_only")
+    with cfe_c2:
+        cfe_countries_sel = st.multiselect("Country", options=cfe_countries_opts, default=[], key="cfe_countries", placeholder="All countries")
+    with cfe_c3:
+        cfe_year_range = st.slider("Founded year", 2000, 2026, (2010, 2026), key="cfe_year")
+    with cfe_c4:
+        cfe_stages_sel = st.multiselect("Stage", options=cfe_stages_opts, default=[], key="cfe_stages", placeholder="All stages")
+    with cfe_c5:
+        cfe_min_raised = st.number_input("Min raised ($M)", min_value=0.0, value=0.0, step=1.0, key="cfe_min_raised")
+
+    cfe_verticals_sel = st.multiselect("Vertical", options=cfe_verticals_opts, default=[], key="cfe_verticals", placeholder="All verticals")
+
+    with st.spinner("Loading…"):
+        cfe_df = _load_filtered_companies(
+            countries_t=tuple(cfe_countries_sel),
+            year_min=cfe_year_range[0],
+            year_max=cfe_year_range[1],
+            stages_t=tuple(cfe_stages_sel),
+            min_raised_m=cfe_min_raised,
+            ai_only=cfe_ai_only,
+            verticals_t=tuple(cfe_verticals_sel),
+        )
+
+    cfe_note = " (top 1,000 by funding — apply filters to narrow)" if len(cfe_df) >= 1000 else ""
+    st.caption(f"{len(cfe_df):,} companies{cfe_note}")
+
+    if not cfe_df.empty:
+        st.dataframe(
+            cfe_df.rename(columns={
+                "name": "Name", "domain": "Domain", "country": "Country",
+                "city": "City", "founded_year": "Founded", "stage": "Stage",
+                "total_raised_m": "Raised ($M)", "ai_score": "AI Score",
+                "cb_ai_tagged": "CB AI", "ai_mentioned": "AI Mentioned",
+                "verticals": "Verticals", "verification_status": "Source",
+            }),
+            hide_index=True,
+            use_container_width=True,
+            height=460,
+        )
+        csv_cfe = cfe_df.to_csv(index=False)
+        st.download_button(
+            f"Download filtered results ({len(cfe_df):,} rows, CSV)",
+            data=csv_cfe,
+            file_name="companies_filtered.csv",
+            mime="text/csv",
+        )
+
+    st.markdown("<hr/>", unsafe_allow_html=True)
+
+    # ── Section 6: Data Export ───────────────────────────────────────
     st.markdown(
         '<div class="section-header">Export Research Data</div>',
         unsafe_allow_html=True,
