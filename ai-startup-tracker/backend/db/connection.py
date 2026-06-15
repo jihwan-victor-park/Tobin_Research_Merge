@@ -100,6 +100,7 @@ def init_db():
         ("companies", "team_size", "ALTER TABLE companies ADD COLUMN team_size INTEGER"),
         ("companies", "stage", "ALTER TABLE companies ADD COLUMN stage VARCHAR(64)"),
         ("companies", "operating_status", "ALTER TABLE companies ADD COLUMN operating_status VARCHAR(64)"),
+        ("companies", "ai_mentioned", "ALTER TABLE companies ADD COLUMN ai_mentioned BOOLEAN NOT NULL DEFAULT FALSE"),
     ]
     with engine.connect() as conn:
         for table, column, ddl in migrations:

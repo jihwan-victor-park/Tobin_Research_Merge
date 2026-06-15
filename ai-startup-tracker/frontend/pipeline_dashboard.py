@@ -534,7 +534,7 @@ def load_startups() -> pd.DataFrame:
             c.id, c.name, c.domain,
             LEFT(c.description, 240) AS description,
             c.country, c.city, c.stage, c.ai_score, c.ai_tags,
-            c.cb_ai_tagged, c.founded_year, c.categories,
+            c.cb_ai_tagged, c.ai_mentioned, c.founded_year, c.categories,
             c.first_seen_at, c.incubator_source, c.verification_status,
             lf.deal_date AS last_funding_date,
             lf.deal_size AS last_funding_amount,
@@ -584,7 +584,8 @@ def load_startups() -> pd.DataFrame:
         # Inclusive "is AI" flag: CB's own AI taxonomy OR model score OR any AI tag.
         has_tags = df["ai_tags"].apply(lambda x: isinstance(x, list) and len(x) > 0)
         cb_tagged = df["cb_ai_tagged"].fillna(False).astype(bool) if "cb_ai_tagged" in df.columns else pd.Series(False, index=df.index)
-        df["is_ai"] = cb_tagged | (df["ai_score"].fillna(0) >= 0.3) | has_tags
+        ai_mentioned = df["ai_mentioned"].fillna(False).astype(bool) if "ai_mentioned" in df.columns else pd.Series(False, index=df.index)
+        df["is_ai"] = cb_tagged | (df["ai_score"].fillna(0) >= 0.3) | has_tags | ai_mentioned
     return df
 
 

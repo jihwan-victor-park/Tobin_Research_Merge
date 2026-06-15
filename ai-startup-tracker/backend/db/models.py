@@ -181,6 +181,7 @@ class Company(Base):
     startup_score = Column(Float, nullable=True)
     ai_tags = Column(ARRAY(Text), nullable=True)
     cb_ai_tagged = Column(Boolean, nullable=False, default=False, server_default="false")
+    ai_mentioned = Column(Boolean, nullable=False, default=False, server_default="false")
     categories = Column(ARRAY(Text), nullable=True)  # industry verticals (CB category_groups_list or PB industry group)
 
     # Timestamps
