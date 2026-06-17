@@ -630,7 +630,7 @@ def _load_overview_stats() -> dict:
     with engine.connect() as conn:
         total = conn.execute(text("SELECT COUNT(*) FROM companies")).scalar() or 0
         ai = conn.execute(text(
-            "SELECT COUNT(*) FROM companies WHERE cb_ai_tagged = TRUE OR ai_score >= 0.3"
+            "SELECT COUNT(*) FROM companies WHERE cb_ai_tagged = TRUE OR ai_score >= 0.3 OR ai_mentioned = TRUE"
         )).scalar() or 0
         funded = conn.execute(text(
             "SELECT COUNT(DISTINCT company_id) FROM funding_signals"
