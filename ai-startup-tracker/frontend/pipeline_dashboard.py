@@ -2285,7 +2285,7 @@ def page_inventory():
     st.dataframe(display, hide_index=True, use_container_width=True, height=480)
 
 
-def page_ai_analysis(df: pd.DataFrame):
+def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None):
     st.markdown(
         '<div class="section-header">AI Startup Analysis</div>'
         '<div class="section-sub">Classification of all tracked companies — AI-focused vs. non-AI, '
@@ -2300,12 +2300,15 @@ def page_ai_analysis(df: pd.DataFrame):
     # Align with overview: is_ai = score >= 0.3 OR any ai_tag present
     # Use apply() to handle both list and string storage ([] is falsy but [] != "" is True)
     has_tags = df["ai_tags"].apply(lambda x: bool(x)) if "ai_tags" in df.columns else pd.Series(False, index=df.index)
-    is_ai = ((df["ai_score"].fillna(0) >= 0.3) | has_tags) if "ai_score" in df.columns else has_tags
+    cb_tagged = df["cb_ai_tagged"].fillna(False).astype(bool) if "cb_ai_tagged" in df.columns else pd.Series(False, index=df.index)
+    ai_mentioned = df["ai_mentioned"].fillna(False).astype(bool) if "ai_mentioned" in df.columns else pd.Series(False, index=df.index)
+    is_ai = cb_tagged | ((df["ai_score"].fillna(0) >= 0.3) | has_tags | ai_mentioned) if "ai_score" in df.columns else has_tags
     df = df.copy()
     df["is_ai"] = is_ai
 
-    total = len(df)
-    ai_cos = int(is_ai.sum())
+    # Use full-DB stats for headline numbers; fall back to df sample if not provided
+    total = stats["total"] if stats else len(df)
+    ai_cos = stats["ai"] if stats else int(is_ai.sum())
     non_ai = total - ai_cos
     ai_pct = round(ai_cos * 100.0 / total, 1) if total else 0
     unclassified = int(df["ai_score"].isna().sum()) if "ai_score" in df.columns else 0
@@ -2313,7 +2316,7 @@ def page_ai_analysis(df: pd.DataFrame):
     # ── Headline metrics ─────────────────────────────────────────────
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Total companies", f"{total:,}")
-    m2.metric("AI companies", f"{ai_cos:,}", help="ai_score ≥ 0.3 or has AI tag")
+    m2.metric("AI companies", f"{ai_cos:,}", help="cb_ai_tagged OR ai_score ≥ 0.3 OR ai_mentioned")
     m3.metric("AI share", f"{ai_pct}%")
     m4.metric("Unclassified", f"{unclassified:,}", help="ai_score is NULL")
 
@@ -2846,7 +2849,7 @@ def main():
     with tab_overview:
         page_overview(scraper_df, health_df)
     with tab_ai:
-        page_ai_analysis(scraper_df)
+        page_ai_analysis(scraper_df, _load_overview_stats())
     with tab_github:
         page_github(github_df, github_df_all)
     with tab_trends:
