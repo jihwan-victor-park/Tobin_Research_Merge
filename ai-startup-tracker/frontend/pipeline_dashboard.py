@@ -1055,6 +1055,7 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
 
     # Live aggregate stats (full DB, not limited to the 15K loaded rows)
     stats = _load_overview_stats()
+    total = stats["total"]
 
     st.markdown(
         '<div class="section-header" style="margin-top:24px;">Companies</div>'
