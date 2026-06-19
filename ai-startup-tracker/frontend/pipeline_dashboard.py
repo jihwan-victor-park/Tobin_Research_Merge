@@ -687,6 +687,28 @@ def _load_country_ai_stats(min_companies: int = 100) -> pd.DataFrame:
 
 
 @st.cache_data(ttl=300)
+def _load_source_ai_stats() -> pd.DataFrame:
+    """Per-source AI counts across all companies (full DB)."""
+    engine = get_engine()
+    query = """
+        SELECT
+            COALESCE(incubator_source::text, '(no source)') AS incubator_source,
+            COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE cb_ai_tagged OR ai_score >= 0.3 OR ai_mentioned) AS ai_count
+        FROM companies
+        GROUP BY incubator_source
+        HAVING COUNT(*) >= 5
+        ORDER BY ai_count DESC
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(query)).mappings().all()
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        df["ai_pct"] = (df["ai_count"] / df["total"] * 100).round(1)
+    return df
+
+
+@st.cache_data(ttl=300)
 def _load_country_year_matrix(top_n: int = 25) -> pd.DataFrame:
     """AI% per country per founding year for the top N countries by total size."""
     engine = get_engine()
@@ -2285,7 +2307,9 @@ def page_inventory():
     st.dataframe(display, hide_index=True, use_container_width=True, height=480)
 
 
-def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None):
+def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None,
+                     source_stats: pd.DataFrame | None = None,
+                     country_stats: pd.DataFrame | None = None):
     st.markdown(
         '<div class="section-header">AI Startup Analysis</div>'
         '<div class="section-sub">Classification of all tracked companies — AI-focused vs. non-AI, '
@@ -2323,7 +2347,9 @@ def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None):
     st.markdown("<br/>", unsafe_allow_html=True)
 
     # ── AI % by source program ───────────────────────────────────────
-    if "incubator_source" in df.columns:
+    if source_stats is not None and not source_stats.empty:
+        prog = source_stats.sort_values("ai_count", ascending=True).tail(20)
+    elif "incubator_source" in df.columns:
         src = df.copy()
         src["incubator_source"] = src["incubator_source"].fillna("(no source)")
         prog = (
@@ -2337,6 +2363,9 @@ def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None):
         prog = prog[prog["total"] >= 5].copy()
         prog["ai_pct"] = (prog["ai_count"] / prog["total"] * 100).round(1)
         prog = prog.sort_values("ai_count", ascending=True).tail(20)
+    else:
+        prog = pd.DataFrame()
+    if not prog.empty:
 
         fig_src = px.bar(
             prog,
@@ -2358,15 +2387,28 @@ def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None):
     col_left, col_right = st.columns([3, 2])
 
     with col_left:
-        if "country" in df.columns:
+        if country_stats is not None and not country_stats.empty:
+            ctry = country_stats.sort_values("ai", ascending=False).head(15).sort_values("ai")
+            fig_ctry = px.bar(
+                ctry,
+                x="ai",
+                y="country",
+                orientation="h",
+                color="ai",
+                color_continuous_scale=[[0, "#cce3ff"], [1, "#00356b"]],
+                labels={"ai": "AI Startups", "country": ""},
+                title="AI Startups by Country (top 15)",
+                text="ai",
+            )
+            fig_ctry.update_traces(textposition="outside")
+            fig_ctry.update_layout(**_layout(height=440))
+            st.plotly_chart(fig_ctry, use_container_width=True)
+        elif "country" in df.columns:
             ai_df = df[df["is_ai"]].copy()
-            # Normalise messy country strings: "USA", "United States", "US" → "United States"
             norm = {"USA": "United States", "US": "United States", "usa": "United States",
                     "U.S.A.": "United States", "U.S.": "United States"}
             ai_df["country_norm"] = ai_df["country"].replace(norm)
-            # Strip trailing semicolon fields like "USA; Remote"
             ai_df["country_norm"] = ai_df["country_norm"].str.split(";").str[0].str.strip()
-
             ctry = (
                 ai_df[ai_df["country_norm"].notna()]
                 .groupby("country_norm")
@@ -2524,9 +2566,11 @@ def page_research():
             marker=dict(size=7),
         ))
         fig.update_layout(
-            **_layout(height=380),
-            yaxis=dict(title="AI share (%)", ticksuffix="%", rangemode="tozero", gridcolor=BORDER_LIGHT),
-            yaxis2=dict(title="Total companies", overlaying="y", side="right", showgrid=False),
+            **_layout(
+                height=380,
+                yaxis=dict(title="AI share (%)", ticksuffix="%", rangemode="tozero", gridcolor=BORDER_LIGHT),
+                yaxis2=dict(title="Total companies", overlaying="y", side="right", showgrid=False),
+            ),
             legend=dict(orientation="h", y=1.08),
             hovermode="x unified",
         )
@@ -2651,11 +2695,13 @@ def page_research():
                     marker_color=STAGE_COLORS.get(bucket, "#999"),
                 ))
             fig_vol.update_layout(
-                **_layout(height=340),
+                **_layout(
+                    height=340,
+                    xaxis=dict(title="", tickformat="d"),
+                    yaxis=dict(title="Deals", gridcolor=BORDER_LIGHT),
+                ),
                 barmode="stack",
                 legend=dict(orientation="h", y=1.08, font=dict(size=11)),
-                xaxis=dict(title="", tickformat="d"),
-                yaxis=dict(title="Deals", gridcolor=BORDER_LIGHT),
                 hovermode="x unified",
             )
             st.plotly_chart(fig_vol, use_container_width=True)
@@ -2675,10 +2721,12 @@ def page_research():
                     marker=dict(size=6),
                 ))
             fig_size.update_layout(
-                **_layout(height=340),
+                **_layout(
+                    height=340,
+                    xaxis=dict(title="", tickformat="d"),
+                    yaxis=dict(title="Median deal size ($M)", gridcolor=BORDER_LIGHT),
+                ),
                 legend=dict(orientation="h", y=1.08, font=dict(size=11)),
-                xaxis=dict(title="", tickformat="d"),
-                yaxis=dict(title="Median deal size ($M)", gridcolor=BORDER_LIGHT),
                 hovermode="x unified",
             )
             st.plotly_chart(fig_size, use_container_width=True)
@@ -2702,10 +2750,12 @@ def page_research():
             line=dict(color="#286dc0", width=2, dash="dot"), marker=dict(size=6),
         ))
         fig_ff.update_layout(
-            **_layout(height=300),
+            **_layout(
+                height=300,
+                xaxis=dict(title="Year of first financing", tickformat="d"),
+                yaxis=dict(title="Share of cohort (%)", ticksuffix="%", gridcolor=BORDER_LIGHT),
+            ),
             legend=dict(orientation="h", y=1.08),
-            xaxis=dict(title="Year of first financing", tickformat="d"),
-            yaxis=dict(title="Share of cohort (%)", ticksuffix="%", gridcolor=BORDER_LIGHT),
             hovermode="x unified",
         )
         st.plotly_chart(fig_ff, use_container_width=True)
@@ -2849,7 +2899,9 @@ def main():
     with tab_overview:
         page_overview(scraper_df, health_df)
     with tab_ai:
-        page_ai_analysis(scraper_df, _load_overview_stats())
+        page_ai_analysis(scraper_df, _load_overview_stats(),
+                         source_stats=_load_source_ai_stats(),
+                         country_stats=_load_country_ai_stats(min_companies=1))
     with tab_github:
         page_github(github_df, github_df_all)
     with tab_trends:
