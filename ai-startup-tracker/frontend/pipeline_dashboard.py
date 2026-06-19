@@ -1235,7 +1235,8 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
     r1, r2 = st.columns([5, 1])
     r1.markdown(
         f'<span style="color:{TXT3};font-size:0.84rem;">'
-        f'<b style="color:{TXT};">{len(f):,}</b> of {total:,} companies '
+        f'<b style="color:{TXT};">{len(f):,}</b> matching '
+        f'(of {len(df):,} loaded) &middot; <b style="color:{TXT};">{total:,}</b> total in DB '
         f'&middot; sorted by most recent funding</span>',
         unsafe_allow_html=True,
     )
