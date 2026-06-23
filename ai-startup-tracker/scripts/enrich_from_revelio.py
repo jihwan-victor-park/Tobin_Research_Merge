@@ -8,12 +8,20 @@ Adds/fills:
 Matches on domain (cleaned URL). Only updates; never inserts new companies.
 """
 from __future__ import annotations
+import os
 import re
 import sys
 import pandas as pd
+from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 
-RAILWAY_URL = "postgresql://postgres:DcnTzVMncslQyHdpliCQpWcWugfJdutm@viaduct.proxy.rlwy.net:19473/railway"
+load_dotenv()
+
+def _db_url() -> str:
+    url = os.environ.get("DATABASE_URL") or os.environ.get("RAILWAY_URL")
+    if not url:
+        raise RuntimeError("Set DATABASE_URL or RAILWAY_URL env var")
+    return url
 REVELIO_FILES = [
     "/Users/alastairpage/Downloads/revelio_company_mapping-000000.parquet",
     "/Users/alastairpage/Downloads/revelio_company_mapping-000001.parquet",
@@ -85,7 +93,7 @@ def ensure_naics_column(conn):
 
 def main(dry_run: bool = False):
     revelio = load_revelio()
-    engine = create_engine(RAILWAY_URL)
+    engine = create_engine(_db_url())
 
     # Pull our companies that either lack founded_year or lack naics_code
     print("\nFetching our company domains from Railway...")
@@ -171,16 +179,18 @@ def main(dry_run: bool = False):
             ))
             print(f"  founded_year: {result.rowcount:,} updated")
 
-        # Bulk update naics_code via temp table
+        # Bulk update naics_code — batch inserts to avoid proxy timeout
         if not to_update_naics.empty:
             print(f"\nUpdating {len(to_update_naics):,} naics_code values...")
             conn.execute(text(
                 "CREATE TEMP TABLE _rev_naics (id INTEGER, nc VARCHAR(10)) ON COMMIT DROP"
             ))
-            conn.execute(
-                text("INSERT INTO _rev_naics VALUES (:id, :nc)"),
-                [{"id": int(r.id), "nc": str(r.rev_naics)} for r in to_update_naics.itertuples()],
-            )
+            records = [{"id": int(r.id), "nc": str(r.rev_naics)} for r in to_update_naics.itertuples()]
+            BATCH = 2_000
+            for i in range(0, len(records), BATCH):
+                conn.execute(text("INSERT INTO _rev_naics VALUES (:id, :nc)"), records[i:i + BATCH])
+                if i % 20_000 == 0:
+                    print(f"  inserted {min(i+BATCH, len(records)):,}/{len(records):,}...")
             result = conn.execute(text(
                 "UPDATE companies c SET naics_code = t.nc "
                 "FROM _rev_naics t WHERE c.id = t.id AND c.naics_code IS NULL"
