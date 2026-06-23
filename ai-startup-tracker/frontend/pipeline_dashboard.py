@@ -737,14 +737,14 @@ def _load_country_year_matrix(top_n: int = 25) -> pd.DataFrame:
 
 @st.cache_data(ttl=300)
 def _load_research_export() -> pd.DataFrame:
-    """All AI companies (cb_ai_tagged OR ai_score >= 0.3) with key research fields."""
+    """All AI companies (cb_ai_tagged OR ai_score >= 0.5 OR ai_mentioned) with key research fields."""
     engine = get_engine()
     query = """
         SELECT name, domain, country, city, founded_year,
-               ai_score, cb_ai_tagged, total_raised, stage,
-               verification_status
+               ai_score, cb_ai_tagged, ai_mentioned, total_raised,
+               team_size, stage, categories, verification_status
         FROM companies
-        WHERE cb_ai_tagged = TRUE OR ai_score >= 0.3
+        WHERE cb_ai_tagged = TRUE OR ai_score >= 0.5 OR ai_mentioned = TRUE
         ORDER BY founded_year DESC NULLS LAST, country
     """
     with engine.connect() as conn:
@@ -2248,6 +2248,7 @@ def page_inventory():
 
     scrape_colors = {"easy": "#1aab68", "agentic": "#286dc0", "challenging": "#dc2626"}
 
+    present_tiers = [t for t in ["easy", "agentic", "challenging"] if t in cat_counts["scrapeability"].values]
     fig_cat = px.bar(
         cat_counts,
         x="category_label",
@@ -2256,7 +2257,7 @@ def page_inventory():
         color_discrete_map=scrape_colors,
         category_orders={
             "category_label": [_CATEGORY_LABELS[c] for c in _CATEGORY_ORDER],
-            "scrapeability": ["easy", "agentic", "challenging"],
+            "scrapeability": present_tiers,
         },
         barmode="stack",
         labels={"category_label": "", "count": "Sites", "scrapeability": ""},
