@@ -630,7 +630,7 @@ def _load_overview_stats() -> dict:
     with engine.connect() as conn:
         total = conn.execute(text("SELECT COUNT(*) FROM companies")).scalar() or 0
         ai = conn.execute(text(
-            "SELECT COUNT(*) FROM companies WHERE cb_ai_tagged = TRUE OR ai_score >= 0.3 OR ai_mentioned = TRUE"
+            "SELECT COUNT(*) FROM companies WHERE cb_ai_tagged = TRUE OR ai_score >= 0.5 OR ai_mentioned = TRUE"
         )).scalar() or 0
         funded = conn.execute(text(
             "SELECT COUNT(DISTINCT company_id) FROM funding_signals"
@@ -650,7 +650,7 @@ def _load_ai_adoption_curve() -> pd.DataFrame:
         SELECT
             founded_year,
             COUNT(*) AS total,
-            COUNT(*) FILTER (WHERE cb_ai_tagged OR ai_score >= 0.3) AS ai
+            COUNT(*) FILTER (WHERE cb_ai_tagged OR ai_score >= 0.5 OR ai_mentioned) AS ai
         FROM companies
         WHERE founded_year BETWEEN 2000 AND 2026
         GROUP BY founded_year
@@ -671,7 +671,7 @@ def _load_country_ai_stats(min_companies: int = 100) -> pd.DataFrame:
     query = f"""
         SELECT country,
                COUNT(*) AS total,
-               COUNT(*) FILTER (WHERE cb_ai_tagged OR ai_score >= 0.3) AS ai
+               COUNT(*) FILTER (WHERE cb_ai_tagged OR ai_score >= 0.5 OR ai_mentioned) AS ai
         FROM companies
         WHERE country IS NOT NULL AND country != ''
         GROUP BY country
@@ -694,7 +694,7 @@ def _load_source_ai_stats() -> pd.DataFrame:
         SELECT
             COALESCE(incubator_source::text, '(no source)') AS incubator_source,
             COUNT(*) AS total,
-            COUNT(*) FILTER (WHERE cb_ai_tagged OR ai_score >= 0.3 OR ai_mentioned) AS ai_count
+            COUNT(*) FILTER (WHERE cb_ai_tagged OR ai_score >= 0.5 OR ai_mentioned) AS ai_count
         FROM companies
         GROUP BY incubator_source
         HAVING COUNT(*) >= 5
@@ -720,7 +720,7 @@ def _load_country_year_matrix(top_n: int = 25) -> pd.DataFrame:
         )
         SELECT c.country, c.founded_year,
                COUNT(*) AS total,
-               COUNT(*) FILTER (WHERE c.cb_ai_tagged OR c.ai_score >= 0.3) AS ai
+               COUNT(*) FILTER (WHERE c.cb_ai_tagged OR c.ai_score >= 0.5 OR c.ai_mentioned) AS ai
         FROM companies c
         JOIN top_countries tc ON c.country = tc.country
         WHERE c.founded_year BETWEEN 2010 AND 2026
@@ -830,7 +830,7 @@ def _load_vertical_ai_stats() -> pd.DataFrame:
         SELECT
             unnest(categories) AS vertical,
             COUNT(*) AS total,
-            COUNT(*) FILTER (WHERE cb_ai_tagged = TRUE OR ai_score >= 0.3) AS ai
+            COUNT(*) FILTER (WHERE cb_ai_tagged = TRUE OR ai_score >= 0.5 OR ai_mentioned = TRUE) AS ai
         FROM companies
         WHERE categories IS NOT NULL AND array_length(categories, 1) > 0
         GROUP BY vertical
@@ -921,7 +921,7 @@ def _load_ai_first_financing() -> pd.DataFrame:
         FROM (
             SELECT
                 EXTRACT(year FROM MIN(fs.deal_date))::int AS first_year,
-                CASE WHEN c.cb_ai_tagged = TRUE OR c.ai_score >= 0.3
+                CASE WHEN c.cb_ai_tagged = TRUE OR c.ai_score >= 0.5 OR c.ai_mentioned = TRUE
                      THEN 'AI' ELSE 'Non-AI' END AS company_type
             FROM funding_signals fs
             JOIN companies c ON c.id = fs.company_id
@@ -1005,7 +1005,7 @@ def _layout(**kw):
     base = dict(
         paper_bgcolor=BG, plot_bgcolor=BG_OFF,
         font=dict(family="Inter", color=TXT2, size=12),
-        title_font=dict(color=TXT, size=14, family="Inter"),
+        title=dict(text="", font=dict(color=TXT, size=14, family="Inter")),
         xaxis=dict(gridcolor=BORDER_LIGHT, zerolinecolor=BORDER),
         yaxis=dict(gridcolor=BORDER_LIGHT, zerolinecolor=BORDER),
         margin=dict(l=0, r=0, t=36, b=0),
