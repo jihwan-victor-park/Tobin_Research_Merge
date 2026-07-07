@@ -3016,6 +3016,112 @@ _CATEGORY_LABELS = {
 }
 
 
+@st.cache_data(ttl=600)
+def _load_pipeline_status() -> dict:
+    """Live activity signals for every pipeline component (Info Sheet §3)."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        tier_last = dict(conn.execute(text(
+            "SELECT difficulty, MAX(started_at) FROM scrape_runs GROUP BY 1"
+        )).fetchall())
+        gh_signals = conn.execute(text("SELECT COUNT(*) FROM github_signals")).scalar() or 0
+        last_site_added = conn.execute(text("SELECT MAX(created_at) FROM site_health")).scalar()
+        cov = conn.execute(text("""
+            SELECT COUNT(*),
+                   COUNT(founded_year),
+                   COUNT(country),
+                   COUNT(*) FILTER (WHERE categories IS NOT NULL
+                                    AND array_length(categories, 1) > 0)
+            FROM companies
+        """)).fetchone()
+        has_naics = bool(conn.execute(text("""
+            SELECT COUNT(*) FROM information_schema.columns
+            WHERE table_name = 'companies' AND column_name = 'naics_code'
+        """)).scalar())
+    total = cov[0] or 1
+    return {
+        "last_easy": tier_last.get("easy"),
+        "last_hard": tier_last.get("hard"),
+        "gh_signals": gh_signals,
+        "last_site_added": last_site_added,
+        "founded_cov": cov[1] / total,
+        "country_cov": cov[2] / total,
+        "categories_cov": cov[3] / total,
+        "has_naics": has_naics,
+    }
+
+
+def _activity_status(ts, active_days: int = 7):
+    """(status label, last-activity string) from a timestamp."""
+    if ts is None:
+        return "⚪ Never ran", "—"
+    days = (datetime.utcnow() - ts).days
+    if days <= active_days:
+        return "🟢 Running", f"{ts:%b %d, %Y}"
+    return "🔴 Stalled", f"{ts:%b %d, %Y} ({days}d ago)"
+
+
+def _info_pipeline_section():
+    try:
+        ps = _load_pipeline_status()
+    except Exception as e:
+        st.error(f"Could not load pipeline status: {e}")
+        return
+
+    st.markdown(
+        "How the database gets built: the **orchestrator** visits every registered "
+        "site — site-specific *easy* scrapers first, and a Claude+Tavily *agentic* "
+        "scraper for everything else. A **healer** watches outcomes (2 easy failures "
+        "→ escalate to agentic; 3 agentic failures → exclude 90 days). **Discovery** "
+        "agents add new sites, and **enrichment** scripts fill in missing fields."
+    )
+
+    easy_stat, easy_last = _activity_status(ps["last_easy"])
+    hard_stat, hard_last = _activity_status(ps["last_hard"])
+    scout_stat, scout_last = _activity_status(ps["last_site_added"], active_days=14)
+    gh_stat = "⚪ Never ran" if ps["gh_signals"] == 0 else "🟢 Has data"
+    revelio_stat = "🟢 Done" if ps["has_naics"] else "🟠 Incomplete"
+
+    rows = [
+        ("Easy-tier scrapers", "36 site-specific scrapers (YC, Techstars, HuggingFace, …)",
+         easy_stat, easy_last, "scripts/run_orchestrator.py --batch"),
+        ("Agentic scraper", "Claude+Tavily agent that can scrape any registered site",
+         hard_stat, hard_last, "scripts/run_orchestrator.py --batch"),
+        ("Healer / watchdog", "Escalates failing sites between tiers, writes diagnoses",
+         hard_stat, hard_last, "runs inside the orchestrator"),
+        ("International scout", "Finds new VC/accelerator sites to register (KR, IL, CN, …)",
+         scout_stat, f"last new site {scout_last}", "scripts/run_international_scout.py"),
+        ("GitHub discovery", "Weekly scan of GitHub orgs for emerging startups",
+         gh_stat, f"{ps['gh_signals']:,} signals in DB", "scripts/github_weekly_discover.py"),
+        ("LLM classifier", "Tags AI relevance + industry vertical (17-category taxonomy)",
+         f"🟢 {ps['categories_cov']:.0%} coverage", "runs after imports", "scripts/run_llm_classify_failover.py"),
+        ("Revelio enrichment", "LinkedIn workforce data → founded_year, NAICS codes",
+         revelio_stat, "naics_code column present" if ps["has_naics"] else "naics_code column missing",
+         "scripts/enrich_from_revelio.py"),
+        ("Country fill / normalize", "TLD inference + normalizer after bulk imports",
+         f"🟢 {ps['country_cov']:.0%} coverage", "maintenance script", "scripts/infer_country_from_tld.py"),
+    ]
+    comp_df = pd.DataFrame(rows, columns=["Component", "What it does", "Status", "Last activity", "How to run"])
+    st.dataframe(comp_df, hide_index=True, use_container_width=True)
+
+    # Auto-detected gaps — the professor's "want running but currently not running?"
+    gaps = []
+    if ps["last_easy"] is None or (datetime.utcnow() - ps["last_easy"]).days > 7:
+        gaps.append("**Scrapers are not running.** No scheduler is attached: Railway only "
+                    "serves this dashboard, and the local launchd job is not loaded. "
+                    "Scrapes happen only when someone runs the orchestrator manually.")
+    if ps["gh_signals"] == 0:
+        gaps.append("**GitHub discovery has never run** against this database "
+                    "(`github_signals` is empty) — a planned weekly source that isn't wired up.")
+    if not ps["has_naics"]:
+        gaps.append("**Revelio enrichment is unfinished** — the NAICS-code backfill "
+                    "(~292K companies) started Jun 21 but never landed here.")
+    if gaps:
+        st.warning("**Wanted running, but currently not:**\n\n" + "\n\n".join(f"- {g}" for g in gaps))
+    else:
+        st.success("All pipeline components show recent activity.")
+
+
 def _info_scraping_section():
     try:
         ops = _load_scraping_ops()
@@ -3213,10 +3319,11 @@ def page_info_sheet():
                 unsafe_allow_html=True)
     _info_scraping_section()
 
-    st.markdown('<div class="section-header">3 · Pipeline components — running vs. not</div>',
+    st.markdown('<div class="section-header">3 · Pipeline components — running vs. not</div>'
+                '<div class="section-sub">Every agent and script that builds this database, '
+                'and whether it is currently running</div>',
                 unsafe_allow_html=True)
-    st.info("Coming soon: every agent and script that builds this database, "
-            "and whether it is currently running.")
+    _info_pipeline_section()
 
 
 # ── Main ─────────────────────────────────────────────────────────────

@@ -35,7 +35,7 @@ committable and pushed to `merge` (Railway auto-deploys).
   - Error-type breakdown (Tavily timeouts, Anthropic 429s, …).
   - Struggling-sites table: broken/degraded with last error + pending_reason.
 
-- [ ] **Step 4 — Section 3: Pipeline Components — running vs not**
+- [x] **Step 4 — Section 3: Pipeline Components — running vs not** (done Jul 7 2026)
   - Inventory table of all pipeline components: SCRAPER (36 easy scrapers +
     agentic engine), HEALER, DISCOVERY (GitHub weekly, international scout),
     CLASSIFIER, enrichment scripts (Revelio, country normalizer, TLD inference).
