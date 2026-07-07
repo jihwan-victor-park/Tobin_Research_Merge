@@ -20,7 +20,7 @@ committable and pushed to `merge` (Railway auto-deploys).
   - `page_info_sheet()` skeleton added, "Info Sheet" inserted as first tab.
   - Section placeholders for Steps 2–4, "as of" timestamp at top.
 
-- [ ] **Step 2 — Section 1: Data Sources & Contribution**
+- [x] **Step 2 — Section 1: Data Sources & Contribution** (done Jul 7 2026)
   - Non-overlapping source breakdown query: `verified_cb` / `verified_pb` /
     scraper-unique (has incubator_signals, not CB/PB) / GitHub-unique.
     Table + stacked bar; totals must sum exactly to the companies count.

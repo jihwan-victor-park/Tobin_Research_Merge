@@ -2870,6 +2870,147 @@ def page_research():
 
 # ── Info Sheet ───────────────────────────────────────────────────────
 
+@st.cache_data(ttl=600)
+def _load_contribution_stats() -> dict:
+    """Non-overlapping source buckets + scraper detail for the Info Sheet.
+
+    Bucket priority: CB / PB first (standard databases), then companies our
+    scrapers found (has an incubator_signal), then GitHub-only. Buckets are
+    mutually exclusive and sum exactly to the companies total.
+    """
+    engine = get_engine()
+    with engine.connect() as conn:
+        buckets = dict(conn.execute(text("""
+            SELECT CASE
+                     WHEN c.verification_status = 'verified_cb' THEN 'cb'
+                     WHEN c.verification_status = 'verified_pb' THEN 'pb'
+                     WHEN s.company_id IS NOT NULL THEN 'scraper'
+                     ELSE 'github'
+                   END AS bucket,
+                   COUNT(*) AS n
+            FROM companies c
+            LEFT JOIN (SELECT DISTINCT company_id FROM incubator_signals) s
+                   ON s.company_id = c.id
+            GROUP BY 1
+        """)).fetchall())
+
+        overlap = dict(conn.execute(text("""
+            SELECT c.verification_status::text, COUNT(DISTINCT s.company_id)
+            FROM incubator_signals s
+            JOIN companies c ON c.id = s.company_id
+            WHERE c.verification_status IN ('verified_cb', 'verified_pb')
+            GROUP BY 1
+        """)).fetchall())
+
+        scraper_sources = conn.execute(text("""
+            SELECT s.source::text, COUNT(DISTINCT c.id)
+            FROM companies c
+            JOIN incubator_signals s ON s.company_id = c.id
+            WHERE c.verification_status = 'emerging_github'
+            GROUP BY 1 ORDER BY 2 DESC
+        """)).fetchall()
+
+        funding = conn.execute(text("""
+            SELECT COUNT(*),
+                   (SELECT COUNT(DISTINCT company_id) FROM funding_signals)
+            FROM funding_signals
+        """)).fetchone()
+
+    return {
+        "buckets": buckets,
+        "overlap": overlap,
+        "scraper_sources": [(s, n) for s, n in scraper_sources],
+        "funding_rows": funding[0] if funding else 0,
+        "funded_companies": funding[1] if funding else 0,
+    }
+
+
+_SCRAPER_SOURCE_LABELS = {
+    "agentic_scrape": "Agentic scraper (Claude+Tavily over registered VC/accelerator/university sites)",
+    "yc": "Y Combinator",
+    "techstars": "Techstars",
+    "harvard_ilabs": "Harvard Innovation Labs",
+    "stanford_startx": "Stanford StartX",
+    "entrepreneur_first": "Entrepreneur First",
+    "mit_engine": "MIT The Engine",
+    "berkeley_skydeck": "Berkeley SkyDeck",
+    "princeton_elab": "Princeton eLab",
+    "rice_owlspark": "Rice OwlSpark",
+    "seedcamp": "Seedcamp",
+    "antler": "Antler",
+}
+
+
+def _info_sources_section():
+    try:
+        stats = _load_contribution_stats()
+    except Exception as e:
+        st.error(f"Could not load contribution stats: {e}")
+        return
+
+    b = stats["buckets"]
+    cb, pb = b.get("cb", 0), b.get("pb", 0)
+    scraper, github = b.get("scraper", 0), b.get("github", 0)
+    total = cb + pb + scraper + github
+    unique_ours = scraper + github
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Total companies", f"{total:,}")
+    m2.metric("Covered by Crunchbase", f"{cb:,}", f"{cb / total:.1%} of total" if total else None, delta_color="off")
+    m3.metric("Covered by PitchBook", f"{pb:,}", f"{pb / total:.1%} of total" if total else None, delta_color="off")
+    m4.metric("Only we have", f"{unique_ours:,}", f"{unique_ours / total:.1%} of total" if total else None, delta_color="off")
+
+    rows = [
+        ("Crunchbase", cb, "Standard database — bulk import, used as the enrichment layer"),
+        ("PitchBook", pb, "Standard database — bulk import; also the source of all funding-deal records"),
+        ("Our scrapers", scraper, "NOT in CB/PB — found by our own scraping of accelerator, VC and university sites"),
+        ("GitHub discovery", github, "NOT in CB/PB — emerging companies found via GitHub organization scans"),
+    ]
+    src_df = pd.DataFrame(rows, columns=["Source", "Companies", "What it is"])
+    src_df["Share"] = (src_df["Companies"] / total).map("{:.1%}".format) if total else "—"
+
+    chart_col, table_col = st.columns([2, 3])
+    with chart_col:
+        fig = go.Figure()
+        colors = {"Crunchbase": YALE_BLUE, "PitchBook": YALE_LIGHT,
+                  "Our scrapers": GREEN, "GitHub discovery": AMBER}
+        for name, n, _ in rows:
+            fig.add_trace(go.Bar(
+                y=["Companies"], x=[n], name=name, orientation="h",
+                marker_color=colors[name],
+                hovertemplate=f"{name}: {n:,}<extra></extra>",
+            ))
+        fig.update_layout(
+            barmode="stack", height=160, showlegend=True,
+            legend=dict(orientation="h", y=-0.4),
+            margin=dict(l=0, r=0, t=10, b=0),
+            xaxis=dict(title=None), yaxis=dict(visible=False),
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        )
+        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+        st.caption("Buckets are mutually exclusive and sum exactly to the total.")
+    with table_col:
+        st.dataframe(src_df[["Source", "Companies", "Share", "What it is"]],
+                     hide_index=True, use_container_width=True)
+
+    cb_overlap = stats["overlap"].get("verified_cb", 0)
+    pb_overlap = stats["overlap"].get("verified_pb", 0)
+    st.markdown(
+        f"**Cross-validation:** our scrapers independently re-discovered "
+        f"**{cb_overlap:,}** Crunchbase and **{pb_overlap:,}** PitchBook companies "
+        f"(counted once, under CB/PB above). Funding data: "
+        f"**{stats['funding_rows']:,}** deal records covering "
+        f"**{stats['funded_companies']:,}** companies, all from PitchBook."
+    )
+
+    with st.expander(f"Where the {scraper:,} scraper-unique companies came from", expanded=False):
+        det = pd.DataFrame(
+            [(_SCRAPER_SOURCE_LABELS.get(s, s), n) for s, n in stats["scraper_sources"]],
+            columns=["Scraper source", "Unique companies (not in CB/PB)"],
+        )
+        st.dataframe(det, hide_index=True, use_container_width=True)
+
+
 def page_info_sheet():
     """One-page summary for collaborators: where the data comes from, what
     runs to build it, and how scraping is doing.
@@ -2888,11 +3029,11 @@ def page_info_sheet():
         "all numbers query the live production database"
     )
 
-    st.markdown('<div class="section-header">1 · Where the data comes from</div>',
+    st.markdown('<div class="section-header">1 · Where the data comes from</div>'
+                '<div class="section-sub">How much is covered by standard databases '
+                '(Crunchbase / PitchBook), and where the rest came from</div>',
                 unsafe_allow_html=True)
-    st.info("Coming soon: contribution breakdown — how much is covered by standard "
-            "databases (Crunchbase / PitchBook) vs. companies only we have "
-            "(our scrapers, GitHub discovery).")
+    _info_sources_section()
 
     st.markdown('<div class="section-header">2 · Scraping operations</div>',
                 unsafe_allow_html=True)
