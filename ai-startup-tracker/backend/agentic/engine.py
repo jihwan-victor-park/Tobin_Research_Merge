@@ -14,7 +14,7 @@ import re
 from collections import Counter
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional, Tuple
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import requests
 
@@ -151,81 +151,20 @@ def _parse_llm_json(raw: str) -> Any:
     )
 
 
-_TOGETHER_API_URL = "https://api.together.xyz/v1/chat/completions"
-_TOGETHER_DEFAULT_MODEL = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
-
-# Cache the Anthropic credit-out signal so we stop spamming Anthropic once
-# we've seen the wallet is empty in this process.
-_ANTHROPIC_DEAD: bool = False
-
-# Substrings (lower-case) we treat as "permanent" Anthropic failures that
-# mean we should switch to Together immediately and stay there for the run.
-_ANTHROPIC_OUT_MARKERS = (
+_ANTHROPIC_BILLING_MARKERS = (
     "credit balance is too low",
-    "insufficient",
+    "insufficient_quota",
     "billing",
     "payment",
-    "quota",
-    "401",
-    "402",
-    "403",
-    "unauthorized",
-    "forbidden",
+    "overloaded",
 )
 
+_HAIKU_FALLBACK_MODEL = "claude-haiku-4-5-20251001"
 
-def _looks_like_anthropic_dead(err: BaseException) -> bool:
+
+def _looks_like_billing_error(err: BaseException) -> bool:
     msg = str(err).lower()
-    return any(m in msg for m in _ANTHROPIC_OUT_MARKERS)
-
-
-def _call_together_json(
-    system_prompt: str,
-    user_prompt: str,
-    model: Optional[str] = None,
-    max_tokens: int = 4000,
-) -> Dict[str, Any]:
-    """Together.ai chat-completions wrapper that returns a parsed JSON dict.
-    Used as the agentic engine's fallback whenever Anthropic refuses (credit-
-    out, auth, etc.). Same contract as `_call_claude_json`."""
-    api_key = (os.getenv("TOGETHER_API_KEY") or "").strip()
-    if not api_key:
-        raise RuntimeError(
-            "TOGETHER_API_KEY not set; cannot fall back from Anthropic."
-        )
-    model_id = (model or os.getenv("LLM_MODEL") or _TOGETHER_DEFAULT_MODEL).strip()
-    payload = {
-        "model": model_id,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-        "temperature": 0.0,
-        "max_tokens": max_tokens,
-        "response_format": {"type": "json_object"},
-    }
-    resp = requests.post(
-        _TOGETHER_API_URL,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        json=payload,
-        timeout=120,
-    )
-    if resp.status_code != 200:
-        raise RuntimeError(
-            f"Together.ai error ({resp.status_code}): {resp.text[:300]}"
-        )
-    body = resp.json()
-    raw = (body.get("choices", [{}])[0].get("message", {}).get("content") or "").strip()
-    parsed = _parse_llm_json(raw)
-    if not isinstance(parsed, dict):
-        raise RuntimeError(
-            f"Expected a JSON object from Together, got {type(parsed).__name__}. "
-            f"First 400 chars: {raw[:400]!r}"
-        )
-    return parsed
+    return any(m in msg for m in _ANTHROPIC_BILLING_MARKERS)
 
 
 def _call_claude_json(
@@ -237,18 +176,11 @@ def _call_claude_json(
 ) -> Dict[str, Any]:
     """Call Claude via official SDK; response must be a JSON object.
 
-    Auto-fallback: if Anthropic returns a credit-out / billing / auth error,
-    we swap to Together (Llama-3.3-70B by default) for the rest of this
-    process so the agentic engine keeps producing data. The fallback is
-    flagged via `_ANTHROPIC_DEAD` so we don't keep retrying Anthropic on
-    every call within the same run.
+    On billing/credit errors, retries once with Haiku (same API key, ~20x
+    cheaper) rather than failing the entire orchestrator run.
     """
-    global _ANTHROPIC_DEAD
-
-    # If we've already proven Anthropic is dead this process, skip straight
-    # to Together — saves time and avoids burning user-visible tracebacks.
-    if _ANTHROPIC_DEAD or not anthropic_api_key or anthropic is None:
-        return _call_together_json(system_prompt, user_prompt, max_tokens=max_tokens)
+    if not anthropic_api_key or anthropic is None:
+        raise RuntimeError("ANTHROPIC_API_KEY not set; cannot call Claude.")
 
     model_id = (model or _anthropic_model()).strip()
     client = anthropic.Anthropic(api_key=anthropic_api_key)
@@ -260,21 +192,28 @@ def _call_claude_json(
             messages=[{"role": "user", "content": user_prompt}],
         )
     except anthropic.APIError as e:
-        if _looks_like_anthropic_dead(e):
-            _ANTHROPIC_DEAD = True
+        if _looks_like_billing_error(e) and model_id != _HAIKU_FALLBACK_MODEL:
+            logger.warning(
+                f"Anthropic billing/quota error on {model_id!r}; "
+                f"retrying with {_HAIKU_FALLBACK_MODEL}"
+            )
             try:
-                return _call_together_json(system_prompt, user_prompt, max_tokens=max_tokens)
-            except Exception as together_err:
-                code = getattr(e, "status_code", None) or getattr(getattr(e, "response", None), "status_code", None)
+                msg = client.messages.create(
+                    model=_HAIKU_FALLBACK_MODEL,
+                    max_tokens=min(max_tokens, 2000),
+                    system=system_prompt,
+                    messages=[{"role": "user", "content": user_prompt}],
+                )
+            except Exception as haiku_err:
                 raise RuntimeError(
-                    f"Anthropic ({code}) credit-out and Together fallback also failed: "
-                    f"{together_err}"
+                    f"Anthropic billing error and Haiku fallback also failed: {haiku_err}"
                 ) from e
-        code = getattr(e, "status_code", None) or getattr(getattr(e, "response", None), "status_code", None)
-        raise RuntimeError(
-            f"Anthropic API error ({code}): {e}. "
-            f"Model={model_id!r}. Set ANTHROPIC_MODEL to a valid model id, e.g. {DEFAULT_CLAUDE_MODEL!r}."
-        ) from e
+        else:
+            code = getattr(e, "status_code", None) or getattr(getattr(e, "response", None), "status_code", None)
+            raise RuntimeError(
+                f"Anthropic API error ({code}): {e}. "
+                f"Model={model_id!r}. Set ANTHROPIC_MODEL to a valid model id, e.g. {DEFAULT_CLAUDE_MODEL!r}."
+            ) from e
 
     raw_parts: List[str] = []
     for block in msg.content:
@@ -293,6 +232,7 @@ def _call_claude_json(
 # ── Tavily ───────────────────────────────────────────────────────────────
 
 def _tavily_extract(api_key: str, urls: List[str]) -> List[Dict[str, Any]]:
+    import time
     payload = {
         "api_key": api_key,
         "urls": urls,
@@ -301,11 +241,19 @@ def _tavily_extract(api_key: str, urls: List[str]) -> List[Dict[str, Any]]:
         "format": "text",
         "timeout": 60,
     }
-    resp = requests.post(TAVILY_EXTRACT_URL, json=payload, timeout=120)
-    resp.raise_for_status()
-    body = resp.json()
-    results = body.get("results", [])
-    return results if isinstance(results, list) else []
+    for attempt in range(4):
+        resp = requests.post(TAVILY_EXTRACT_URL, json=payload, timeout=120)
+        if resp.status_code == 429:
+            wait = 10 * (2 ** attempt)
+            logger.warning(f"Tavily rate limit (429); retrying in {wait}s (attempt {attempt + 1}/4)")
+            time.sleep(wait)
+            continue
+        resp.raise_for_status()
+        body = resp.json()
+        results = body.get("results", [])
+        return results if isinstance(results, list) else []
+    resp.raise_for_status()  # last attempt — let it propagate
+    return []
 
 
 def _playwright_wait_ms() -> int:
@@ -326,8 +274,56 @@ def _playwright_browser_enabled() -> bool:
         return False
 
 
+_PORTFOLIO_PATH_PATTERNS = frozenset({
+    "/portfolio", "/companies", "/investments", "/startups",
+    "/cohort", "/batch", "/portfolio-companies", "/our-companies",
+    "/ventures", "/investees", "/our-portfolio",
+})
+
+
+def _is_portfolio_url(url: str) -> bool:
+    """True when a URL path looks like a VC/accelerator portfolio listing."""
+    path = urlparse(url).path.lower().rstrip("/")
+    return any(pat in path for pat in _PORTFOLIO_PATH_PATTERNS)
+
+
+def _extract_pagination_links(html: str, base_url: str) -> List[str]:
+    """Extract next-page links from rendered HTML using BeautifulSoup."""
+    try:
+        from bs4 import BeautifulSoup
+    except ImportError:
+        return []
+    soup = BeautifulSoup(html, "html.parser")
+    seen: set = set()
+    found: List[str] = []
+    for a in soup.find_all("a", href=True):
+        href = (a.get("href") or "").strip()
+        if not href or href.startswith("#") or href.startswith("javascript"):
+            continue
+        text = (a.get_text() or "").strip()
+        rel = a.get("rel") or []
+        classes = " ".join(a.get("class") or []).lower()
+        is_next = (
+            "next" in rel
+            or bool(re.search(r"\bnext\b|›|→|»", text, re.I))
+            or bool(re.search(r"next|pagination.?next", classes, re.I))
+            or bool(re.search(r"[?&]page=\d+|[?&]p=\d+|/page/\d+", href, re.I))
+        )
+        if not is_next:
+            continue
+        full_url = urljoin(base_url, href)
+        if full_url not in seen:
+            seen.add(full_url)
+            found.append(full_url)
+    return found[:5]
+
+
 def _playwright_extract_urls(urls: List[str], *, max_urls: int = 3) -> List[Dict[str, Any]]:
-    """Headless Chromium; same shape as Tavily ``{url, raw_content}`` for SPAs / lazy lists."""
+    """Headless Chromium; same shape as Tavily ``{url, raw_content}`` for SPAs / lazy lists.
+
+    Each returned chunk may also contain ``_pagination_links`` — a list of next-page
+    URLs extracted from the rendered HTML, for use by the main scrape loop.
+    """
     if not _playwright_browser_enabled():
         return []
     try:
@@ -358,7 +354,12 @@ def _playwright_extract_urls(urls: List[str], *, max_urls: int = 3) -> List[Dict
                         page.goto(url, wait_until="domcontentloaded", timeout=90000)
                         page.wait_for_timeout(wait_ms)
                         text = page.inner_text("body")
-                        out.append({"url": url, "raw_content": text or ""})
+                        html = page.content()
+                        pagination = _extract_pagination_links(html, url)
+                        chunk: Dict[str, Any] = {"url": url, "raw_content": text or ""}
+                        if pagination:
+                            chunk["_pagination_links"] = pagination
+                        out.append(chunk)
                     except Exception as e:
                         out.append({"url": url, "raw_content": f"[playwright error on {url}: {e}]"})
                 ctx.close()
@@ -377,14 +378,24 @@ def _maybe_enrich_chunks_playwright(
     chunks: List[Dict[str, Any]],
     candidate_urls: List[str],
     thin_threshold: int = 900,
+    force: bool = False,
 ) -> List[Dict[str, Any]]:
-    """If Tavily returned almost nothing, retry top URLs with a real browser."""
-    if not chunks or _chunks_text_total(chunks) >= thin_threshold:
+    """Retry top URLs with a real browser.
+
+    Fires when Tavily returned thin content OR when force=True (portfolio/SPA pages
+    where Tavily returns shell HTML that looks large but contains no company data).
+    """
+    if not chunks:
+        return chunks
+    if not force and _chunks_text_total(chunks) >= thin_threshold:
         return chunks
     if not _playwright_browser_enabled():
         return chunks
     pw = _playwright_extract_urls(candidate_urls[:3], max_urls=3)
-    if pw and _chunks_text_total(pw) > _chunks_text_total(chunks):
+    if not pw:
+        return chunks
+    # force=True: always prefer Playwright (portfolio SPAs fool Tavily with shell HTML)
+    if force or _chunks_text_total(pw) > _chunks_text_total(chunks):
         return pw
     return chunks
 
@@ -811,6 +822,7 @@ def _save_to_db(records: List[Dict[str, Any]], source_url: str = "") -> Tuple[in
     new_count = 0
     updated_count = 0
     now = datetime.now(timezone.utc)
+    src_domain = domain_for_url(source_url) if source_url else None
 
     with session_scope() as session:
         for r in records:
@@ -832,6 +844,7 @@ def _save_to_db(records: List[Dict[str, Any]], source_url: str = "") -> Tuple[in
                     name=name,
                     domain=domain,
                     normalized_name=norm_name,
+                    source_domain=src_domain,
                     verification_status=VerificationStatus.emerging_github,
                     location_source=LocationSource.unknown,
                     first_seen_at=now,
@@ -848,6 +861,8 @@ def _save_to_db(records: List[Dict[str, Any]], source_url: str = "") -> Tuple[in
                     company.domain = domain
                 if not company.normalized_name and norm_name:
                     company.normalized_name = norm_name
+                if not company.source_domain and src_domain:
+                    company.source_domain = src_domain
                 updated_count += 1
 
             # Update location if extracted
@@ -1327,13 +1342,22 @@ def run_agentic_scrape(
         else:
             candidate_urls = _derive_retry_urls(url, strategy, instr)
 
-        # 4. Tavily extract
+        # 4. Tavily extract + optional Playwright enrichment
         _notify(progress_callback, f"[{idx}/{len(strategies)}] Tavily extracting ({len(candidate_urls[:6])} URLs)…")
         chunks = _tavily_extract(tavily_api_key, candidate_urls[:6])
         before_pw = _chunks_text_total(chunks)
-        chunks = _maybe_enrich_chunks_playwright(chunks, candidate_urls[:6])
+        force_pw = any(_is_portfolio_url(u) for u in candidate_urls[:6])
+        chunks = _maybe_enrich_chunks_playwright(chunks, candidate_urls[:6], force=force_pw)
         if _chunks_text_total(chunks) > before_pw:
-            _notify(progress_callback, f"[{idx}/{len(strategies)}] Playwright fallback added richer text ({before_pw} → {_chunks_text_total(chunks)} chars)…")
+            _notify(progress_callback, f"[{idx}/{len(strategies)}] Playwright {'(forced portfolio)' if force_pw else 'fallback'} added richer text ({before_pw} → {_chunks_text_total(chunks)} chars)…")
+
+        # Follow pagination links found in rendered HTML
+        pagination_links = [lnk for c in chunks for lnk in c.get("_pagination_links", [])]
+        if pagination_links:
+            _notify(progress_callback, f"[{idx}/{len(strategies)}] Following {len(pagination_links)} pagination link(s)…")
+            extra = _playwright_extract_urls(pagination_links[:3], max_urls=3)
+            if extra:
+                chunks = chunks + extra
 
         if not chunks:
             attempts.append(RetryAttempt(
@@ -1394,44 +1418,30 @@ def run_agentic_scrape(
             new_count, updated_count = _save_to_db(cleaned, source_url=url)
     else:
         # ── Fast path failed → Agent fallback ──
-        # The tool-use agent loop relies on Anthropic's native tool API, which
-        # has no Together equivalent. If Anthropic is dead this run, skip it
-        # and just save whatever fast-path produced (often non-empty).
-        if _ANTHROPIC_DEAD:
-            _notify(progress_callback,
-                    f"Anthropic credit-out: skipping tool-use agent, "
-                    f"saving fast-path records ({len(best_records)}).")
+        _notify(progress_callback,
+                f"Fast path got {best_validation.record_count} records "
+                f"({best_validation.reason}). Switching to Agent mode…")
+        try:
+            agent_records, new_count, updated_count = _run_tool_use_agent(
+                url=url,
+                initial_records=best_records,
+                tavily_api_key=tavily_api_key,
+                anthropic_api_key=anthropic_api_key,
+                save_to_db_flag=save_to_db,
+                progress_callback=progress_callback,
+            )
+            raw_before_post = len(agent_records)
+            cleaned = _postprocess_records(agent_records)
+            cleaned = _enrich_records(anthropic_api_key, cleaned, progress_callback)
+            preview = cleaned[:EXTRACTED_PREVIEW_CAP]
+        except Exception as e:
+            _notify(progress_callback, f"Agent failed: {e}. Using fast path results.")
             raw_before_post = len(best_records)
             cleaned = _postprocess_records(best_records)
             cleaned = _enrich_records(anthropic_api_key, cleaned, progress_callback)
             preview = cleaned[:EXTRACTED_PREVIEW_CAP]
             if save_to_db and cleaned:
                 new_count, updated_count = _save_to_db(cleaned, source_url=url)
-        else:
-            _notify(progress_callback,
-                    f"Fast path got {best_validation.record_count} records "
-                    f"({best_validation.reason}). Switching to Agent mode…")
-            try:
-                agent_records, new_count, updated_count = _run_tool_use_agent(
-                    url=url,
-                    initial_records=best_records,
-                    tavily_api_key=tavily_api_key,
-                    anthropic_api_key=anthropic_api_key,
-                    save_to_db_flag=save_to_db,
-                    progress_callback=progress_callback,
-                )
-                raw_before_post = len(agent_records)
-                cleaned = _postprocess_records(agent_records)
-                cleaned = _enrich_records(anthropic_api_key, cleaned, progress_callback)
-                preview = cleaned[:EXTRACTED_PREVIEW_CAP]
-            except Exception as e:
-                _notify(progress_callback, f"Agent failed: {e}. Using fast path results.")
-                raw_before_post = len(best_records)
-                cleaned = _postprocess_records(best_records)
-                cleaned = _enrich_records(anthropic_api_key, cleaned, progress_callback)
-                preview = cleaned[:EXTRACTED_PREVIEW_CAP]
-                if save_to_db and cleaned:
-                    new_count, updated_count = _save_to_db(cleaned, source_url=url)
 
     # Align final_validation + instruction YAML with deduped rows (matches Done! / DB)
     best_validation = _validate_records(

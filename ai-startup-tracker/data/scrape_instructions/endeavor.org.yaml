@@ -1,0 +1,25 @@
+version: 1
+domain: endeavor.org
+created_at: '2026-06-13T21:55:26.969287Z'
+updated_at: '2026-06-13T21:55:26.969287Z'
+seed_urls:
+- https://endeavor.org/
+preferred_strategy: single_page_extract
+fallback_order:
+- single_page_extract
+- subpage_discovery
+- pagination_probe
+- search_probe
+subpage_hints: []
+pagination_hints: []
+quality_expectation_min_records: 1
+last_success:
+  run_id: agentic_run_20260613_215332
+  at: '2026-06-13T21:55:26.969287Z'
+  input_url: https://endeavor.org/
+  strategy: single_page_extract
+  record_count: 13
+  valid_name_ratio: 1.0
+  duplicate_ratio: 0.0
+  completeness_score: 1.0
+notes: null

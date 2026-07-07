@@ -72,6 +72,9 @@ scraped_data/
 temp/
 cache/
 
+# Scout runtime state
+data/scout_coverage.json
+
 # Playwright
 .playwright/
 

@@ -696,6 +696,309 @@ def scrape_grindstone(session: requests.Session) -> List[Dict]:
     )
 
 
+# ── South Korea ──────────────────────────────────────────────────────────
+
+def scrape_strong_ventures(session: requests.Session) -> List[Dict]:
+    """Strong Ventures — Seoul, South Korea
+    Early-stage VC; portfolio cards in .portfolio-grid or similar.
+    """
+    logger.info("Scraping Strong Ventures...")
+    return _generic_scrape(
+        session,
+        ["https://www.strong.vc/portfolio", "https://www.strong.vc/"],
+        IncubatorSource.strong_ventures, "Strong Ventures", "South Korea", "Seoul",
+        card_selectors=["div.portfolio-item", "div.company-card", "div.w-dyn-item",
+                        "article.company", "li.portfolio-company"],
+    )
+
+
+def scrape_bon_angels(session: requests.Session) -> List[Dict]:
+    """Bon Angels — Seoul, South Korea
+    Seed-stage VC; portfolio names extracted from headings or image alts.
+    """
+    logger.info("Scraping Bon Angels...")
+    return _generic_scrape(
+        session,
+        ["https://www.bonangels.net/portfolio",
+         "https://www.bonangels.net/en/portfolio",
+         "https://www.bonangels.net/"],
+        IncubatorSource.bon_angels, "Bon Angels", "South Korea", "Seoul",
+        card_selectors=["div.portfolio-item", "div.company-card", "div.w-dyn-item",
+                        "ul.portfolio li", "div.portfolio-grid div"],
+    )
+
+
+def scrape_kakao_ventures(session: requests.Session) -> List[Dict]:
+    """Kakao Ventures — Seoul, South Korea
+    Kakao's VC arm; portfolio on English site or investor.kakao.com.
+    """
+    logger.info("Scraping Kakao Ventures...")
+    return _generic_scrape(
+        session,
+        ["https://www.kakaoventures.com/portfolio",
+         "https://www.kakaoventures.com/en/portfolio",
+         "https://www.kakaoventures.com/"],
+        IncubatorSource.kakao_ventures, "Kakao Ventures", "South Korea", "Seoul",
+        card_selectors=["div.portfolio-card", "div.company-card", "div.w-dyn-item",
+                        "li.portfolio-item", "div.portfolio-list-item"],
+    )
+
+
+def scrape_primer_sazze(session: requests.Session) -> List[Dict]:
+    """Primer Sazze Partners — Seoul, South Korea
+    Early-stage accelerator/VC; portfolio page in Korean and English.
+    """
+    logger.info("Scraping Primer Sazze...")
+    return _generic_scrape(
+        session,
+        ["https://primer.kr/en/portfolio",
+         "https://primer.kr/portfolio",
+         "https://primer.kr/"],
+        IncubatorSource.primer_sazze, "Primer Sazze", "South Korea", "Seoul",
+        card_selectors=["div.portfolio-item", "div.company-card", "div.w-dyn-item",
+                        "article.startup", "li.company"],
+    )
+
+
+def scrape_naver_d2sf(session: requests.Session) -> List[Dict]:
+    """Naver D2 Startup Factory — Seongnam, South Korea
+    Naver's startup investment arm; portfolio at d2startup.com.
+    """
+    logger.info("Scraping Naver D2SF...")
+    return _generic_scrape(
+        session,
+        ["https://d2startup.com/portfolio",
+         "https://d2startup.com/startups",
+         "https://d2startup.com/"],
+        IncubatorSource.naver_d2sf, "Naver D2SF", "South Korea", "Seongnam",
+        card_selectors=["div.portfolio-item", "div.startup-card", "div.w-dyn-item",
+                        "li.startup", "div.company-card"],
+    )
+
+
+def scrape_tips_program(session: requests.Session) -> List[Dict]:
+    """TIPS (Tech Incubator Program for Startup) — Seoul, South Korea
+    Government-backed deep-tech incubator; company list at tipsstartup.or.kr.
+    """
+    logger.info("Scraping TIPS Program...")
+    resp = _get(session, "https://www.tipsstartup.or.kr/company/list")
+    if not resp:
+        resp = _get(session, "https://www.tipsstartup.or.kr/")
+    if not resp:
+        return []
+
+    soup = BeautifulSoup(resp.text, "lxml")
+    companies = []
+
+    # TIPS uses a table layout; try rows first
+    for tr in soup.select("table tbody tr"):
+        tds = tr.find_all("td")
+        if not tds:
+            continue
+        name = tds[0].get_text(strip=True) if tds else None
+        if not _valid(name):
+            continue
+        link = tr.find("a", href=True)
+        href = link.get("href", "") if link else ""
+        website = href if href.startswith("http") and "tipsstartup" not in href else None
+        companies.append(_rec(name, IncubatorSource.tips_program, "South Korea", "Seoul",
+                              website_url=website))
+
+    if companies:
+        companies = _dedup(companies)
+        logger.info(f"TIPS Program: {len(companies)} companies (table)")
+        return companies
+
+    # Fallback: heading scan
+    return _generic_scrape(
+        session,
+        ["https://www.tipsstartup.or.kr/company/list", "https://www.tipsstartup.or.kr/"],
+        IncubatorSource.tips_program, "TIPS Program", "South Korea", "Seoul",
+        card_selectors=["div.company-item", "div.startup-item", "li.company",
+                        "div.w-dyn-item", "article"],
+    )
+
+
+# ── Israel ────────────────────────────────────────────────────────────────
+
+def scrape_ourcrowd(session: requests.Session) -> List[Dict]:
+    """OurCrowd — Jerusalem, Israel
+    Equity crowdfunding platform with large startup portfolio.
+    """
+    logger.info("Scraping OurCrowd...")
+    return _generic_scrape(
+        session,
+        ["https://www.ourcrowd.com/portfolio",
+         "https://www.ourcrowd.com/companies",
+         "https://www.ourcrowd.com/"],
+        IncubatorSource.ourcrowd, "OurCrowd", "Israel", "Jerusalem",
+        card_selectors=["div.company-card", "div.portfolio-card", "div.w-dyn-item",
+                        "article.company", "li.portfolio-item"],
+    )
+
+
+def scrape_jvp(session: requests.Session) -> List[Dict]:
+    """Jerusalem Venture Partners (JVP) — Jerusalem, Israel
+    Deep-tech / cybersecurity VC with extensive portfolio.
+    """
+    logger.info("Scraping JVP...")
+    return _generic_scrape(
+        session,
+        ["https://jvp.co.il/companies/",
+         "https://jvp.co.il/portfolio/",
+         "https://jvp.co.il/"],
+        IncubatorSource.jvp, "JVP", "Israel", "Jerusalem",
+        card_selectors=["div.company-card", "div.portfolio-item", "div.w-dyn-item",
+                        "article.company", "li.company"],
+    )
+
+
+def scrape_pitango(session: requests.Session) -> List[Dict]:
+    """Pitango Venture Capital — Tel Aviv, Israel
+    One of Israel's largest VC firms; portfolio page with card layout.
+    """
+    logger.info("Scraping Pitango...")
+    return _generic_scrape(
+        session,
+        ["https://www.pitango.com/portfolio/",
+         "https://www.pitango.com/companies/",
+         "https://www.pitango.com/"],
+        IncubatorSource.pitango, "Pitango", "Israel", "Tel Aviv",
+        card_selectors=["div.portfolio-item", "div.company-card", "div.w-dyn-item",
+                        "article.company", "li.portfolio-item"],
+    )
+
+
+def scrape_team8(session: requests.Session) -> List[Dict]:
+    """Team8 — Tel Aviv, Israel
+    Cybersecurity and enterprise tech venture group / foundry.
+    """
+    logger.info("Scraping Team8...")
+    return _generic_scrape(
+        session,
+        ["https://www.team8.vc/portfolio/",
+         "https://www.team8.vc/companies/",
+         "https://www.team8.vc/"],
+        IncubatorSource.team8, "Team8", "Israel", "Tel Aviv",
+        card_selectors=["div.portfolio-item", "div.company-card", "div.w-dyn-item",
+                        "article.company", "li.company"],
+    )
+
+
+def scrape_grove_ventures(session: requests.Session) -> List[Dict]:
+    """Grove Ventures — Tel Aviv, Israel
+    Deep-tech / AI / semiconductor focused VC.
+    """
+    logger.info("Scraping Grove Ventures...")
+    return _generic_scrape(
+        session,
+        ["https://www.groveventures.com/companies/",
+         "https://www.groveventures.com/portfolio/",
+         "https://www.groveventures.com/"],
+        IncubatorSource.grove_ventures, "Grove Ventures", "Israel", "Tel Aviv",
+        card_selectors=["div.company-card", "div.portfolio-item", "div.w-dyn-item",
+                        "article.company", "li.company"],
+    )
+
+
+def scrape_viola_ventures(session: requests.Session) -> List[Dict]:
+    """Viola Ventures — Herzliya, Israel
+    One of Israel's leading tech VC firms.
+    """
+    logger.info("Scraping Viola Ventures...")
+    return _generic_scrape(
+        session,
+        ["https://www.viola-group.com/companies/",
+         "https://www.viola-group.com/portfolio/",
+         "https://www.viola-group.com/"],
+        IncubatorSource.viola_ventures, "Viola Ventures", "Israel", "Herzliya",
+        card_selectors=["div.company-card", "div.portfolio-item", "div.w-dyn-item",
+                        "article.company", "li.portfolio-item"],
+    )
+
+
+# ── China ─────────────────────────────────────────────────────────────────
+
+def scrape_miracleplus(session: requests.Session) -> List[Dict]:
+    """MiraclePlus — Beijing, China
+    YC China successor; accelerates deep-tech and AI startups.
+    """
+    logger.info("Scraping MiraclePlus...")
+    return _generic_scrape(
+        session,
+        ["https://www.miracleplus.com/portfolio",
+         "https://www.miracleplus.com/startups",
+         "https://www.miracleplus.com/"],
+        IncubatorSource.miracleplus, "MiraclePlus", "China", "Beijing",
+        card_selectors=["div.company-card", "div.portfolio-item", "div.startup-card",
+                        "div.w-dyn-item", "li.company"],
+    )
+
+
+def scrape_sinovation(session: requests.Session) -> List[Dict]:
+    """Sinovation Ventures (Innovation Works) — Beijing, China
+    Kai-Fu Lee's AI-focused VC; portfolio includes major Chinese AI startups.
+    """
+    logger.info("Scraping Sinovation Ventures...")
+    return _generic_scrape(
+        session,
+        ["https://www.sinovationventures.com/portfolio",
+         "https://www.sinovationventures.com/companies",
+         "https://www.sinovationventures.com/"],
+        IncubatorSource.sinovation, "Sinovation Ventures", "China", "Beijing",
+        card_selectors=["div.portfolio-item", "div.company-card", "div.startup-card",
+                        "div.w-dyn-item", "article.company"],
+    )
+
+
+def scrape_zhenfund(session: requests.Session) -> List[Dict]:
+    """ZhenFund — Beijing, China
+    Prolific seed-stage fund co-founded by Bob Xu; large startup portfolio.
+    """
+    logger.info("Scraping ZhenFund...")
+    return _generic_scrape(
+        session,
+        ["https://www.zhenfund.com/portfolio",
+         "https://www.zhenfund.com/en/portfolio",
+         "https://www.zhenfund.com/"],
+        IncubatorSource.zhenfund, "ZhenFund", "China", "Beijing",
+        card_selectors=["div.portfolio-item", "div.company-card", "div.w-dyn-item",
+                        "li.startup", "article.company"],
+    )
+
+
+def scrape_idg_capital(session: requests.Session) -> List[Dict]:
+    """IDG Capital — Beijing, China
+    One of China's oldest and largest VC firms; extensive AI/tech portfolio.
+    """
+    logger.info("Scraping IDG Capital...")
+    return _generic_scrape(
+        session,
+        ["https://www.idgcapital.com/portfolio",
+         "https://www.idgcapital.com/companies",
+         "https://www.idgcapital.com/"],
+        IncubatorSource.idg_capital, "IDG Capital", "China", "Beijing",
+        card_selectors=["div.portfolio-item", "div.company-card", "div.w-dyn-item",
+                        "article.company", "li.portfolio-item"],
+    )
+
+
+def scrape_innospring(session: requests.Session) -> List[Dict]:
+    """Innospring — Beijing / Silicon Valley, China
+    Cross-border accelerator bridging China-US tech ecosystems.
+    """
+    logger.info("Scraping Innospring...")
+    return _generic_scrape(
+        session,
+        ["https://www.innospring.com/portfolio",
+         "https://www.innospring.com/startups",
+         "https://www.innospring.com/"],
+        IncubatorSource.innospring, "Innospring", "China", "Beijing",
+        card_selectors=["div.portfolio-item", "div.company-card", "div.startup-card",
+                        "div.w-dyn-item", "article.startup"],
+    )
+
+
 # ── DB upsert ──────────────────────────────────────────────────────────
 
 def upsert_companies(records: List[Dict]) -> Dict[str, int]:
@@ -840,6 +1143,26 @@ SCRAPERS = {
     # Africa
     "grindstone":        scrape_grindstone,
     "ventures_platform": scrape_ventures_platform,
+    # South Korea
+    "strong_ventures":   scrape_strong_ventures,
+    "bon_angels":        scrape_bon_angels,
+    "kakao_ventures":    scrape_kakao_ventures,
+    "primer_sazze":      scrape_primer_sazze,
+    "naver_d2sf":        scrape_naver_d2sf,
+    "tips_program":      scrape_tips_program,
+    # Israel
+    "ourcrowd":          scrape_ourcrowd,
+    "jvp":               scrape_jvp,
+    "pitango":           scrape_pitango,
+    "team8":             scrape_team8,
+    "grove_ventures":    scrape_grove_ventures,
+    "viola_ventures":    scrape_viola_ventures,
+    # China
+    "miracleplus":       scrape_miracleplus,
+    "sinovation":        scrape_sinovation,
+    "zhenfund":          scrape_zhenfund,
+    "idg_capital":       scrape_idg_capital,
+    "innospring":        scrape_innospring,
 }
 
 

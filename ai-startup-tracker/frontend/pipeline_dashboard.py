@@ -26,6 +26,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from backend.db.connection import get_engine
 from backend.orchestrator.orchestrator import Orchestrator
 from backend.scrapers.registry import SCRAPER_REGISTRY
+from backend.utils.country import count_distinct_countries, normalize_country, GLOBE_COUNTRIES
 from backend.utils.denylist import BIG_TECH_DENYLIST
 
 load_dotenv()
@@ -471,9 +472,11 @@ _engine = get_engine()
 with _engine.connect() as _conn:
     _total = _conn.execute(text("SELECT COUNT(*) FROM companies")).scalar() or 0
     _sources = _conn.execute(text("SELECT COUNT(*) FROM site_health")).scalar() or 0
-    _countries = _conn.execute(text(
-        "SELECT COUNT(DISTINCT country) FROM companies WHERE country IS NOT NULL"
-    )).scalar() or 0
+    _raw_countries = _conn.execute(text(
+        "SELECT DISTINCT country FROM companies"
+        " WHERE country IS NOT NULL AND country != '' AND country NOT ILIKE '%remote%'"
+    )).scalars().all()
+    _countries = count_distinct_countries(_raw_countries)
 
 _logo_img = (
     f'<img src="data:image/png;base64,{_logo_b64}" class="topnav-logo" alt="Yale SOM"/>'
@@ -531,6 +534,7 @@ def load_startups() -> pd.DataFrame:
             c.id, c.name, c.domain,
             LEFT(c.description, 240) AS description,
             c.country, c.city, c.stage, c.ai_score, c.ai_tags,
+            c.cb_ai_tagged, c.ai_mentioned, c.founded_year, c.categories,
             c.first_seen_at, c.incubator_source, c.verification_status,
             lf.deal_date AS last_funding_date,
             lf.deal_size AS last_funding_amount,
@@ -577,10 +581,11 @@ def load_startups() -> pd.DataFrame:
         is_big = name_l.isin(BIG_TECH_DENYLIST) | dom_root.isin(BIG_TECH_DENYLIST)
         df = df[~is_big].reset_index(drop=True)
 
-        # Inclusive "is AI" flag: any model-scored signal OR any AI tag attached.
-        # Captures companies with even a slight AI signal, not only high-confidence ones.
+        # Inclusive "is AI" flag: CB's own AI taxonomy OR model score OR any AI tag.
         has_tags = df["ai_tags"].apply(lambda x: isinstance(x, list) and len(x) > 0)
-        df["is_ai"] = (df["ai_score"].fillna(0) >= 0.3) | has_tags
+        cb_tagged = df["cb_ai_tagged"].fillna(False).astype(bool) if "cb_ai_tagged" in df.columns else pd.Series(False, index=df.index)
+        ai_mentioned = df["ai_mentioned"].fillna(False).astype(bool) if "ai_mentioned" in df.columns else pd.Series(False, index=df.index)
+        df["is_ai"] = cb_tagged | (df["ai_score"].fillna(0) >= 0.3) | has_tags | ai_mentioned
     return df
 
 
@@ -618,13 +623,389 @@ def load_recent_runs(hours: int = 168) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+@st.cache_data(ttl=120)
+def _load_overview_stats() -> dict:
+    """Live aggregate stats for the Overview metric cards."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        total = conn.execute(text("SELECT COUNT(*) FROM companies")).scalar() or 0
+        ai = conn.execute(text(
+            "SELECT COUNT(*) FROM companies WHERE cb_ai_tagged = TRUE OR ai_score >= 0.5 OR ai_mentioned = TRUE"
+        )).scalar() or 0
+        funded = conn.execute(text(
+            "SELECT COUNT(DISTINCT company_id) FROM funding_signals"
+        )).scalar() or 0
+        countries = conn.execute(text(
+            "SELECT COUNT(DISTINCT country) FROM companies "
+            "WHERE country IS NOT NULL AND country != ''"
+        )).scalar() or 0
+    return {"total": total, "ai": ai, "funded": funded, "countries": countries}
+
+
+@st.cache_data(ttl=300)
+def _load_ai_adoption_curve() -> pd.DataFrame:
+    """Aggregate AI adoption by founding year across all companies."""
+    engine = get_engine()
+    query = """
+        SELECT
+            founded_year,
+            COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE cb_ai_tagged OR ai_score >= 0.5 OR ai_mentioned) AS ai
+        FROM companies
+        WHERE founded_year BETWEEN 2000 AND 2026
+        GROUP BY founded_year
+        ORDER BY founded_year
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(query)).mappings().all()
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        df["ai_pct"] = (df["ai"] / df["total"] * 100).round(1)
+    return df
+
+
+@st.cache_data(ttl=300)
+def _load_country_ai_stats(min_companies: int = 100) -> pd.DataFrame:
+    """Per-country totals and AI counts across all companies."""
+    engine = get_engine()
+    query = f"""
+        SELECT country,
+               COUNT(*) AS total,
+               COUNT(*) FILTER (WHERE cb_ai_tagged OR ai_score >= 0.5 OR ai_mentioned) AS ai
+        FROM companies
+        WHERE country IS NOT NULL AND country != ''
+        GROUP BY country
+        HAVING COUNT(*) >= {min_companies}
+        ORDER BY ai DESC
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(query)).mappings().all()
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        df["ai_pct"] = (df["ai"] / df["total"] * 100).round(1)
+    return df
+
+
+@st.cache_data(ttl=300)
+def _load_source_ai_stats() -> pd.DataFrame:
+    """Per-source AI counts across all companies (full DB)."""
+    engine = get_engine()
+    query = """
+        SELECT
+            COALESCE(incubator_source::text, '(no source)') AS incubator_source,
+            COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE cb_ai_tagged OR ai_score >= 0.5 OR ai_mentioned) AS ai_count
+        FROM companies
+        GROUP BY incubator_source
+        HAVING COUNT(*) >= 5
+        ORDER BY ai_count DESC
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(query)).mappings().all()
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        df["ai_pct"] = (df["ai_count"] / df["total"] * 100).round(1)
+    return df
+
+
+@st.cache_data(ttl=300)
+def _load_country_year_matrix(top_n: int = 25) -> pd.DataFrame:
+    """AI% per country per founding year for the top N countries by total size."""
+    engine = get_engine()
+    query = f"""
+        WITH top_countries AS (
+            SELECT country FROM companies
+            WHERE country IS NOT NULL AND country != ''
+            GROUP BY country ORDER BY COUNT(*) DESC LIMIT {top_n}
+        )
+        SELECT c.country, c.founded_year,
+               COUNT(*) AS total,
+               COUNT(*) FILTER (WHERE c.cb_ai_tagged OR c.ai_score >= 0.5 OR c.ai_mentioned) AS ai
+        FROM companies c
+        JOIN top_countries tc ON c.country = tc.country
+        WHERE c.founded_year BETWEEN 2010 AND 2026
+        GROUP BY c.country, c.founded_year
+        ORDER BY c.country, c.founded_year
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(query)).mappings().all()
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        df["ai_pct"] = (df["ai"] / df["total"] * 100).round(1)
+    return df
+
+
+@st.cache_data(ttl=300)
+def _load_research_export() -> pd.DataFrame:
+    """All AI companies (cb_ai_tagged OR ai_score >= 0.5 OR ai_mentioned) with key research fields."""
+    engine = get_engine()
+    query = """
+        SELECT name, domain, country, city, founded_year,
+               ai_score, cb_ai_tagged, ai_mentioned, total_raised,
+               team_size, stage, categories, verification_status
+        FROM companies
+        WHERE cb_ai_tagged = TRUE OR ai_score >= 0.5 OR ai_mentioned = TRUE
+        ORDER BY founded_year DESC NULLS LAST, country
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(query)).mappings().all()
+    return pd.DataFrame(rows)
+
+
+@st.cache_data(ttl=300)
+def _load_company_filter_options() -> tuple:
+    """Distinct countries, stages, and verticals for the Company Explorer filters."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        countries = [r[0] for r in conn.execute(text(
+            "SELECT DISTINCT country FROM companies WHERE country IS NOT NULL ORDER BY country"
+        )).all()]
+        stages = [r[0] for r in conn.execute(text(
+            "SELECT stage FROM companies WHERE stage IS NOT NULL GROUP BY stage ORDER BY COUNT(*) DESC"
+        )).all()]
+        verticals = sorted({r[0] for r in conn.execute(text(
+            "SELECT DISTINCT unnest(categories) AS v FROM companies WHERE categories IS NOT NULL"
+        )).all()})
+    return countries, stages, verticals
+
+
+@st.cache_data(ttl=300)
+def _load_filtered_companies(
+    countries_t: tuple,
+    year_min: int,
+    year_max: int,
+    stages_t: tuple,
+    min_raised_m: float,
+    ai_only: bool,
+    verticals_t: tuple,
+    limit: int = 1000,
+) -> pd.DataFrame:
+    engine = get_engine()
+    conditions = ["founded_year BETWEEN :year_min AND :year_max"]
+    params: dict = {"year_min": year_min, "year_max": year_max, "limit": limit}
+
+    if countries_t:
+        conditions.append("country = ANY(:countries)")
+        params["countries"] = list(countries_t)
+    if stages_t:
+        conditions.append("stage = ANY(:stages)")
+        params["stages"] = list(stages_t)
+    if min_raised_m > 0:
+        conditions.append("total_raised >= :min_raised")
+        params["min_raised"] = min_raised_m
+    if ai_only:
+        conditions.append("(cb_ai_tagged = TRUE OR ai_score >= 0.5 OR ai_mentioned = TRUE)")
+    if verticals_t:
+        conditions.append("categories && :verticals")
+        params["verticals"] = list(verticals_t)
+
+    where = " AND ".join(conditions)
+    query = f"""
+        SELECT
+            name, domain, country, city, founded_year, stage,
+            ROUND(total_raised::numeric, 1) AS total_raised_m,
+            ai_score,
+            cb_ai_tagged,
+            ai_mentioned,
+            COALESCE(array_to_string(categories, ', '), '') AS verticals,
+            verification_status
+        FROM companies
+        WHERE {where}
+        ORDER BY total_raised DESC NULLS LAST, founded_year DESC NULLS LAST
+        LIMIT :limit
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(query), params).mappings().all()
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        df["ai_score"] = df["ai_score"].round(2)
+    return df
+
+
+@st.cache_data(ttl=300)
+def _load_vertical_ai_stats() -> pd.DataFrame:
+    """AI share per industry vertical (canonical categories)."""
+    engine = get_engine()
+    query = """
+        SELECT
+            unnest(categories) AS vertical,
+            COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE cb_ai_tagged = TRUE OR ai_score >= 0.5 OR ai_mentioned = TRUE) AS ai
+        FROM companies
+        WHERE categories IS NOT NULL AND array_length(categories, 1) > 0
+        GROUP BY vertical
+        ORDER BY total DESC
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(query)).mappings().all()
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        df["ai_pct"] = (df["ai"] / df["total"] * 100).round(1)
+    return df
+
+
+@st.cache_data(ttl=300)
+def _load_vc_deal_volume() -> pd.DataFrame:
+    """Deal count by stage bucket × year (2010-2024)."""
+    engine = get_engine()
+    query = """
+        SELECT
+            EXTRACT(year FROM deal_date)::int AS year,
+            CASE round_type
+                WHEN 'Accelerator/Incubator' THEN 'Pre-Seed / Accel'
+                WHEN 'Grant'                 THEN 'Pre-Seed / Accel'
+                WHEN 'Seed Round'            THEN 'Seed'
+                WHEN 'Angel (individual)'    THEN 'Seed'
+                WHEN 'Equity Crowdfunding'   THEN 'Seed'
+                WHEN 'Early Stage VC'        THEN 'Early VC'
+                WHEN 'Later Stage VC'        THEN 'Growth'
+                WHEN 'PE Growth/Expansion'   THEN 'Growth'
+                WHEN 'Corporate'             THEN 'Corporate / Other'
+                WHEN 'PIPE'                  THEN 'Corporate / Other'
+            END AS stage_bucket,
+            COUNT(*) AS deals
+        FROM funding_signals
+        WHERE deal_date IS NOT NULL
+          AND EXTRACT(year FROM deal_date) BETWEEN 2010 AND 2024
+          AND round_type IN (
+              'Accelerator/Incubator', 'Grant',
+              'Seed Round', 'Angel (individual)', 'Equity Crowdfunding',
+              'Early Stage VC', 'Later Stage VC', 'PE Growth/Expansion',
+              'Corporate', 'PIPE'
+          )
+        GROUP BY year, stage_bucket
+        ORDER BY year, stage_bucket
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(query)).mappings().all()
+    return pd.DataFrame(rows)
+
+
+@st.cache_data(ttl=300)
+def _load_deal_size_trend() -> pd.DataFrame:
+    """Median deal size ($M) by year and stage bucket (2010-2024)."""
+    engine = get_engine()
+    query = """
+        SELECT
+            EXTRACT(year FROM deal_date)::int AS year,
+            CASE round_type
+                WHEN 'Seed Round'         THEN 'Seed'
+                WHEN 'Angel (individual)' THEN 'Seed'
+                WHEN 'Early Stage VC'     THEN 'Early VC'
+                WHEN 'Later Stage VC'     THEN 'Growth'
+                WHEN 'PE Growth/Expansion' THEN 'Growth'
+            END AS stage_bucket,
+            PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY deal_size / 1e6) AS median_m
+        FROM funding_signals
+        WHERE deal_date IS NOT NULL
+          AND deal_size > 0
+          AND EXTRACT(year FROM deal_date) BETWEEN 2010 AND 2024
+          AND round_type IN (
+              'Seed Round', 'Angel (individual)',
+              'Early Stage VC', 'Later Stage VC', 'PE Growth/Expansion'
+          )
+        GROUP BY year, stage_bucket
+        ORDER BY year, stage_bucket
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(query)).mappings().all()
+    return pd.DataFrame(rows)
+
+
+@st.cache_data(ttl=300)
+def _load_ai_first_financing() -> pd.DataFrame:
+    """First financing year distribution for AI vs non-AI companies (2010-2024)."""
+    engine = get_engine()
+    query = """
+        SELECT first_year, company_type, COUNT(*) AS companies
+        FROM (
+            SELECT
+                EXTRACT(year FROM MIN(fs.deal_date))::int AS first_year,
+                CASE WHEN c.cb_ai_tagged = TRUE OR c.ai_score >= 0.5 OR c.ai_mentioned = TRUE
+                     THEN 'AI' ELSE 'Non-AI' END AS company_type
+            FROM funding_signals fs
+            JOIN companies c ON c.id = fs.company_id
+            WHERE fs.deal_date IS NOT NULL
+            GROUP BY c.id, c.cb_ai_tagged, c.ai_score
+        ) sub
+        WHERE first_year BETWEEN 2010 AND 2024
+        GROUP BY first_year, company_type
+        ORDER BY first_year, company_type
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(query)).mappings().all()
+    return pd.DataFrame(rows)
+
+
+@st.cache_data(ttl=300)
+def _load_site_countries() -> dict[str, str]:
+    """Returns domain → canonical country mapping.
+
+    Priority: source_domain cross-ref > incubator_source cross-ref > TLD inference.
+    """
+    engine = get_engine()
+    mapping: dict[str, str] = {}
+
+    # Primary: source_domain set by agentic scraper (arbitrary sites)
+    with engine.connect() as conn:
+        rows = conn.execute(text(
+            "SELECT source_domain, country FROM companies "
+            "WHERE source_domain IS NOT NULL AND country IS NOT NULL AND country != '' "
+            "GROUP BY source_domain, country ORDER BY COUNT(*) DESC"
+        )).mappings().all()
+    for row in rows:
+        domain = row["source_domain"]
+        if domain and domain not in mapping:
+            norm = normalize_country(row["country"])
+            if norm and norm in GLOBE_COUNTRIES:
+                mapping[domain] = norm
+
+    # Fallback: incubator_source enum for legacy hard-coded sources
+    with engine.connect() as conn:
+        rows = conn.execute(text(
+            "SELECT DISTINCT incubator_source::text, country FROM companies "
+            "WHERE incubator_source IS NOT NULL AND country IS NOT NULL AND country != ''"
+        )).mappings().all()
+    for row in rows:
+        src = row["incubator_source"]
+        if src and src not in mapping:
+            norm = normalize_country(row["country"])
+            if norm and norm in GLOBE_COUNTRIES:
+                mapping[src] = norm
+
+    # For remaining domains, infer from TLD (longer patterns first)
+    with engine.connect() as conn:
+        domain_rows = conn.execute(text("SELECT DISTINCT domain FROM site_health")).mappings().all()
+    _TLD_MAP = [
+        (".co.kr", "South Korea"), (".com.au", "Australia"), (".co.uk", "United Kingdom"),
+        (".com.br", "Brazil"), (".co.il", "Israel"), (".co.in", "India"),
+        (".kr", "South Korea"), (".jp", "Japan"), (".de", "Germany"),
+        (".fr", "France"), (".il", "Israel"), (".sg", "Singapore"),
+        (".au", "Australia"), (".se", "Sweden"), (".nl", "Netherlands"),
+        (".in", "India"), (".ae", "United Arab Emirates"), (".cn", "China"),
+        (".tw", "Taiwan"), (".br", "Brazil"), (".ca", "Canada"),
+        (".uk", "United Kingdom"), (".dk", "Denmark"), (".fi", "Finland"),
+        (".no", "Norway"), (".ch", "Switzerland"), (".be", "Belgium"),
+        (".es", "Spain"), (".it", "Italy"), (".pl", "Poland"), (".ee", "Estonia"),
+    ]
+    for row in domain_rows:
+        domain = row["domain"]
+        if domain not in mapping:
+            for suffix, country in _TLD_MAP:
+                if domain.endswith(suffix):
+                    mapping[domain] = country
+                    break
+
+    return mapping
+
+
 # ── Plotly helpers ───────────────────────────────────────────────────
 
 def _layout(**kw):
     base = dict(
         paper_bgcolor=BG, plot_bgcolor=BG_OFF,
         font=dict(family="Inter", color=TXT2, size=12),
-        title_font=dict(color=TXT, size=14, family="Inter"),
+        title=dict(text="", font=dict(color=TXT, size=14, family="Inter")),
         xaxis=dict(gridcolor=BORDER_LIGHT, zerolinecolor=BORDER),
         yaxis=dict(gridcolor=BORDER_LIGHT, zerolinecolor=BORDER),
         margin=dict(l=0, r=0, t=36, b=0),
@@ -694,13 +1075,9 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
                 diagnosed_n = int(health_df["pending_reason"].notna().sum())
                 sc3.metric("With AI diagnosis", f"{diagnosed_n:,}")
 
-    # Metrics
-    total = len(df)
-    # Inclusive: any model-scored AI signal OR any AI tag attached.
-    is_ai_col = df["is_ai"] if "is_ai" in df.columns else (df["ai_score"].fillna(0) >= 0.3)
-    ai_n = int(is_ai_col.sum())
-    funded = int(df["last_funding_date"].notna().sum())
-    countries = df["country"].dropna().nunique()
+    # Live aggregate stats (full DB, not limited to the 15K loaded rows)
+    stats = _load_overview_stats()
+    total = stats["total"]
 
     st.markdown(
         '<div class="section-header" style="margin-top:24px;">Companies</div>'
@@ -708,10 +1085,10 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
         unsafe_allow_html=True,
     )
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Total Companies", f"{total:,}")
-    m2.metric("AI Startups", f"{ai_n:,}")
-    m3.metric("With Funding", f"{funded:,}")
-    m4.metric("Countries", f"{countries:,}")
+    m1.metric("Total Companies", f"{stats['total']:,}")
+    m2.metric("AI Startups", f"{stats['ai']:,}")
+    m3.metric("With Funding", f"{stats['funded']:,}")
+    m4.metric("Countries", f"{stats['countries']:,}")
 
     # ── US Geography Map ─────────────────────────────────────────────
     st.markdown(
@@ -799,7 +1176,7 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
         "government_program": "Government Program", "discovery_aggregator": "Discovery Aggregator",
     }
 
-    ff1, ff2, ff3, ff4 = st.columns(4)
+    ff1, ff2, ff3, ff4, ff5 = st.columns(5)
     stages = sorted(df["stage"].dropna().unique().tolist())
     sel_stages = ff1.multiselect("Stage", options=stages, placeholder="All stages")
     ctries = sorted(df["country"].dropna().unique().tolist())
@@ -809,6 +1186,8 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
     sel_cats = ff4.multiselect("Source type", options=list(_CAT_LABELS.keys()),
                                 format_func=lambda x: _CAT_LABELS.get(x, x),
                                 placeholder="All types")
+    from backend.utils.industry import CANONICAL_VERTICALS
+    sel_verticals = ff5.multiselect("Vertical", options=CANONICAL_VERTICALS, placeholder="All verticals")
 
     if "founded_year" in df.columns and df["founded_year"].notna().any():
         valid_yrs = df["founded_year"].dropna().astype(int)
@@ -839,6 +1218,10 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
     if sel_cats:
         src_cat = f["incubator_source"].astype(str).map(_SOURCE_CATEGORY).fillna("discovery_aggregator")
         f = f[src_cat.isin(sel_cats)]
+    if sel_verticals and "categories" in f.columns:
+        f = f[f["categories"].apply(
+            lambda cats: isinstance(cats, list) and any(v in cats for v in sel_verticals)
+        )]
     if yr_range and "founded_year" in f.columns:
         f = f[f["founded_year"].isna() | f["founded_year"].between(yr_range[0], yr_range[1])]
     if search:
@@ -852,7 +1235,8 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
     r1, r2 = st.columns([5, 1])
     r1.markdown(
         f'<span style="color:{TXT3};font-size:0.84rem;">'
-        f'<b style="color:{TXT};">{len(f):,}</b> of {total:,} companies '
+        f'<b style="color:{TXT};">{len(f):,}</b> matching '
+        f'(of {len(df):,} loaded) &middot; <b style="color:{TXT};">{total:,}</b> total in DB '
         f'&middot; sorted by most recent funding</span>',
         unsafe_allow_html=True,
     )
@@ -1017,7 +1401,8 @@ def page_trends(df: pd.DataFrame):
         unsafe_allow_html=True,
     )
 
-    ai_df = df[(df["ai_score"].fillna(0) >= 0.5) & df["ai_tags"].notna()].copy()
+    is_ai_sig = (df["ai_score"].fillna(0) >= 0.5) | df.get("cb_ai_tagged", pd.Series(False, index=df.index)).fillna(False)
+    ai_df = df[is_ai_sig & df["ai_tags"].notna()].copy()
     ai_df = ai_df[ai_df["ai_tags"].apply(lambda x: isinstance(x, list) and len(x) > 0)]
 
     if ai_df.empty:
@@ -1068,6 +1453,7 @@ def page_trends(df: pd.DataFrame):
     md = md.rename(columns={"subdomain": "Subdomain", "total": "Total",
                              "new_30d": "New (30d)", "prev_30d": "Prev 30d", "growth_pct": "Growth"})
     st.dataframe(md, width="stretch", hide_index=True)
+
 
 
 # ── Page: Pipeline Health ────────────────────────────────────────────
@@ -1191,6 +1577,63 @@ def page_health(health_df: pd.DataFrame, runs_df: pd.DataFrame):
             rd["duration_seconds"] = rd["duration_seconds"].apply(
                 lambda v: f"{v:.1f}s" if pd.notna(v) else "")
         st.dataframe(rd, width="stretch", hide_index=True, height=340)
+
+    # ── Coverage by Country ──────────────────────────────────────────
+    st.markdown("---")
+    st.markdown("### Coverage by Country")
+
+    country_map = _load_site_countries()
+    hdf = health_df.copy()
+    hdf["country"] = hdf["domain"].map(country_map)
+    intl_df = hdf[hdf["country"].notna()].copy()
+
+    if intl_df.empty:
+        st.info("No country data available yet — scrape some sites or check TLD coverage.")
+    else:
+        by_country = (
+            intl_df.groupby("country")
+            .agg(
+                total=("domain", "count"),
+                healthy=("status", lambda x: (x == "healthy").sum()),
+                pending=("status", lambda x: (x == "pending").sum()),
+                broken=("status", lambda x: (x == "broken").sum()),
+                last_scraped=("last_success_at", "max"),
+            )
+            .reset_index()
+            .sort_values("total", ascending=False)
+        )
+
+        fig = go.Figure()
+        for state, color in [("pending", "#f59e0b"), ("healthy", "#22c55e"), ("broken", "#ef4444")]:
+            fig.add_bar(
+                y=by_country["country"],
+                x=by_country[state],
+                name=state.capitalize(),
+                marker_color=color,
+                orientation="h",
+            )
+        fig.update_layout(
+            barmode="stack",
+            height=max(300, len(by_country) * 28),
+            xaxis_title="Sites",
+            legend_title_text="Status",
+            title_text="",
+            **_layout(),
+        )
+        fig.update_yaxes(autorange="reversed")
+        st.plotly_chart(fig, use_container_width=True)
+
+        display = by_country.copy()
+        display["last_scraped"] = pd.to_datetime(display["last_scraped"], errors="coerce").dt.strftime("%Y-%m-%d")
+        st.dataframe(
+            display.rename(columns={
+                "country": "Country", "total": "Total",
+                "healthy": "Healthy", "pending": "Pending", "broken": "Broken",
+                "last_scraped": "Last Scraped",
+            }),
+            use_container_width=True,
+            hide_index=True,
+        )
 
 
 # ── Page: GitHub Discovery ───────────────────────────────────────────
@@ -1805,6 +2248,7 @@ def page_inventory():
 
     scrape_colors = {"easy": "#1aab68", "agentic": "#286dc0", "challenging": "#dc2626"}
 
+    present_tiers = [t for t in ["easy", "agentic", "challenging"] if t in cat_counts["scrapeability"].values]
     fig_cat = px.bar(
         cat_counts,
         x="category_label",
@@ -1813,7 +2257,7 @@ def page_inventory():
         color_discrete_map=scrape_colors,
         category_orders={
             "category_label": [_CATEGORY_LABELS[c] for c in _CATEGORY_ORDER],
-            "scrapeability": ["easy", "agentic", "challenging"],
+            "scrapeability": present_tiers,
         },
         barmode="stack",
         labels={"category_label": "", "count": "Sites", "scrapeability": ""},
@@ -1865,7 +2309,9 @@ def page_inventory():
     st.dataframe(display, hide_index=True, use_container_width=True, height=480)
 
 
-def page_ai_analysis(df: pd.DataFrame):
+def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None,
+                     source_stats: pd.DataFrame | None = None,
+                     country_stats: pd.DataFrame | None = None):
     st.markdown(
         '<div class="section-header">AI Startup Analysis</div>'
         '<div class="section-sub">Classification of all tracked companies — AI-focused vs. non-AI, '
@@ -1880,12 +2326,15 @@ def page_ai_analysis(df: pd.DataFrame):
     # Align with overview: is_ai = score >= 0.3 OR any ai_tag present
     # Use apply() to handle both list and string storage ([] is falsy but [] != "" is True)
     has_tags = df["ai_tags"].apply(lambda x: bool(x)) if "ai_tags" in df.columns else pd.Series(False, index=df.index)
-    is_ai = ((df["ai_score"].fillna(0) >= 0.3) | has_tags) if "ai_score" in df.columns else has_tags
+    cb_tagged = df["cb_ai_tagged"].fillna(False).astype(bool) if "cb_ai_tagged" in df.columns else pd.Series(False, index=df.index)
+    ai_mentioned = df["ai_mentioned"].fillna(False).astype(bool) if "ai_mentioned" in df.columns else pd.Series(False, index=df.index)
+    is_ai = cb_tagged | ((df["ai_score"].fillna(0) >= 0.3) | has_tags | ai_mentioned) if "ai_score" in df.columns else has_tags
     df = df.copy()
     df["is_ai"] = is_ai
 
-    total = len(df)
-    ai_cos = int(is_ai.sum())
+    # Use full-DB stats for headline numbers; fall back to df sample if not provided
+    total = stats["total"] if stats else len(df)
+    ai_cos = stats["ai"] if stats else int(is_ai.sum())
     non_ai = total - ai_cos
     ai_pct = round(ai_cos * 100.0 / total, 1) if total else 0
     unclassified = int(df["ai_score"].isna().sum()) if "ai_score" in df.columns else 0
@@ -1893,14 +2342,16 @@ def page_ai_analysis(df: pd.DataFrame):
     # ── Headline metrics ─────────────────────────────────────────────
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Total companies", f"{total:,}")
-    m2.metric("AI companies", f"{ai_cos:,}", help="ai_score ≥ 0.3 or has AI tag")
+    m2.metric("AI companies", f"{ai_cos:,}", help="cb_ai_tagged OR ai_score ≥ 0.3 OR ai_mentioned")
     m3.metric("AI share", f"{ai_pct}%")
     m4.metric("Unclassified", f"{unclassified:,}", help="ai_score is NULL")
 
     st.markdown("<br/>", unsafe_allow_html=True)
 
     # ── AI % by source program ───────────────────────────────────────
-    if "incubator_source" in df.columns:
+    if source_stats is not None and not source_stats.empty:
+        prog = source_stats.sort_values("ai_count", ascending=True).tail(20)
+    elif "incubator_source" in df.columns:
         src = df.copy()
         src["incubator_source"] = src["incubator_source"].fillna("(no source)")
         prog = (
@@ -1914,6 +2365,9 @@ def page_ai_analysis(df: pd.DataFrame):
         prog = prog[prog["total"] >= 5].copy()
         prog["ai_pct"] = (prog["ai_count"] / prog["total"] * 100).round(1)
         prog = prog.sort_values("ai_count", ascending=True).tail(20)
+    else:
+        prog = pd.DataFrame()
+    if not prog.empty:
 
         fig_src = px.bar(
             prog,
@@ -1935,15 +2389,28 @@ def page_ai_analysis(df: pd.DataFrame):
     col_left, col_right = st.columns([3, 2])
 
     with col_left:
-        if "country" in df.columns:
+        if country_stats is not None and not country_stats.empty:
+            ctry = country_stats.sort_values("ai", ascending=False).head(15).sort_values("ai")
+            fig_ctry = px.bar(
+                ctry,
+                x="ai",
+                y="country",
+                orientation="h",
+                color="ai",
+                color_continuous_scale=[[0, "#cce3ff"], [1, "#00356b"]],
+                labels={"ai": "AI Startups", "country": ""},
+                title="AI Startups by Country (top 15)",
+                text="ai",
+            )
+            fig_ctry.update_traces(textposition="outside")
+            fig_ctry.update_layout(**_layout(height=440))
+            st.plotly_chart(fig_ctry, use_container_width=True)
+        elif "country" in df.columns:
             ai_df = df[df["is_ai"]].copy()
-            # Normalise messy country strings: "USA", "United States", "US" → "United States"
             norm = {"USA": "United States", "US": "United States", "usa": "United States",
                     "U.S.A.": "United States", "U.S.": "United States"}
             ai_df["country_norm"] = ai_df["country"].replace(norm)
-            # Strip trailing semicolon fields like "USA; Remote"
             ai_df["country_norm"] = ai_df["country_norm"].str.split(";").str[0].str.strip()
-
             ctry = (
                 ai_df[ai_df["country_norm"].notna()]
                 .groupby("country_norm")
@@ -2010,16 +2477,16 @@ def page_ai_analysis(df: pd.DataFrame):
             .reset_index()
             .tail(24)
         )
-        fig_time = px.bar(
-            monthly,
-            x="month",
-            y=["ai", "total"],
+        fig_time = go.Figure()
+        fig_time.add_bar(x=monthly["month"], y=monthly["total"], name="All", marker_color="#e3e7ee")
+        fig_time.add_bar(x=monthly["month"], y=monthly["ai"], name="AI", marker_color="#286dc0")
+        fig_time.update_layout(
             barmode="overlay",
-            color_discrete_map={"ai": "#286dc0", "total": "#e3e7ee"},
-            labels={"month": "", "value": "Companies", "variable": ""},
-            title="Monthly Company Discovery (AI in blue, all in grey)",
+            title_text="Monthly Company Discovery (AI in blue, all in grey)",
+            xaxis_title="",
+            yaxis_title="Companies",
+            **_layout(height=280),
         )
-        fig_time.update_layout(**_layout(height=280))
         st.plotly_chart(fig_time, use_container_width=True)
 
     # ── Recently discovered AI companies ────────────────────────────
@@ -2041,6 +2508,364 @@ def page_ai_analysis(df: pd.DataFrame):
                       "ai_score": "AI Score", "incubator_source": "Source", "first_seen_at": "First Seen"}
         recent.rename(columns=col_rename, inplace=True)
         st.dataframe(recent, hide_index=True, use_container_width=True, height=480)
+
+
+# ── Page: Research ───────────────────────────────────────────────────
+
+def page_research():
+    stats = _load_overview_stats()
+    curve = _load_ai_adoption_curve()
+    country_stats = _load_country_ai_stats(min_companies=100)
+    matrix = _load_country_year_matrix(top_n=25)
+    vertical_stats = _load_vertical_ai_stats()
+    deal_volume = _load_vc_deal_volume()
+    deal_sizes = _load_deal_size_trend()
+    first_fin = _load_ai_first_financing()
+
+    total_cos = stats["total"]
+    total_ai = stats["ai"]
+    countries_n = stats["countries"]
+
+    st.markdown(
+        f'<div class="section-header">Research Dashboard</div>'
+        f'<div class="section-sub">Global AI startup formation — {total_cos:,} companies across {countries_n} countries, 2000–2026</div>',
+        unsafe_allow_html=True,
+    )
+
+    # ── Summary stats ────────────────────────────────────────────────
+    if not curve.empty:
+        # Peak year: only consider years with at least 1,000 companies (avoid sparse recent years)
+        stable = curve[curve["total"] >= 1000]
+        peak_year = int(stable.loc[stable["ai_pct"].idxmax(), "founded_year"]) if not stable.empty else "—"
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Total companies", f"{total_cos:,}")
+        c2.metric("AI companies", f"{total_ai:,}", f"{100*total_ai/total_cos:.1f}% of total")
+        c3.metric("Countries", f"{countries_n}")
+        c4.metric("Peak AI year", str(peak_year))
+
+    st.markdown("<hr/>", unsafe_allow_html=True)
+
+    # ── Section 1: AI Formation Timeline ────────────────────────────
+    st.markdown(
+        '<div class="section-header">AI Startup Formation Timeline</div>'
+        '<div class="section-sub">Total tech companies (bars) vs AI share % (line) by founding year</div>',
+        unsafe_allow_html=True,
+    )
+
+    if not curve.empty:
+        fig = go.Figure()
+        fig.add_trace(go.Bar(
+            x=curve["founded_year"], y=curve["total"],
+            name="All tech companies",
+            marker_color="rgba(0,53,107,0.18)",
+            yaxis="y2",
+        ))
+        fig.add_trace(go.Scatter(
+            x=curve["founded_year"], y=curve["ai_pct"],
+            name="AI share (%)",
+            mode="lines+markers",
+            line=dict(color="#0d9668", width=3),
+            marker=dict(size=7),
+        ))
+        fig.update_layout(
+            **_layout(
+                height=380,
+                yaxis=dict(title="AI share (%)", ticksuffix="%", rangemode="tozero", gridcolor=BORDER_LIGHT),
+                yaxis2=dict(title="Total companies", overlaying="y", side="right", showgrid=False),
+            ),
+            legend=dict(orientation="h", y=1.08),
+            hovermode="x unified",
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown("<hr/>", unsafe_allow_html=True)
+
+    # ── Section 2: Geographic AI Concentration ───────────────────────
+    st.markdown(
+        '<div class="section-header">Geographic AI Concentration</div>'
+        '<div class="section-sub">Countries ranked by AI share of tech startup formation (min 100 companies)</div>',
+        unsafe_allow_html=True,
+    )
+
+    if not country_stats.empty:
+        col_left, col_right = st.columns([3, 2])
+
+        with col_left:
+            top30 = country_stats.head(30).sort_values("ai_pct")
+            fig_geo = px.bar(
+                top30, x="ai_pct", y="country", orientation="h",
+                labels={"ai_pct": "AI share (%)", "country": ""},
+                color="ai_pct",
+                color_continuous_scale=[[0, "#e3e7ee"], [0.5, "#286dc0"], [1, "#00356b"]],
+            )
+            fig_geo.update_coloraxes(showscale=False)
+            fig_geo.update_layout(**_layout(height=max(400, len(top30) * 22)))
+            st.plotly_chart(fig_geo, use_container_width=True)
+
+        with col_right:
+            tbl = country_stats.head(30)[["country", "total", "ai", "ai_pct"]].copy()
+            tbl.columns = ["Country", "Total", "AI", "AI %"]
+            tbl["AI %"] = tbl["AI %"].apply(lambda v: f"{v:.1f}%")
+            st.dataframe(tbl, hide_index=True, use_container_width=True, height=680)
+
+    st.markdown("<hr/>", unsafe_allow_html=True)
+
+    # ── Section 3: AI Adoption by Industry Vertical ──────────────────
+    st.markdown(
+        '<div class="section-header">AI Adoption by Industry Vertical</div>'
+        '<div class="section-sub">AI share of startup formation per industry — unified taxonomy across Crunchbase and PitchBook (98% coverage)</div>',
+        unsafe_allow_html=True,
+    )
+
+    if not vertical_stats.empty:
+        col_vl, col_vr = st.columns([3, 2])
+        with col_vl:
+            sorted_v = vertical_stats.sort_values("ai_pct")
+            fig_vert = px.bar(
+                sorted_v, x="ai_pct", y="vertical", orientation="h",
+                labels={"ai_pct": "AI share (%)", "vertical": ""},
+                color="ai_pct",
+                color_continuous_scale=[[0, "#e3e7ee"], [0.5, "#286dc0"], [1, "#00356b"]],
+            )
+            fig_vert.update_coloraxes(showscale=False)
+            fig_vert.update_layout(**_layout(height=max(380, len(sorted_v) * 26)))
+            st.plotly_chart(fig_vert, use_container_width=True)
+        with col_vr:
+            tbl_v = vertical_stats[["vertical", "total", "ai", "ai_pct"]].copy()
+            tbl_v = tbl_v.sort_values("ai_pct", ascending=False)
+            tbl_v.columns = ["Vertical", "Total", "AI", "AI %"]
+            tbl_v["AI %"] = tbl_v["AI %"].apply(lambda v: f"{v:.1f}%")
+            st.dataframe(tbl_v, hide_index=True, use_container_width=True, height=500)
+
+    st.markdown("<hr/>", unsafe_allow_html=True)
+
+    # ── Section 4: Country × Year Heatmap ───────────────────────────
+    st.markdown(
+        '<div class="section-header">AI Adoption by Country × Year</div>'
+        '<div class="section-sub">AI share (%) per country per founding year — top 25 countries by total size</div>',
+        unsafe_allow_html=True,
+    )
+
+    if not matrix.empty:
+        pivot = matrix.pivot(index="country", columns="founded_year", values="ai_pct").fillna(0)
+        # Sort countries by their 2022-2024 average AI% descending
+        recent_cols = [c for c in pivot.columns if c >= 2020]
+        pivot["_sort"] = pivot[recent_cols].mean(axis=1) if recent_cols else 0
+        pivot = pivot.sort_values("_sort", ascending=False).drop(columns=["_sort"])
+
+        fig_heat = px.imshow(
+            pivot,
+            labels=dict(x="Founded Year", y="Country", color="AI share (%)"),
+            color_continuous_scale=[[0, "#f0f4fa"], [0.3, "#286dc0"], [1, "#00356b"]],
+            aspect="auto",
+            zmin=0, zmax=50,
+        )
+        fig_heat.update_layout(**_layout(height=max(500, len(pivot) * 22)))
+        fig_heat.update_xaxes(side="bottom")
+        st.plotly_chart(fig_heat, use_container_width=True)
+
+    st.markdown("<hr/>", unsafe_allow_html=True)
+
+    # ── Section 4: VC Deal Intelligence ─────────────────────────────
+    st.markdown(
+        '<div class="section-header">VC Deal Intelligence</div>'
+        '<div class="section-sub">268K funding events from PitchBook — deal volume, size trends, and AI vs non-AI first financing</div>',
+        unsafe_allow_html=True,
+    )
+
+    if not deal_volume.empty:
+        col_vol, col_size = st.columns(2)
+
+        with col_vol:
+            st.markdown("**Deal volume by stage (2010–2024)**")
+            STAGE_COLORS = {
+                "Pre-Seed / Accel": "#a8c8e8",
+                "Seed":             "#286dc0",
+                "Early VC":         "#00356b",
+                "Growth":           "#0d9668",
+                "Corporate / Other":"#888888",
+            }
+            bucket_order = ["Pre-Seed / Accel", "Seed", "Early VC", "Growth", "Corporate / Other"]
+            fig_vol = go.Figure()
+            for bucket in bucket_order:
+                sub = deal_volume[deal_volume["stage_bucket"] == bucket]
+                if sub.empty:
+                    continue
+                fig_vol.add_trace(go.Bar(
+                    x=sub["year"], y=sub["deals"],
+                    name=bucket,
+                    marker_color=STAGE_COLORS.get(bucket, "#999"),
+                ))
+            fig_vol.update_layout(
+                **_layout(
+                    height=340,
+                    xaxis=dict(title="", tickformat="d"),
+                    yaxis=dict(title="Deals", gridcolor=BORDER_LIGHT),
+                ),
+                barmode="stack",
+                legend=dict(orientation="h", y=1.08, font=dict(size=11)),
+                hovermode="x unified",
+            )
+            st.plotly_chart(fig_vol, use_container_width=True)
+
+        with col_size:
+            st.markdown("**Median deal size by stage ($M, 2010–2024)**")
+            SIZE_COLORS = {"Seed": "#286dc0", "Early VC": "#00356b", "Growth": "#0d9668"}
+            fig_size = go.Figure()
+            for bucket, color in SIZE_COLORS.items():
+                sub = deal_sizes[deal_sizes["stage_bucket"] == bucket]
+                if sub.empty:
+                    continue
+                fig_size.add_trace(go.Scatter(
+                    x=sub["year"], y=sub["median_m"].round(1),
+                    name=bucket, mode="lines+markers",
+                    line=dict(color=color, width=2),
+                    marker=dict(size=6),
+                ))
+            fig_size.update_layout(
+                **_layout(
+                    height=340,
+                    xaxis=dict(title="", tickformat="d"),
+                    yaxis=dict(title="Median deal size ($M)", gridcolor=BORDER_LIGHT),
+                ),
+                legend=dict(orientation="h", y=1.08, font=dict(size=11)),
+                hovermode="x unified",
+            )
+            st.plotly_chart(fig_size, use_container_width=True)
+
+    if not first_fin.empty:
+        st.markdown("**First financing year: AI vs non-AI companies**")
+        ai_df = first_fin[first_fin["company_type"] == "AI"]
+        non_df = first_fin[first_fin["company_type"] == "Non-AI"]
+        # Normalise to % within each group so scale difference doesn't dominate
+        ai_total = ai_df["companies"].sum()
+        non_total = non_df["companies"].sum()
+        fig_ff = go.Figure()
+        fig_ff.add_trace(go.Scatter(
+            x=ai_df["first_year"], y=(ai_df["companies"] / ai_total * 100).round(2),
+            name="AI companies", mode="lines+markers",
+            line=dict(color="#0d9668", width=2), marker=dict(size=6),
+        ))
+        fig_ff.add_trace(go.Scatter(
+            x=non_df["first_year"], y=(non_df["companies"] / non_total * 100).round(2),
+            name="Non-AI companies", mode="lines+markers",
+            line=dict(color="#286dc0", width=2, dash="dot"), marker=dict(size=6),
+        ))
+        fig_ff.update_layout(
+            **_layout(
+                height=300,
+                xaxis=dict(title="Year of first financing", tickformat="d"),
+                yaxis=dict(title="Share of cohort (%)", ticksuffix="%", gridcolor=BORDER_LIGHT),
+            ),
+            legend=dict(orientation="h", y=1.08),
+            hovermode="x unified",
+        )
+        st.plotly_chart(fig_ff, use_container_width=True)
+
+    st.markdown("<hr/>", unsafe_allow_html=True)
+
+    # ── Section 5: Company Explorer ──────────────────────────────────
+    st.markdown(
+        '<div class="section-header">Company Explorer</div>'
+        '<div class="section-sub">Filter across all companies by country, year, stage, and funding — results capped at 1,000 rows; apply filters to narrow</div>',
+        unsafe_allow_html=True,
+    )
+
+    cfe_countries_opts, cfe_stages_opts, cfe_verticals_opts = _load_company_filter_options()
+
+    cfe_c1, cfe_c2, cfe_c3, cfe_c4, cfe_c5 = st.columns([1.2, 2.5, 2, 2, 1.8])
+    with cfe_c1:
+        cfe_ai_only = st.toggle("AI only", value=False, key="cfe_ai_only")
+    with cfe_c2:
+        cfe_countries_sel = st.multiselect("Country", options=cfe_countries_opts, default=[], key="cfe_countries", placeholder="All countries")
+    with cfe_c3:
+        cfe_year_range = st.slider("Founded year", 2000, 2026, (2010, 2026), key="cfe_year")
+    with cfe_c4:
+        cfe_stages_sel = st.multiselect("Stage", options=cfe_stages_opts, default=[], key="cfe_stages", placeholder="All stages")
+    with cfe_c5:
+        cfe_min_raised = st.number_input("Min raised ($M)", min_value=0.0, value=0.0, step=1.0, key="cfe_min_raised")
+
+    cfe_verticals_sel = st.multiselect("Vertical", options=cfe_verticals_opts, default=[], key="cfe_verticals", placeholder="All verticals")
+
+    with st.spinner("Loading…"):
+        cfe_df = _load_filtered_companies(
+            countries_t=tuple(cfe_countries_sel),
+            year_min=cfe_year_range[0],
+            year_max=cfe_year_range[1],
+            stages_t=tuple(cfe_stages_sel),
+            min_raised_m=cfe_min_raised,
+            ai_only=cfe_ai_only,
+            verticals_t=tuple(cfe_verticals_sel),
+        )
+
+    cfe_note = " (top 1,000 by funding — apply filters to narrow)" if len(cfe_df) >= 1000 else ""
+    st.caption(f"{len(cfe_df):,} companies{cfe_note}")
+
+    if not cfe_df.empty:
+        st.dataframe(
+            cfe_df.rename(columns={
+                "name": "Name", "domain": "Domain", "country": "Country",
+                "city": "City", "founded_year": "Founded", "stage": "Stage",
+                "total_raised_m": "Raised ($M)", "ai_score": "AI Score",
+                "cb_ai_tagged": "CB AI", "ai_mentioned": "AI Mentioned",
+                "verticals": "Verticals", "verification_status": "Source",
+            }),
+            hide_index=True,
+            use_container_width=True,
+            height=460,
+        )
+        csv_cfe = cfe_df.to_csv(index=False)
+        st.download_button(
+            f"Download filtered results ({len(cfe_df):,} rows, CSV)",
+            data=csv_cfe,
+            file_name="companies_filtered.csv",
+            mime="text/csv",
+        )
+
+    st.markdown("<hr/>", unsafe_allow_html=True)
+
+    # ── Section 6: Data Export ───────────────────────────────────────
+    st.markdown(
+        '<div class="section-header">Export Research Data</div>',
+        unsafe_allow_html=True,
+    )
+
+    col_a, col_b = st.columns(2)
+
+    with col_a:
+        if not curve.empty:
+            csv_timeline = curve.to_csv(index=False)
+            st.download_button(
+                "Download: Formation by year (CSV)",
+                data=csv_timeline,
+                file_name="ai_formation_by_year.csv",
+                mime="text/csv",
+            )
+
+    with col_b:
+        if not country_stats.empty:
+            csv_country = country_stats.to_csv(index=False)
+            st.download_button(
+                "Download: Country AI stats (CSV)",
+                data=csv_country,
+                file_name="ai_concentration_by_country.csv",
+                mime="text/csv",
+            )
+
+    st.markdown("<br/>", unsafe_allow_html=True)
+
+    if st.button(f"Load full AI companies dataset (~{total_ai:,} rows)", type="secondary"):
+        with st.spinner("Querying…"):
+            export_df = _load_research_export()
+        st.success(f"{len(export_df):,} AI companies loaded")
+        csv_full = export_df.to_csv(index=False)
+        st.download_button(
+            "Download: All AI companies (CSV)",
+            data=csv_full,
+            file_name="ai_companies_full.csv",
+            mime="text/csv",
+        )
+        st.dataframe(export_df.head(200), hide_index=True, use_container_width=True)
 
 
 # ── Main ─────────────────────────────────────────────────────────────
@@ -2069,18 +2894,22 @@ def main():
     else:
         github_df = github_df_all.iloc[0:0].copy()
 
-    tab_overview, tab_ai, tab_github, tab_trends, tab_health, tab_inventory, tab_scraper = st.tabs([
-        "Overview", "AI Analysis", "GitHub Discovery", "Trends", "Pipeline Health", "Inventory", "Scraper",
+    tab_overview, tab_ai, tab_github, tab_trends, tab_research, tab_health, tab_inventory, tab_scraper = st.tabs([
+        "Overview", "AI Analysis", "GitHub Discovery", "Trends", "Research", "Pipeline Health", "Inventory", "Scraper",
     ])
 
     with tab_overview:
         page_overview(scraper_df, health_df)
     with tab_ai:
-        page_ai_analysis(scraper_df)
+        page_ai_analysis(scraper_df, _load_overview_stats(),
+                         source_stats=_load_source_ai_stats(),
+                         country_stats=_load_country_ai_stats(min_companies=1))
     with tab_github:
         page_github(github_df, github_df_all)
     with tab_trends:
         page_trends(scraper_df)
+    with tab_research:
+        page_research()
     with tab_health:
         page_health(health_df, runs_df)
     with tab_inventory:

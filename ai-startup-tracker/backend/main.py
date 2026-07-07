@@ -43,6 +43,9 @@ app.add_middleware(
 )
 
 
+from backend.utils.country import normalize_country as _normalize_country, GLOBE_COUNTRIES
+
+
 # ── /api/stats ────────────────────────────────────────────────────────────────
 
 @app.get("/api/stats")
@@ -83,11 +86,22 @@ def get_stats():
             for r in rows
         ]
 
+        raw_country_rows = db.execute(text("""
+            SELECT DISTINCT country FROM companies
+            WHERE country IS NOT NULL AND country != ''
+              AND country NOT ILIKE '%remote%'
+        """)).fetchall()
+        country_count = sum(
+            1 for r in raw_country_rows
+            if _normalize_country(r.country) in GLOBE_COUNTRIES
+        )
+
         return {
             "total_companies": total,
             "ai_flagged": ai_flagged,
             "ai_pct": round(ai_flagged / total * 100, 1) if total else 0,
             "with_domain": with_domain,
+            "countries": country_count,
             "sources": sources,
         }
     finally:
@@ -203,31 +217,6 @@ def get_founding_years():
 
 # ── /api/stats/locations ──────────────────────────────────────────────────────
 
-# Normalize messy country strings to standard names
-_COUNTRY_ALIASES = {
-    "usa": "United States",
-    "us": "United States",
-    "united states": "United States",
-    "united states of america": "United States",
-    "uk": "United Kingdom",
-    "united kingdom": "United Kingdom",
-    "great britain": "United Kingdom",
-    "england": "United Kingdom",
-    "uae": "United Arab Emirates",
-    "south korea": "South Korea",
-    "republic of korea": "South Korea",
-    "korea": "South Korea",
-}
-
-def _normalize_country(raw: str) -> str:
-    if not raw:
-        return None
-    # Strip suffixes like "; Remote", "/ Remote"
-    cleaned = raw.split(";")[0].split("/")[0].strip()
-    lower = cleaned.lower()
-    return _COUNTRY_ALIASES.get(lower, cleaned)
-
-
 @app.get("/api/stats/locations")
 def get_locations():
     # country column exists in the schema — returns AI-flagged companies grouped by country
@@ -237,7 +226,7 @@ def get_locations():
             text("""
                 SELECT country, COUNT(*) AS count
                 FROM companies
-                WHERE ai_score >= 0.6
+                WHERE ai_score >= 0.1
                   AND country IS NOT NULL AND country != ''
                   AND country NOT ILIKE '%remote%'
                 GROUP BY country

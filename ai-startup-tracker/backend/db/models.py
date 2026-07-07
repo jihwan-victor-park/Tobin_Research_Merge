@@ -103,6 +103,29 @@ class IncubatorSource(str, enum.Enum):
     h_farm = "h_farm"
     sting_stockholm = "sting_stockholm"
     rockstart = "rockstart"
+    # International expansion — South Korea, Israel, China
+    # For existing DBs, run for each new value:
+    #   ALTER TYPE incubator_source_enum ADD VALUE '<value>';
+    # South Korea
+    strong_ventures = "strong_ventures"
+    bon_angels = "bon_angels"
+    kakao_ventures = "kakao_ventures"
+    primer_sazze = "primer_sazze"
+    naver_d2sf = "naver_d2sf"
+    tips_program = "tips_program"
+    # Israel
+    ourcrowd = "ourcrowd"
+    jvp = "jvp"
+    pitango = "pitango"
+    team8 = "team8"
+    grove_ventures = "grove_ventures"
+    viola_ventures = "viola_ventures"
+    # China
+    miracleplus = "miracleplus"
+    sinovation = "sinovation"
+    zhenfund = "zhenfund"
+    idg_capital = "idg_capital"
+    innospring = "innospring"
     # University Accelerators (added to DB via migrations)
     yc = "yc"
     rice_owlspark = "rice_owlspark"
@@ -150,12 +173,16 @@ class Company(Base):
     founded_year = Column(Integer, nullable=True)
     team_size = Column(Integer, nullable=True)
     stage = Column(String(64), nullable=True)  # pre-seed, seed, series_a, etc.
+    total_raised = Column(Float, nullable=True)  # USD, from PitchBook
     operating_status = Column(String(64), nullable=True)  # operating, acquired, closed
 
     # Scores
     ai_score = Column(Float, nullable=True)
     startup_score = Column(Float, nullable=True)
     ai_tags = Column(ARRAY(Text), nullable=True)
+    cb_ai_tagged = Column(Boolean, nullable=False, default=False, server_default="false")
+    ai_mentioned = Column(Boolean, nullable=False, default=False, server_default="false")
+    categories = Column(ARRAY(Text), nullable=True)  # industry verticals (CB category_groups_list or PB industry group)
 
     # Timestamps
     first_seen_at = Column(DateTime, nullable=True, default=datetime.utcnow)
@@ -168,6 +195,9 @@ class Company(Base):
         Enum(IncubatorSource, name="incubator_source_enum", create_type=True),
         nullable=True,
     )
+    # Free-text source domain — set by agentic scraper for arbitrary sites in site_health.
+    # Allows linking companies back to site_health domains without needing an enum entry.
+    source_domain = Column(String(256), nullable=True, index=True)
 
     # Relationships
     github_signals = relationship("GithubSignal", back_populates="company", cascade="all, delete-orphan")

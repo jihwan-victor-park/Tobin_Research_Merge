@@ -1,0 +1,25 @@
+version: 1
+domain: meti.go.jp
+created_at: '2026-06-13T21:55:27.026319Z'
+updated_at: '2026-06-13T21:55:27.026319Z'
+seed_urls:
+- https://www.meti.go.jp/english/press/2025/0313_001.html
+preferred_strategy: single_page_extract
+fallback_order:
+- single_page_extract
+- subpage_discovery
+- pagination_probe
+- search_probe
+subpage_hints: []
+pagination_hints: []
+quality_expectation_min_records: 1
+last_success:
+  run_id: agentic_run_20260613_215332
+  at: '2026-06-13T21:55:27.026319Z'
+  input_url: https://www.meti.go.jp/english/press/2025/0313_001.html
+  strategy: single_page_extract
+  record_count: 31
+  valid_name_ratio: 1.0
+  duplicate_ratio: 0.0
+  completeness_score: 1.0
+notes: null

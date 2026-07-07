@@ -1,7 +1,7 @@
 version: 1
 domain: tracxn.com
 created_at: '2026-04-07T14:14:49.769191Z'
-updated_at: '2026-04-07T14:14:49.769191Z'
+updated_at: '2026-06-13T21:53:32.107660Z'
 seed_urls:
 - https://tracxn.com
 preferred_strategy: single_page_extract
@@ -14,8 +14,8 @@ subpage_hints: []
 pagination_hints: []
 quality_expectation_min_records: 1
 last_success:
-  run_id: agentic_run_20260407_141446
-  at: '2026-04-07T14:14:49.769191Z'
+  run_id: agentic_run_20260613_214821
+  at: '2026-06-13T21:53:32.107660Z'
   input_url: https://tracxn.com
   strategy: single_page_extract
   record_count: 1
@@ -23,4 +23,3 @@ last_success:
   duplicate_ratio: 0.0
   completeness_score: 1.0
 notes: null
-category: discovery_aggregator

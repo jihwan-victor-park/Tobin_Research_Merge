@@ -30,11 +30,13 @@ STRONG_AI_TEXT_KEYWORDS = re.compile(
 )
 
 MODERATE_AI_TEXT_KEYWORDS = re.compile(
-    r"\b(machine learning|deep learning|neural net|computer vision|"
-    r"natural language|object detection|image classification|"
+    r"\b(artificial intelligence|machine learning|deep learning|neural net|"
+    r"computer vision|natural language|object detection|image classification|"
     r"sentiment analysis|recommendation engine|"
     r"model training|model serving|mlops|"
-    r"pytorch|tensorflow|jax|hugging\s?face)\b",
+    r"pytorch|tensorflow|jax|hugging\s?face|"
+    r"generative ai|gen ai|ai.powered|ai-driven|ai-enabled|"
+    r"predictive analytics|data science)\b",
     re.IGNORECASE,
 )
 
@@ -49,6 +51,37 @@ STARTUP_TEXT_SIGNALS = re.compile(
     r"our platform|our product|we help|we build)\b",
     re.IGNORECASE,
 )
+
+
+_AI_NAME_PATTERN = re.compile(
+    r"\b(AI|ML|LLM|GPT|NLP|AGI|artificial intelligence|machine learning|"
+    r"deep learning|neural|generative)\b",
+    re.IGNORECASE,
+)
+
+
+def compute_ai_mentioned(
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    readme_snippet: Optional[str] = None,
+) -> bool:
+    """
+    Return True if the company name or description contains AI-related terms.
+
+    Simpler and broader than compute_ai_score — no threshold, no weighting.
+    Designed to catch PitchBook companies whose short descriptions trigger
+    only one keyword (score = 0.1, below the 0.3 threshold) and companies
+    with 'AI' / 'ML' in their name (not checked by ai_score at all).
+    """
+    if name and _AI_NAME_PATTERN.search(name):
+        return True
+    combined = " ".join(filter(None, [description, readme_snippet]))
+    if combined:
+        if STRONG_AI_TEXT_KEYWORDS.search(combined):
+            return True
+        if MODERATE_AI_TEXT_KEYWORDS.search(combined):
+            return True
+    return False
 
 
 def compute_ai_score(

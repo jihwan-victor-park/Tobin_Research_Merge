@@ -1,8 +1,9 @@
 version: 1
 domain: balderton.com
 created_at: '2026-05-10T23:40:15.186672Z'
-updated_at: '2026-05-10T23:40:15.186672Z'
+updated_at: '2026-06-10T16:42:12.223396Z'
 seed_urls:
+- https://www.balderton.com/companies/
 - https://www.balderton.com/portfolio/
 preferred_strategy: single_page_extract
 fallback_order:
@@ -14,9 +15,9 @@ subpage_hints: []
 pagination_hints: []
 quality_expectation_min_records: 1
 last_success:
-  run_id: agentic_run_20260510_234007
-  at: '2026-05-10T23:40:15.186672Z'
-  input_url: https://www.balderton.com/portfolio/
+  run_id: agentic_run_20260610_164133
+  at: '2026-06-10T16:42:12.223396Z'
+  input_url: https://www.balderton.com/companies/
   strategy: single_page_extract
   record_count: 1
   valid_name_ratio: 1.0

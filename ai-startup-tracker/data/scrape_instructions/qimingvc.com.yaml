@@ -1,0 +1,25 @@
+version: 1
+domain: qimingvc.com
+created_at: '2026-06-12T14:47:39.892749Z'
+updated_at: '2026-06-12T14:47:39.892749Z'
+seed_urls:
+- https://www.qimingvc.com/en/portfolio
+preferred_strategy: subpage_discovery
+fallback_order:
+- single_page_extract
+- subpage_discovery
+- pagination_probe
+- search_probe
+subpage_hints: []
+pagination_hints: []
+quality_expectation_min_records: 1
+last_success:
+  run_id: agentic_run_20260612_143558
+  at: '2026-06-12T14:47:39.892749Z'
+  input_url: https://www.qimingvc.com/en/portfolio
+  strategy: subpage_discovery
+  record_count: 280
+  valid_name_ratio: 1.0
+  duplicate_ratio: 0.004
+  completeness_score: 0.999
+notes: null

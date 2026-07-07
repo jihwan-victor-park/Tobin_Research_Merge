@@ -1,10 +1,11 @@
 version: 1
 domain: mit.edu
 created_at: '2026-05-10T23:16:55.213210Z'
-updated_at: '2026-05-10T23:16:55.213210Z'
+updated_at: '2026-06-13T21:37:06.700321Z'
 seed_urls:
+- https://entrepreneurship.mit.edu/accelerator/past-teams/
 - https://entrepreneurship.mit.edu/companies/
-preferred_strategy: pagination_probe
+preferred_strategy: single_page_extract
 fallback_order:
 - single_page_extract
 - subpage_discovery
@@ -14,11 +15,11 @@ subpage_hints: []
 pagination_hints: []
 quality_expectation_min_records: 1
 last_success:
-  run_id: agentic_run_20260510_231614
-  at: '2026-05-10T23:16:55.213210Z'
-  input_url: https://entrepreneurship.mit.edu/companies/
-  strategy: pagination_probe
-  record_count: 4
+  run_id: agentic_run_20260613_213526
+  at: '2026-06-13T21:37:06.700321Z'
+  input_url: https://entrepreneurship.mit.edu/accelerator/past-teams/
+  strategy: single_page_extract
+  record_count: 2
   valid_name_ratio: 1.0
   duplicate_ratio: 0.0
   completeness_score: 1.0

@@ -1,10 +1,10 @@
 version: 1
 domain: dealroom.co
 created_at: '2026-04-07T14:13:15.861205Z'
-updated_at: '2026-05-05T05:49:51.625215Z'
+updated_at: '2026-06-13T22:16:01.867444Z'
 seed_urls:
-- https://dealroom.co/companies
 - https://dealroom.co
+- https://dealroom.co/companies
 preferred_strategy: single_page_extract
 fallback_order:
 - single_page_extract
@@ -15,13 +15,12 @@ subpage_hints: []
 pagination_hints: []
 quality_expectation_min_records: 1
 last_success:
-  run_id: agentic_run_20260505_054934
-  at: '2026-05-05T05:49:51.625215Z'
-  input_url: https://dealroom.co/companies
+  run_id: agentic_run_20260613_221256
+  at: '2026-06-13T22:16:01.867444Z'
+  input_url: https://dealroom.co
   strategy: single_page_extract
-  record_count: 23
+  record_count: 3
   valid_name_ratio: 1.0
   duplicate_ratio: 0.0
   completeness_score: 1.0
 notes: null
-category: discovery_aggregator

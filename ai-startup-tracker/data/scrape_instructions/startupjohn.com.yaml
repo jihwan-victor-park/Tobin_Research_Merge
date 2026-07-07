@@ -1,7 +1,7 @@
 version: 1
 domain: startupjohn.com
 created_at: '2026-04-07T14:57:53.731031Z'
-updated_at: '2026-04-07T14:57:53.731031Z'
+updated_at: '2026-06-13T14:01:14.382264Z'
 seed_urls:
 - https://startupjohn.com
 preferred_strategy: single_page_extract
@@ -14,8 +14,8 @@ subpage_hints: []
 pagination_hints: []
 quality_expectation_min_records: 1
 last_success:
-  run_id: agentic_run_20260407_145750
-  at: '2026-04-07T14:57:53.731031Z'
+  run_id: agentic_run_20260613_135935
+  at: '2026-06-13T14:01:14.382264Z'
   input_url: https://startupjohn.com
   strategy: single_page_extract
   record_count: 1
@@ -23,4 +23,3 @@ last_success:
   duplicate_ratio: 0.0
   completeness_score: 1.0
 notes: null
-category: discovery_aggregator

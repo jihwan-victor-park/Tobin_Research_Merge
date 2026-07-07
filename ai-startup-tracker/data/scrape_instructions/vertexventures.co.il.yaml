@@ -1,0 +1,25 @@
+version: 1
+domain: vertexventures.co.il
+created_at: '2026-06-12T14:20:01.964710Z'
+updated_at: '2026-06-12T14:20:01.964710Z'
+seed_urls:
+- https://jobs.vertexventures.co.il
+preferred_strategy: single_page_extract
+fallback_order:
+- single_page_extract
+- subpage_discovery
+- pagination_probe
+- search_probe
+subpage_hints: []
+pagination_hints: []
+quality_expectation_min_records: 1
+last_success:
+  run_id: agentic_run_20260612_141937
+  at: '2026-06-12T14:20:01.964710Z'
+  input_url: https://jobs.vertexventures.co.il
+  strategy: single_page_extract
+  record_count: 12
+  valid_name_ratio: 1.0
+  duplicate_ratio: 0.0
+  completeness_score: 1.0
+notes: null
