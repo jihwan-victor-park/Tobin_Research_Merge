@@ -27,7 +27,7 @@ committable and pushed to `merge` (Railway auto-deploys).
   - Scraper-unique breakdown by source (agentic sites, Techstars, YC, …).
   - Overlap note: companies our scrapers found that are ALSO in CB/PB.
 
-- [ ] **Step 3 — Section 2: Scraping Operations**
+- [x] **Step 3 — Section 2: Scraping Operations** (done Jul 7 2026)
   - Registered sites count; status breakdown (healthy/broken/degraded/pending/
     excluded); category breakdown (VC portfolio, university, accelerator, gov).
   - Last-30-days run stats: success rate, records collected, last run timestamp

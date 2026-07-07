@@ -2941,6 +2941,178 @@ _SCRAPER_SOURCE_LABELS = {
 }
 
 
+@st.cache_data(ttl=600)
+def _load_scraping_ops() -> dict:
+    """Site inventory, run outcomes and error taxonomy for the Info Sheet."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        site_status = dict(conn.execute(text(
+            "SELECT status, COUNT(*) FROM site_health GROUP BY 1"
+        )).fetchall())
+
+        cat_rows = conn.execute(text("""
+            SELECT COALESCE(category, 'other') AS cat,
+                   COUNT(*) AS sites,
+                   COUNT(*) FILTER (WHERE status = 'healthy') AS healthy
+            FROM site_health GROUP BY 1 ORDER BY 2 DESC
+        """)).fetchall()
+
+        run_stats = conn.execute(text("""
+            SELECT COUNT(*),
+                   COUNT(*) FILTER (WHERE status = 'success'),
+                   COALESCE(SUM(records_new) FILTER (WHERE status = 'success'), 0),
+                   MAX(started_at)
+            FROM scrape_runs
+            WHERE started_at > NOW() - INTERVAL '30 days'
+        """)).fetchone()
+
+        lifetime = conn.execute(text("""
+            SELECT COUNT(*),
+                   COUNT(*) FILTER (WHERE status = 'success'),
+                   MAX(started_at)
+            FROM scrape_runs
+        """)).fetchone()
+
+        errors = conn.execute(text("""
+            SELECT CASE
+                     WHEN error_message ILIKE '%tavily%' THEN 'Tavily API unreachable / timeout'
+                     WHEN error_message ILIKE '%429%' THEN 'Anthropic rate limit (429)'
+                     WHEN error_message ILIKE '%together%' THEN 'Together.ai auth (401)'
+                     WHEN error_message ILIKE '%timed out%' OR error_message ILIKE '%timeout%' THEN 'Site timeout'
+                     ELSE 'Other'
+                   END AS kind, COUNT(*)
+            FROM scrape_runs
+            WHERE status = 'error' AND started_at > NOW() - INTERVAL '60 days'
+            GROUP BY 1 ORDER BY 2 DESC
+        """)).fetchall()
+
+        struggling = pd.read_sql(text("""
+            SELECT domain, COALESCE(category, 'other') AS category, status,
+                   consecutive_failures, last_success_at,
+                   total_successes, total_runs,
+                   COALESCE(pending_reason, LEFT(last_error, 90)) AS diagnosis
+            FROM site_health
+            WHERE status IN ('broken', 'degraded')
+            ORDER BY total_successes DESC, consecutive_failures DESC
+        """), conn)
+
+    return {
+        "site_status": site_status,
+        "categories": [tuple(r) for r in cat_rows],
+        "runs_30d": tuple(run_stats),
+        "lifetime": tuple(lifetime),
+        "errors_60d": [tuple(r) for r in errors],
+        "struggling": struggling,
+    }
+
+
+_CATEGORY_LABELS = {
+    "vc_portfolio": "VC portfolios",
+    "university_incubator": "University incubators",
+    "accelerator": "Accelerators",
+    "government_program": "Government programs",
+    "discovery_aggregator": "Discovery aggregators",
+    "other": "Other / uncategorized",
+}
+
+
+def _info_scraping_section():
+    try:
+        ops = _load_scraping_ops()
+    except Exception as e:
+        st.error(f"Could not load scraping stats: {e}")
+        return
+
+    ss = ops["site_status"]
+    total_sites = sum(ss.values())
+    healthy = ss.get("healthy", 0)
+    struggling_n = ss.get("broken", 0) + ss.get("degraded", 0)
+
+    runs30, ok30, new30, last30 = ops["runs_30d"]
+    runs_all, ok_all, last_run = ops["lifetime"]
+
+    # Stall banner — the single most important operational fact on this page.
+    if last_run is None:
+        st.error("The scraping pipeline has never run.")
+    else:
+        days_idle = (datetime.utcnow() - last_run).days
+        if days_idle > 7:
+            st.error(
+                f"**Scraping pipeline is STALLED** — last run was {last_run:%b %d, %Y} "
+                f"({days_idle} days ago). Nothing is scheduled to run it automatically; "
+                "see section 3 below."
+            )
+        else:
+            st.success(f"Scraping pipeline active — last run {last_run:%b %d, %Y}.")
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Websites registered", f"{total_sites:,}")
+    m2.metric("Currently healthy", f"{healthy:,}",
+              f"{healthy / total_sites:.0%} of sites" if total_sites else None, delta_color="off")
+    m3.metric("Struggling (broken + degraded)", f"{struggling_n:,}")
+    m4.metric("Lifetime success rate",
+              f"{ok_all / runs_all:.0%}" if runs_all else "—",
+              f"{ok_all:,} of {runs_all:,} runs", delta_color="off")
+
+    col_status, col_cat = st.columns(2)
+    with col_status:
+        st.markdown("**Site status**")
+        order = ["healthy", "degraded", "broken", "pending", "excluded"]
+        desc = {
+            "healthy": "producing records",
+            "degraded": "partially failing",
+            "broken": "failing — needs attention",
+            "pending": "registered, never run",
+            "excluded": "gave up (90-day exclusion)",
+        }
+        stat_df = pd.DataFrame(
+            [(s, ss.get(s, 0), desc[s]) for s in order if ss.get(s, 0)],
+            columns=["Status", "Sites", "Meaning"],
+        )
+        st.dataframe(stat_df, hide_index=True, use_container_width=True)
+    with col_cat:
+        st.markdown("**By site category**")
+        cat_df = pd.DataFrame(
+            [(_CATEGORY_LABELS.get(c, c), n, h, f"{h / n:.0%}" if n else "—")
+             for c, n, h in ops["categories"]],
+            columns=["Category", "Sites", "Healthy", "Healthy %"],
+        )
+        st.dataframe(cat_df, hide_index=True, use_container_width=True)
+
+    st.markdown("**Recent activity (last 30 days)**")
+    a1, a2, a3 = st.columns(3)
+    a1.metric("Scrape runs", f"{runs30:,}")
+    a2.metric("Successful", f"{ok30:,}",
+              f"{ok30 / runs30:.0%} success rate" if runs30 else None, delta_color="off")
+    a3.metric("New companies collected", f"{int(new30):,}")
+
+    if ops["errors_60d"]:
+        err_total = sum(n for _, n in ops["errors_60d"])
+        st.markdown("**Why runs fail** (errors, last 60 days)")
+        err_df = pd.DataFrame(ops["errors_60d"], columns=["Failure cause", "Runs"])
+        err_df["Share"] = (err_df["Runs"] / err_total).map("{:.0%}".format)
+        st.dataframe(err_df, hide_index=True, use_container_width=True)
+        st.caption(
+            "Nearly all failures are external-API issues (Tavily connectivity, "
+            "Anthropic rate limits), not site problems — retry with backoff "
+            "recovers most of these sites without any new code per site."
+        )
+
+    strug = ops["struggling"]
+    if not strug.empty:
+        with st.expander(f"Monitoring: all {len(strug)} struggling sites", expanded=False):
+            view = strug.rename(columns={
+                "domain": "Domain", "category": "Category", "status": "Status",
+                "consecutive_failures": "Consecutive failures",
+                "last_success_at": "Last success",
+                "total_successes": "Lifetime successes",
+                "total_runs": "Lifetime runs",
+                "diagnosis": "Diagnosis / last error",
+            })
+            view["Category"] = view["Category"].map(lambda c: _CATEGORY_LABELS.get(c, c))
+            st.dataframe(view, hide_index=True, use_container_width=True, height=420)
+
+
 def _info_sources_section():
     try:
         stats = _load_contribution_stats()
@@ -3035,10 +3207,11 @@ def page_info_sheet():
                 unsafe_allow_html=True)
     _info_sources_section()
 
-    st.markdown('<div class="section-header">2 · Scraping operations</div>',
+    st.markdown('<div class="section-header">2 · Scraping operations</div>'
+                '<div class="section-sub">How many websites we scrape, how many succeed, '
+                'and which ones are struggling</div>',
                 unsafe_allow_html=True)
-    st.info("Coming soon: how many websites we scrape, how many succeed, "
-            "and monitoring of struggling sites.")
+    _info_scraping_section()
 
     st.markdown('<div class="section-header">3 · Pipeline components — running vs. not</div>',
                 unsafe_allow_html=True)
