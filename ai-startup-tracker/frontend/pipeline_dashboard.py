@@ -2868,6 +2868,43 @@ def page_research():
         st.dataframe(export_df.head(200), hide_index=True, use_container_width=True)
 
 
+# ── Info Sheet ───────────────────────────────────────────────────────
+
+def page_info_sheet():
+    """One-page summary for collaborators: where the data comes from, what
+    runs to build it, and how scraping is doing.
+
+    Sections are filled in incrementally — see reports/INFO_SHEET_PLAN.md
+    for the step plan and how to resume.
+    """
+    st.markdown(
+        '<div class="section-header">Info Sheet</div>'
+        '<div class="section-sub">Everything about this database on one page — '
+        'data provenance, scraping operations, and pipeline status</div>',
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        f"Generated {datetime.utcnow():%Y-%m-%d %H:%M} UTC — "
+        "all numbers query the live production database"
+    )
+
+    st.markdown('<div class="section-header">1 · Where the data comes from</div>',
+                unsafe_allow_html=True)
+    st.info("Coming soon: contribution breakdown — how much is covered by standard "
+            "databases (Crunchbase / PitchBook) vs. companies only we have "
+            "(our scrapers, GitHub discovery).")
+
+    st.markdown('<div class="section-header">2 · Scraping operations</div>',
+                unsafe_allow_html=True)
+    st.info("Coming soon: how many websites we scrape, how many succeed, "
+            "and monitoring of struggling sites.")
+
+    st.markdown('<div class="section-header">3 · Pipeline components — running vs. not</div>',
+                unsafe_allow_html=True)
+    st.info("Coming soon: every agent and script that builds this database, "
+            "and whether it is currently running.")
+
+
 # ── Main ─────────────────────────────────────────────────────────────
 
 def main():
@@ -2894,10 +2931,12 @@ def main():
     else:
         github_df = github_df_all.iloc[0:0].copy()
 
-    tab_overview, tab_ai, tab_github, tab_trends, tab_research, tab_health, tab_inventory, tab_scraper = st.tabs([
-        "Overview", "AI Analysis", "GitHub Discovery", "Trends", "Research", "Pipeline Health", "Inventory", "Scraper",
+    tab_overview, tab_info, tab_ai, tab_github, tab_trends, tab_research, tab_health, tab_inventory, tab_scraper = st.tabs([
+        "Overview", "Info Sheet", "AI Analysis", "GitHub Discovery", "Trends", "Research", "Pipeline Health", "Inventory", "Scraper",
     ])
 
+    with tab_info:
+        page_info_sheet()
     with tab_overview:
         page_overview(scraper_df, health_df)
     with tab_ai:
