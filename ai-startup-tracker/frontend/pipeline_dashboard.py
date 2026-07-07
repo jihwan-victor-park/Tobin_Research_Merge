@@ -11,7 +11,7 @@ from __future__ import annotations
 import base64
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -2870,7 +2870,12 @@ def page_research():
 
 # ── Info Sheet ───────────────────────────────────────────────────────
 
-@st.cache_data(ttl=600)
+def _utcnow() -> datetime:
+    """Naive UTC now — DB timestamps are timezone-naive UTC."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+@st.cache_data(ttl=1800)
 def _load_contribution_stats() -> dict:
     """Non-overlapping source buckets + scraper detail for the Info Sheet.
 
@@ -2941,7 +2946,7 @@ _SCRAPER_SOURCE_LABELS = {
 }
 
 
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=1800)
 def _load_scraping_ops() -> dict:
     """Site inventory, run outcomes and error taxonomy for the Info Sheet."""
     engine = get_engine()
@@ -3016,7 +3021,7 @@ _CATEGORY_LABELS = {
 }
 
 
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=1800)
 def _load_pipeline_status() -> dict:
     """Live activity signals for every pipeline component (Info Sheet §3)."""
     engine = get_engine()
@@ -3055,7 +3060,7 @@ def _activity_status(ts, active_days: int = 7):
     """(status label, last-activity string) from a timestamp."""
     if ts is None:
         return "⚪ Never ran", "—"
-    days = (datetime.utcnow() - ts).days
+    days = (_utcnow() - ts).days
     if days <= active_days:
         return "🟢 Running", f"{ts:%b %d, %Y}"
     return "🔴 Stalled", f"{ts:%b %d, %Y} ({days}d ago)"
@@ -3106,7 +3111,7 @@ def _info_pipeline_section():
 
     # Auto-detected gaps — the professor's "want running but currently not running?"
     gaps = []
-    if ps["last_easy"] is None or (datetime.utcnow() - ps["last_easy"]).days > 7:
+    if ps["last_easy"] is None or (_utcnow() - ps["last_easy"]).days > 7:
         gaps.append("**Scrapers are not running.** No scheduler is attached: Railway only "
                     "serves this dashboard, and the local launchd job is not loaded. "
                     "Scrapes happen only when someone runs the orchestrator manually.")
@@ -3141,7 +3146,7 @@ def _info_scraping_section():
     if last_run is None:
         st.error("The scraping pipeline has never run.")
     else:
-        days_idle = (datetime.utcnow() - last_run).days
+        days_idle = (_utcnow() - last_run).days
         if days_idle > 7:
             st.error(
                 f"**Scraping pipeline is STALLED** — last run was {last_run:%b %d, %Y} "
@@ -3303,7 +3308,7 @@ def page_info_sheet():
         unsafe_allow_html=True,
     )
     st.caption(
-        f"Generated {datetime.utcnow():%Y-%m-%d %H:%M} UTC — "
+        f"Generated {_utcnow():%Y-%m-%d %H:%M} UTC — "
         "all numbers query the live production database"
     )
 

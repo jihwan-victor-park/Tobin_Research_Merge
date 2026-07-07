@@ -44,10 +44,14 @@ committable and pushed to `merge` (Railway auto-deploys).
   - Auto-detected gaps: scrape_runs stale, github_signals empty,
     naics_code column missing, no scheduler attached to Railway.
 
-- [ ] **Step 5 — Verify & polish**
-  - Run Streamlit locally against Railway DB; confirm page renders, queries
-    are fast enough (raise cache TTLs if needed), numbers cross-check.
-  - Final commit + confirm Railway deploy serves the page.
+- [x] **Step 5 — Verify & polish** (done Jul 7 2026)
+  - Verified end-to-end in headless Chromium (Playwright) against Railway DB:
+    all 3 sections render with live data, 0 exceptions, buckets sum to
+    978,162 exactly, stall banner + gap warnings display correctly.
+  - Polish: Info Sheet cache TTLs 600→1800s (queries cost ~10s, numbers move
+    slowly); fixed deprecated `datetime.utcnow()` in Info Sheet code via
+    naive-UTC helper. Page load is dominated by the pre-existing
+    `load_startups()` (~15s, ttl=60) — not the Info Sheet.
 
 ## Context needed to resume
 
