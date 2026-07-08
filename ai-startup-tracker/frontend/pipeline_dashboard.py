@@ -3011,7 +3011,7 @@ def _load_scraping_ops() -> dict:
     }
 
 
-_CATEGORY_LABELS = {
+_INFO_CATEGORY_LABELS = {
     "vc_portfolio": "VC portfolios",
     "university_incubator": "University incubators",
     "accelerator": "Accelerators",
@@ -3184,7 +3184,7 @@ def _info_scraping_section():
     with col_cat:
         st.markdown("**By site category**")
         cat_df = pd.DataFrame(
-            [(_CATEGORY_LABELS.get(c, c), n, h, f"{h / n:.0%}" if n else "—")
+            [(_INFO_CATEGORY_LABELS.get(c, c), n, h, f"{h / n:.0%}" if n else "—")
              for c, n, h in ops["categories"]],
             columns=["Category", "Sites", "Healthy", "Healthy %"],
         )
@@ -3220,7 +3220,7 @@ def _info_scraping_section():
                 "total_runs": "Lifetime runs",
                 "diagnosis": "Diagnosis / last error",
             })
-            view["Category"] = view["Category"].map(lambda c: _CATEGORY_LABELS.get(c, c))
+            view["Category"] = view["Category"].map(lambda c: _INFO_CATEGORY_LABELS.get(c, c))
             view = view[["Domain", "Category", "Status", "Consecutive failures",
                          "Last success", "Lifetime successes", "Lifetime runs",
                          "Diagnosis / last error"]]
