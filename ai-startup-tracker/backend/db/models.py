@@ -182,6 +182,10 @@ class Company(Base):
     ai_tags = Column(ARRAY(Text), nullable=True)
     cb_ai_tagged = Column(Boolean, nullable=False, default=False, server_default="false")
     ai_mentioned = Column(Boolean, nullable=False, default=False, server_default="false")
+    # LLM verdict ("is AI the core product?") for PitchBook rows the keyword
+    # cascade can't decide — see scripts/classify_pb_ai_with_llm.py. NULL =
+    # not yet classified (e.g. non-PB rows, or PB rows already cb_ai_tagged).
+    llm_ai_verified = Column(Boolean, nullable=True)
     categories = Column(ARRAY(Text), nullable=True)  # industry verticals (CB category_groups_list or PB industry group)
 
     # Timestamps
