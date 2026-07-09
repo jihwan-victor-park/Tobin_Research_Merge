@@ -59,3 +59,4 @@ json-repair>=0.30.0
 
 # Agentic scraper — JS-rendered pages (install browsers: playwright install chromium)
 playwright>=1.40.0
+feedparser>=6.0.0
