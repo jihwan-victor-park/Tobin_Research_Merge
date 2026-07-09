@@ -25,7 +25,9 @@ alembic==1.13.1
 requests==2.31.0
 tldextract>=5.0.0
 rapidfuzz>=3.0.0
-pandas>=2.0.0
+# pandas 3.x removes APIs that plotly 5.18 and this codebase still use
+# (get_group(str), read_sql with TextClause) — stay on 2.x until those move.
+pandas>=2.0.0,<3
 pyarrow>=14.0.0
 
 # Scraping (legacy — kept for existing scrapers)
@@ -57,3 +59,4 @@ json-repair>=0.30.0
 
 # Agentic scraper — JS-rendered pages (install browsers: playwright install chromium)
 playwright>=1.40.0
+feedparser>=6.0.0

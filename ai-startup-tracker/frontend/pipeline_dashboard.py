@@ -11,7 +11,7 @@ from __future__ import annotations
 import base64
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -32,10 +32,10 @@ from backend.utils.denylist import BIG_TECH_DENYLIST
 load_dotenv()
 
 # ── Design tokens ────────────────────────────────────────────────────
-YALE_BLUE = "#00356b"
+YALE_BLUE = "#00356b"   # brand ink: headings, table accents
 YALE_MID = "#1a4f8a"
 YALE_LIGHT = "#2a6cb5"
-ACCENT = "#286dc0"
+ACCENT = "#29568c"      # primary data series (validated: chroma, CVD, >=3:1)
 BG = "#ffffff"
 BG_OFF = "#f7f8fb"
 BG_CARD = "#f9fafb"
@@ -44,9 +44,28 @@ BORDER_LIGHT = "#eef1f6"
 TXT = "#1a1f2e"
 TXT2 = "#4a5568"
 TXT3 = "#8492a6"
-GREEN = "#0d9668"
-AMBER = "#d97706"
-RED = "#dc2626"
+GREEN = "#0d9668"       # status: working / healthy
+AMBER = "#d97706"       # status: pending / degraded
+RED = "#dc2626"         # status: broken / failed
+
+# Chrome (PitchBook-style shell)
+SIDEBAR_BG = "#152943"          # dark navy left rail
+SIDEBAR_TXT = "#b7c4d6"
+CREAM = "#f5f2e9"               # top bar
+CREAM_BORDER = "#e4ddc9"
+
+# Chart palette (validated with the dataviz palette checker on white):
+#   BLUE_RAMP  — single-hue steel-blue ordinal ramp, light→dark, ordered series
+#   CAT        — categorical slots (navy / teal / gold / light blue), fixed order;
+#                gold is sub-3:1 on white → use only with legend + labels/table
+#   SEQ_SCALE  — continuous sequential scale (heatmaps, color-by-value bars)
+#   GRAY_CTX   — context / "everything else" marks (never carries identity)
+BLUE_RAMP = ["#8fb3dd", "#5f8cbf", "#33608f", "#1f3a5f"]
+CAT = ["#29568c", "#178a66", "#cf9008", "#5c95d6"]
+TEAL = CAT[1]
+GOLD = CAT[2]
+SEQ_SCALE = [[0, "#e3ebf5"], [0.5, "#5f8cbf"], [1, "#1f3a5f"]]
+GRAY_CTX = "#d7dde6"
 
 # ── US city coordinates (for geography map) ──────────────────────────
 US_CITIES = {
@@ -131,7 +150,7 @@ US_CITIES = {
 st.set_page_config(
     page_title="AI Startup Tracker",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # ── CSS ──────────────────────────────────────────────────────────────
@@ -143,6 +162,7 @@ st.markdown(f"""
     html, body, .stApp {{
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
         background: {BG} !important;
     }}
     p, span:not([data-testid*="Icon"]):not([class*="icon"]):not([class*="Icon"]),
@@ -155,8 +175,7 @@ st.markdown(f"""
         font-family: "Material Symbols Rounded","Material Icons" !important;
     }}
 
-    /* Hide sidebar + streamlit chrome */
-    section[data-testid="stSidebar"] {{ display: none !important; }}
+    /* Hide streamlit chrome */
     #MainMenu, footer {{ visibility: hidden; }}
     header {{ display: none !important; }}
 
@@ -164,20 +183,132 @@ st.markdown(f"""
     [data-testid="stMain"] {{ background: {BG} !important; }}
     .block-container {{
         padding-top: 0 !important;
-        padding-bottom: 2rem;
+        padding-bottom: 3rem;
         max-width: 100% !important;
         padding-left: 0 !important;
         padding-right: 0 !important;
     }}
+    /* kill the default flex gap between top-level blocks so the cream
+       bar sits flush against the viewport top (page content re-adds its
+       own padding via .st-key-page) */
+    .block-container > div[data-testid="stVerticalBlock"] {{
+        gap: 0 !important;
+    }}
 
-    /* ── Top nav bar (white, with logo + tabs) ── */
+    /* ── Dark navy sidebar (primary navigation) ── */
+    section[data-testid="stSidebar"] {{
+        background: {SIDEBAR_BG} !important;
+        border-right: none;
+        min-width: 240px !important;
+        max-width: 240px !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stSidebarHeader"] {{
+        padding: 0; height: 0;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
+    [data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
+    section[data-testid="stSidebar"] .block-container {{
+        padding: 0 !important;
+    }}
+    .sb-brand {{
+        padding: 22px 20px 18px 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        margin-bottom: 14px;
+    }}
+    .sb-title {{
+        color: #ffffff;
+        font-size: 0.98rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        line-height: 1.3;
+    }}
+    .sb-sub {{
+        color: rgba(255,255,255,0.45);
+        font-size: 0.64rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-top: 5px;
+    }}
+    .sb-eyebrow {{
+        color: rgba(255,255,255,0.35);
+        font-size: 0.6rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        padding: 4px 20px 6px 20px;
+    }}
+    /* nav radio → nav list */
+    section[data-testid="stSidebar"] [role="radiogroup"] {{
+        gap: 1px;
+        padding: 0 10px;
+    }}
+    section[data-testid="stSidebar"] [role="radiogroup"] label > div:first-child {{
+        display: none;
+    }}
+    section[data-testid="stSidebar"] [role="radiogroup"] label {{
+        padding: 8px 12px;
+        border-radius: 6px;
+        width: 100%;
+        margin: 0;
+        border-left: 2px solid transparent;
+        transition: background 0.12s;
+    }}
+    section[data-testid="stSidebar"] [role="radiogroup"] label:hover {{
+        background: rgba(255,255,255,0.05);
+    }}
+    section[data-testid="stSidebar"] [role="radiogroup"] label p {{
+        color: {SIDEBAR_TXT};
+        font-size: 0.85rem;
+        font-weight: 400;
+    }}
+    section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {{
+        background: #e9eef5;
+        border-left: 2px solid {GOLD};
+    }}
+    section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) p {{
+        color: {YALE_BLUE};
+        font-weight: 600;
+    }}
+    .sb-foot {{
+        padding: 16px 20px;
+        margin-top: 18px;
+        border-top: 1px solid rgba(255,255,255,0.08);
+    }}
+    .sb-foot-val {{
+        color: #ffffff;
+        font-size: 0.92rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }}
+    .sb-foot-label {{
+        color: rgba(255,255,255,0.4);
+        font-size: 0.6rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 10px;
+    }}
+    .sb-foot-row {{
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 6px;
+    }}
+    .sb-foot-key {{
+        color: rgba(255,255,255,0.5);
+        font-size: 0.72rem;
+    }}
+
+    /* ── Cream top bar ── */
     .topnav {{
-        background: {BG};
-        border-bottom: 1px solid {BORDER};
-        padding: 0 40px;
+        background: {CREAM};
+        border-bottom: 1px solid {CREAM_BORDER};
+        padding: 0 32px;
         display: flex;
         align-items: center;
         gap: 0;
+        height: 52px;
         position: sticky;
         top: 0;
         z-index: 999;
@@ -186,84 +317,69 @@ st.markdown(f"""
         display: flex;
         align-items: center;
         gap: 14px;
-        padding: 10px 0;
-        margin-right: 36px;
         flex-shrink: 0;
     }}
     .topnav-logo {{
-        height: 34px;
+        height: 30px;
+        background: #ffffff;
+        padding: 3px 7px;
+        border-radius: 4px;
+        border: 1px solid {CREAM_BORDER};
+        box-sizing: content-box;
     }}
     .topnav-sep {{
         width: 1px;
-        height: 26px;
-        background: {BORDER};
+        height: 20px;
+        background: {CREAM_BORDER};
     }}
     .topnav-title {{
-        font-size: 0.95rem;
-        font-weight: 700;
+        font-size: 0.88rem;
+        font-weight: 600;
         color: {YALE_BLUE};
-        letter-spacing: -0.02em;
+        letter-spacing: -0.01em;
         white-space: nowrap;
     }}
     .topnav-right {{
         margin-left: auto;
-        color: {TXT3};
-        font-size: 0.72rem;
+        display: flex;
+        align-items: baseline;
+        gap: 22px;
         white-space: nowrap;
     }}
-
-    /* Hero banner */
-    .hero {{
-        background: linear-gradient(135deg, {YALE_BLUE} 0%, {YALE_MID} 60%, {YALE_LIGHT} 100%);
-        padding: 26px 40px 22px 40px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+    .topnav-stat {{
+        color: {TXT2};
+        font-size: 0.76rem;
+        font-variant-numeric: tabular-nums;
     }}
-    .hero-title {{
-        color: #fff;
-        font-size: 1.5rem;
-        font-weight: 700;
-        letter-spacing: -0.025em;
-    }}
-    .hero-sub {{
-        color: rgba(255,255,255,0.55);
-        font-size: 0.82rem;
-        margin-top: 2px;
-    }}
-    .hero-stats {{
-        display: flex;
-        gap: 32px;
-    }}
-    .hero-stat {{
-        text-align: center;
-    }}
-    .hero-stat-val {{
-        color: #fff;
-        font-size: 1.35rem;
-        font-weight: 700;
-        line-height: 1.2;
-    }}
-    .hero-stat-label {{
-        color: rgba(255,255,255,0.45);
-        font-size: 0.58rem;
+    .topnav-stat b {{
+        color: {YALE_BLUE};
         font-weight: 600;
+    }}
+    .topnav-meta {{
+        color: {TXT3};
+        font-size: 0.64rem;
+        font-weight: 500;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.09em;
     }}
 
-    /* ── Nav tabs (flush under hero, act as page nav) ── */
+    /* Page content wrapper */
+    .st-key-page {{
+        padding: 24px 32px 0 32px;
+    }}
+
+    /* ── Inner tabs (within a page, e.g. working/pending tables) ── */
     .stTabs {{ margin-top: 0; }}
     .stTabs [data-baseweb="tab-list"] {{
-        gap: 0;
-        background: {BG};
+        gap: 22px;
+        background: transparent;
         border-bottom: 1px solid {BORDER};
-        padding: 0 40px;
+        padding: 0;
     }}
     .stTabs [data-baseweb="tab"] {{
         border-radius: 0;
-        padding: 13px 24px;
-        font-size: 0.88rem;
+        padding: 9px 2px;
+        font-size: 0.83rem;
         font-weight: 500;
         color: {TXT3};
         background: transparent;
@@ -272,8 +388,10 @@ st.markdown(f"""
         white-space: nowrap;
     }}
     .stTabs [data-baseweb="tab"]:hover {{
-        color: {TXT2};
+        color: {TXT};
     }}
+    .stTabs [data-baseweb="tab-highlight"],
+    .stTabs [data-baseweb="tab-border"] {{ display: none; }}
     .stTabs [aria-selected="true"] {{
         color: {YALE_BLUE} !important;
         background: transparent !important;
@@ -281,63 +399,74 @@ st.markdown(f"""
         font-weight: 600;
     }}
     .stTabs [data-baseweb="tab-panel"] {{
-        padding: 1.5rem 40px 0 40px;
+        padding: 1rem 0 0 0;
     }}
 
     /* ── Section headers ── */
-    h1 {{ color: {YALE_BLUE}; font-weight: 700; font-size: 1.4rem !important;
+    h1 {{ color: {YALE_BLUE}; font-weight: 700; font-size: 1.35rem !important;
          letter-spacing: -0.02em; margin-bottom: 0.2rem !important; }}
-    h2 {{ color: {TXT}; font-weight: 600; font-size: 1.1rem !important; }}
-    h3 {{ color: {TXT2}; font-weight: 600; font-size: 0.8rem !important;
-         text-transform: uppercase; letter-spacing: 0.06em; }}
+    h2 {{ color: {TXT}; font-weight: 600; font-size: 1.05rem !important; }}
+    h3 {{ color: {TXT2}; font-weight: 600; font-size: 0.76rem !important;
+         text-transform: uppercase; letter-spacing: 0.07em; }}
     p {{ color: {TXT2}; font-size: 0.85rem; }}
-    .stCaption {{ color: {TXT3}; }}
+    .stCaption, [data-testid="stCaptionContainer"] {{ color: {TXT3}; font-size: 0.76rem; }}
 
     .section-header {{
         color: {TXT};
-        font-size: 1.05rem;
+        font-size: 1rem;
         font-weight: 600;
         letter-spacing: -0.01em;
-        margin: 0 0 4px 0;
+        margin: 0 0 3px 0;
     }}
     .section-sub {{
         color: {TXT3};
-        font-size: 0.82rem;
+        font-size: 0.8rem;
+        line-height: 1.5;
         margin: 0 0 16px 0;
     }}
 
-    /* ── Metric cards ── */
+    /* ── Metric cards (soft cream, echoes the top bar) ── */
     [data-testid="stMetric"] {{
-        background: {BG};
-        padding: 18px 20px;
-        border-radius: 10px;
-        border: 1px solid {BORDER};
+        background: #faf8f1;
+        padding: 14px 18px 13px 18px;
+        border-radius: 6px;
+        border: 1px solid #eae3d0;
+        box-shadow: 0 1px 2px rgba(16,24,40,0.03);
     }}
     [data-testid="stMetricValue"] {{
-        font-size: 1.5rem;
-        font-weight: 700;
+        font-size: 1.4rem;
+        font-weight: 600;
         color: {YALE_BLUE};
         font-family: 'Inter', sans-serif;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.01em;
+        line-height: 1.25;
     }}
     [data-testid="stMetricLabel"] {{
-        font-size: 0.66rem;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        color: {TXT3};
-        font-weight: 500;
+    }}
+    [data-testid="stMetricLabel"] p {{
+        font-size: 0.64rem !important;
+        color: {TXT3} !important;
+        font-weight: 600;
+    }}
+    [data-testid="stMetricDelta"] {{
+        font-size: 0.74rem;
+        font-variant-numeric: tabular-nums;
     }}
 
     /* ── Cards ── */
     .card {{
         background: {BG};
         border: 1px solid {BORDER};
-        border-radius: 12px;
+        border-radius: 6px;
         padding: 20px 24px;
     }}
     .card-muted {{
         background: {BG_OFF};
         border: 1px solid {BORDER_LIGHT};
-        border-radius: 12px;
+        border-radius: 6px;
         padding: 20px 24px;
     }}
 
@@ -345,44 +474,58 @@ st.markdown(f"""
     .filter-bar {{
         background: {BG_OFF};
         border: 1px solid {BORDER_LIGHT};
-        border-radius: 10px;
-        padding: 16px 20px;
+        border-radius: 6px;
+        padding: 14px 18px;
         margin-bottom: 16px;
     }}
     .filter-bar-label {{
         color: {TXT3};
-        font-size: 0.68rem;
+        font-size: 0.64rem;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.07em;
+        letter-spacing: 0.08em;
         margin-bottom: 6px;
     }}
 
     /* ── Inputs ── */
-    .stTextInput input, .stSelectbox > div > div, .stMultiSelect > div > div {{
+    .stTextInput input, .stNumberInput input,
+    .stSelectbox > div > div, .stMultiSelect > div > div {{
         background: {BG} !important;
         border: 1px solid {BORDER} !important;
         color: {TXT} !important;
-        font-size: 0.85rem !important;
-        border-radius: 8px !important;
+        font-size: 0.84rem !important;
+        border-radius: 6px !important;
     }}
+    .stTextInput input::placeholder {{ color: {TXT3} !important; }}
     .stTextInput input:focus {{
         border-color: {ACCENT} !important;
         box-shadow: 0 0 0 2px rgba(0,53,107,0.08) !important;
     }}
     .stCheckbox label {{ color: {TXT2} !important; font-size: 0.82rem !important; }}
+    .stMultiSelect span[data-baseweb="tag"] {{
+        background: #eaf0f8 !important;
+        color: {YALE_BLUE} !important;
+        border-radius: 4px !important;
+        font-size: 0.76rem !important;
+    }}
+    .stMultiSelect span[data-baseweb="tag"] span {{ color: {YALE_BLUE} !important; }}
+    label[data-testid="stWidgetLabel"] p {{
+        font-size: 0.72rem !important;
+        font-weight: 500;
+        color: {TXT2} !important;
+    }}
 
     /* ── Data table ── */
     [data-testid="stDataFrame"] {{
-        border-radius: 10px;
+        border-radius: 6px;
         overflow: hidden;
         border: 1px solid {BORDER};
     }}
 
     /* ── Buttons ── */
     .stButton > button {{
-        border-radius: 8px;
-        font-size: 0.84rem;
+        border-radius: 6px;
+        font-size: 0.82rem;
         font-weight: 500;
         border: 1px solid {BORDER};
         background: {BG};
@@ -409,7 +552,7 @@ st.markdown(f"""
         border: 1px solid {BORDER} !important;
         color: {TXT2} !important;
         font-size: 0.8rem !important;
-        border-radius: 8px !important;
+        border-radius: 6px !important;
     }}
     .stDownloadButton > button:hover {{
         border-color: {ACCENT} !important;
@@ -420,7 +563,7 @@ st.markdown(f"""
     .scraper-card {{
         background: {BG};
         border: 1px solid {BORDER};
-        border-radius: 10px;
+        border-radius: 6px;
         padding: 14px 16px;
         height: 100%;
     }}
@@ -442,19 +585,24 @@ st.markdown(f"""
     .dot-broken {{ color: {RED}; }}
     .dot-excluded {{ color: #7c3aed; }}
 
-    /* Expander */
+    /* Expander — cream header strip */
     [data-testid="stExpander"] {{
-        border: 1px solid {BORDER} !important;
-        border-radius: 10px;
+        border: 1px solid #eae3d0 !important;
+        border-radius: 6px;
         background: {BG};
+        overflow: hidden;
     }}
     [data-testid="stExpander"] summary {{
-        font-size: 0.85rem;
+        font-size: 0.84rem;
         padding: 10px 14px !important;
         color: {TXT};
+        background: #f8f5eb;
+    }}
+    [data-testid="stExpander"] summary:hover {{
+        background: #f3efe0;
     }}
 
-    hr {{ border-color: {BORDER_LIGHT}; margin: 16px 0; }}
+    hr {{ border: none; border-top: 1px solid {BORDER_LIGHT}; margin: 24px 0 20px 0; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -483,7 +631,7 @@ _logo_img = (
     if _logo_b64 else '<span class="topnav-title">Yale SOM</span>'
 )
 
-# 1) White navigation bar with logo
+# Cream top bar: logo + title left, live stats right
 st.markdown(
     f'<div class="topnav">'
     f'<div class="topnav-brand">'
@@ -491,25 +639,8 @@ st.markdown(
     f'<div class="topnav-sep"></div>'
     f'<span class="topnav-title">AI Startup Tracker</span>'
     f'</div>'
-    f'<div class="topnav-right">Tobin Center for Economic Policy &middot; Yale University</div>'
-    f'</div>',
-    unsafe_allow_html=True,
-)
-
-# 2) Blue hero strip with live stats
-st.markdown(
-    f'<div class="hero">'
-    f'<div>'
-    f'<div class="hero-title">Tracking the AI startup ecosystem</div>'
-    f'<div class="hero-sub">Automated discovery and trend intelligence</div>'
-    f'</div>'
-    f'<div class="hero-stats">'
-    f'<div class="hero-stat"><div class="hero-stat-val">{_total:,}</div>'
-    f'<div class="hero-stat-label">Companies</div></div>'
-    f'<div class="hero-stat"><div class="hero-stat-val">{_sources:,}</div>'
-    f'<div class="hero-stat-label">Sources</div></div>'
-    f'<div class="hero-stat"><div class="hero-stat-val">{_countries:,}</div>'
-    f'<div class="hero-stat-label">Countries</div></div>'
+    f'<div class="topnav-right">'
+    f'<span class="topnav-meta">Tobin Center for Economic Policy &middot; Yale University</span>'
     f'</div>'
     f'</div>',
     unsafe_allow_html=True,
@@ -1001,13 +1132,25 @@ def _load_site_countries() -> dict[str, str]:
 
 # ── Plotly helpers ───────────────────────────────────────────────────
 
+_PLOT_CFG = {"displayModeBar": False}
+
+
 def _layout(**kw):
     base = dict(
-        paper_bgcolor=BG, plot_bgcolor=BG_OFF,
-        font=dict(family="Inter", color=TXT2, size=12),
-        title=dict(text="", font=dict(color=TXT, size=14, family="Inter")),
-        xaxis=dict(gridcolor=BORDER_LIGHT, zerolinecolor=BORDER),
-        yaxis=dict(gridcolor=BORDER_LIGHT, zerolinecolor=BORDER),
+        paper_bgcolor=BG, plot_bgcolor=BG,
+        font=dict(family="Inter", color=TXT3, size=11.5),
+        title=dict(text="", font=dict(color=TXT, size=13, family="Inter"),
+                   x=0, xanchor="left"),
+        colorway=[ACCENT] + CAT[1:],
+        xaxis=dict(showgrid=False, zeroline=False,
+                   linecolor=BORDER, ticks="outside", tickcolor=BORDER,
+                   ticklen=4, tickfont=dict(size=11)),
+        yaxis=dict(gridcolor=BORDER_LIGHT, zeroline=False,
+                   linecolor="rgba(0,0,0,0)", tickfont=dict(size=11)),
+        legend=dict(font=dict(size=11, color=TXT2), bgcolor="rgba(0,0,0,0)"),
+        hoverlabel=dict(bgcolor="#ffffff", bordercolor=BORDER,
+                        font=dict(family="Inter", size=12, color=TXT)),
+        bargap=0.35,
         margin=dict(l=0, r=0, t=36, b=0),
     )
     base.update(kw)
@@ -1119,7 +1262,7 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
         mc1, mc2 = st.columns([3, 1])
         with mc1:
             st.map(map_df, latitude="lat", longitude="lon", size="size",
-                   color="#0F4D92", zoom=3, width="stretch")
+                   color="#1f3a5f", zoom=3, width="stretch")
         with mc2:
             top_cities = (
                 city_agg.nlargest(10, "count")[["city", "count"]]
@@ -1132,8 +1275,9 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
             st.dataframe(top_cities, width="stretch", hide_index=True, height=380)
 
     # ── Filters ──────────────────────────────────────────────────────
-    st.markdown('<div class="filter-bar">', unsafe_allow_html=True)
-    st.markdown('<div class="filter-bar-label">Filters</div>', unsafe_allow_html=True)
+    # (raw-HTML wrappers can't enclose Streamlit widgets, so this is a
+    # labeled divider rather than a boxed container)
+    st.markdown('<hr/><div class="filter-bar-label">Filters</div>', unsafe_allow_html=True)
 
     search = st.text_input("Search", placeholder="Search by name or description...",
                            label_visibility="collapsed")
@@ -1196,8 +1340,6 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
         yr_range = st.slider("Founded year", yr_min, yr_max, (2015, yr_max), key="yr_range")
     else:
         yr_range = None
-
-    st.markdown('</div>', unsafe_allow_html=True)
 
     # Apply
     f = df.copy()
@@ -1376,9 +1518,9 @@ def page_trends(df: pd.DataFrame):
         daily.columns = ["date", "count"]
         fig = px.bar(daily, x="date", y="count",
                      labels={"count": "Companies", "date": "Date"})
-        fig.update_traces(marker_color=YALE_BLUE)
+        fig.update_traces(marker_color=ACCENT)
         fig.update_layout(**_layout(height=260))
-        st.plotly_chart(fig, width="stretch")
+        st.plotly_chart(fig, width="stretch", config=_PLOT_CFG)
 
         preview = week.head(50)[
             ["name", "country", "stage", "last_funding_date", "first_seen_at", "domain"]
@@ -1431,22 +1573,26 @@ def page_trends(df: pd.DataFrame):
         fig1 = px.bar(mg, x="new_30d", y="subdomain", orientation="h",
                       title="New companies (last 30 days)",
                       labels={"new_30d": "Companies", "subdomain": ""})
-        fig1.update_traces(marker_color=YALE_BLUE)
+        fig1.update_traces(marker_color=ACCENT)
         fig1.update_layout(**_layout(height=420,
-            yaxis=dict(autorange="reversed", gridcolor=BORDER_LIGHT),
+            xaxis=dict(showgrid=True, gridcolor=BORDER_LIGHT, zeroline=False,
+                       linecolor="rgba(0,0,0,0)", tickfont=dict(size=11)),
+            yaxis=dict(autorange="reversed", showgrid=False),
             showlegend=False))
-        st.plotly_chart(fig1, width="stretch")
+        st.plotly_chart(fig1, width="stretch", config=_PLOT_CFG)
 
     with t2:
         gs = mg.sort_values("growth_pct", ascending=False)
         fig2 = px.bar(gs, x="growth_pct", y="subdomain", orientation="h",
                       title="Growth rate (vs prior 30d)",
                       labels={"growth_pct": "% Growth", "subdomain": ""})
-        fig2.update_traces(marker_color=GREEN)
+        fig2.update_traces(marker_color=TEAL)
         fig2.update_layout(**_layout(height=420,
-            yaxis=dict(autorange="reversed", gridcolor=BORDER_LIGHT),
+            xaxis=dict(showgrid=True, gridcolor=BORDER_LIGHT, zeroline=False,
+                       linecolor="rgba(0,0,0,0)", tickfont=dict(size=11)),
+            yaxis=dict(autorange="reversed", showgrid=False),
             showlegend=False))
-        st.plotly_chart(fig2, width="stretch")
+        st.plotly_chart(fig2, width="stretch", config=_PLOT_CFG)
 
     md = mg[["subdomain", "total", "new_30d", "prev_30d", "growth_pct"]].copy()
     md["growth_pct"] = md["growth_pct"].apply(lambda v: f"{v:+.1f}%")
@@ -1501,7 +1647,7 @@ def page_health(health_df: pd.DataFrame, runs_df: pd.DataFrame):
             import plotly.express as px
             fig = px.bar(
                 inv, x="category", y="count", color="worker_state",
-                color_discrete_map={"working": "#1aab68", "pending": "#d97706"},
+                color_discrete_map={"working": GREEN, "pending": AMBER},
                 category_orders={"category": [
                     "university_incubator", "accelerator", "vc_portfolio",
                     "discovery_aggregator", "government_program", "other",
@@ -1509,7 +1655,7 @@ def page_health(health_df: pd.DataFrame, runs_df: pd.DataFrame):
                 barmode="stack",
             )
             fig.update_layout(**_layout(height=260, legend_title_text=""))
-            st.plotly_chart(fig, width="stretch")
+            st.plotly_chart(fig, width="stretch", config=_PLOT_CFG)
         except Exception:
             st.dataframe(inv, hide_index=True, width="stretch")
     else:
@@ -1604,7 +1750,7 @@ def page_health(health_df: pd.DataFrame, runs_df: pd.DataFrame):
         )
 
         fig = go.Figure()
-        for state, color in [("pending", "#f59e0b"), ("healthy", "#22c55e"), ("broken", "#ef4444")]:
+        for state, color in [("pending", AMBER), ("healthy", GREEN), ("broken", RED)]:
             fig.add_bar(
                 y=by_country["country"],
                 x=by_country[state],
@@ -1621,7 +1767,7 @@ def page_health(health_df: pd.DataFrame, runs_df: pd.DataFrame):
             **_layout(),
         )
         fig.update_yaxes(autorange="reversed")
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, config=_PLOT_CFG)
 
         display = by_country.copy()
         display["last_scraped"] = pd.to_datetime(display["last_scraped"], errors="coerce").dt.strftime("%Y-%m-%d")
@@ -1668,15 +1814,13 @@ def page_github(df: pd.DataFrame, df_all: pd.DataFrame):
         return
 
     # Filters
-    st.markdown('<div class="filter-bar">', unsafe_allow_html=True)
-    st.markdown('<div class="filter-bar-label">Filters</div>', unsafe_allow_html=True)
+    st.markdown('<hr/><div class="filter-bar-label">Filters</div>', unsafe_allow_html=True)
     search = st.text_input("Search GitHub", placeholder="Search by repo, owner, description...",
                            label_visibility="collapsed", key="gh_search")
     gc1, gc2, gc3 = st.columns(3)
     min_stars = gc1.number_input("Min stars", min_value=0, value=0, step=100, key="gh_minstars")
     min_conf = gc2.slider("Min LLM confidence", 0.0, 1.0, 0.6, 0.05, key="gh_minconf")
     recent_only = gc3.checkbox("Last 30 days", key="gh_recent")
-    st.markdown('</div>', unsafe_allow_html=True)
 
     f = df.copy()
     if min_stars > 0:
@@ -2165,12 +2309,12 @@ _CATEGORY_ORDER = [
 ]
 
 _CAT_COLORS = {
-    "university_incubator": "#286dc0",
-    "accelerator":          "#1aab68",
-    "vc_portfolio":         "#a855f7",
-    "government_program":   "#d97706",
-    "discovery_aggregator": "#06b6d4",
-    "other":                "#94a3b8",
+    "university_incubator": CAT[0],
+    "accelerator":          CAT[1],
+    "vc_portfolio":         CAT[3],
+    "government_program":   CAT[2],
+    "discovery_aggregator": BLUE_RAMP[0],
+    "other":                "#9aa5b3",
 }
 
 
@@ -2246,7 +2390,7 @@ def page_inventory():
     )
     cat_counts["category_label"] = cat_counts["category"].map(_CATEGORY_LABELS)
 
-    scrape_colors = {"easy": "#1aab68", "agentic": "#286dc0", "challenging": "#dc2626"}
+    scrape_colors = {"easy": GREEN, "agentic": ACCENT, "challenging": RED}
 
     present_tiers = [t for t in ["easy", "agentic", "challenging"] if t in cat_counts["scrapeability"].values]
     fig_cat = px.bar(
@@ -2264,7 +2408,7 @@ def page_inventory():
         title="Sites by Type & Scrapeability",
     )
     fig_cat.update_layout(**_layout(height=320))
-    st.plotly_chart(fig_cat, use_container_width=True)
+    st.plotly_chart(fig_cat, use_container_width=True, config=_PLOT_CFG)
 
     # ── Scrapeability donut ────────────────────────────────────────────
     col_donut, col_table = st.columns([1, 2])
@@ -2278,7 +2422,7 @@ def page_inventory():
             hovertemplate="%{label}: %{value}<extra></extra>",
         ))
         fig_d.update_layout(**_layout(height=280, title_text="Scrapeability split"))
-        st.plotly_chart(fig_d, use_container_width=True)
+        st.plotly_chart(fig_d, use_container_width=True, config=_PLOT_CFG)
 
     # ── Challenging sites table ────────────────────────────────────────
     with col_table:
@@ -2375,14 +2519,14 @@ def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None,
             y="incubator_source",
             orientation="h",
             color="ai_pct",
-            color_continuous_scale=[[0, "#cce3ff"], [1, "#286dc0"]],
+            color_continuous_scale=SEQ_SCALE,
             labels={"ai_count": "AI Companies", "incubator_source": "", "ai_pct": "AI %"},
             title="AI Companies by Source",
             text="ai_count",
         )
         fig_src.update_traces(textposition="outside")
         fig_src.update_layout(**_layout(height=max(300, len(prog) * 26 + 80)))
-        st.plotly_chart(fig_src, use_container_width=True)
+        st.plotly_chart(fig_src, use_container_width=True, config=_PLOT_CFG)
 
     # ── Country distribution ─────────────────────────────────────────
     st.markdown("<br/>", unsafe_allow_html=True)
@@ -2397,14 +2541,14 @@ def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None,
                 y="country",
                 orientation="h",
                 color="ai",
-                color_continuous_scale=[[0, "#cce3ff"], [1, "#00356b"]],
+                color_continuous_scale=SEQ_SCALE,
                 labels={"ai": "AI Startups", "country": ""},
                 title="AI Startups by Country (top 15)",
                 text="ai",
             )
             fig_ctry.update_traces(textposition="outside")
             fig_ctry.update_layout(**_layout(height=440))
-            st.plotly_chart(fig_ctry, use_container_width=True)
+            st.plotly_chart(fig_ctry, use_container_width=True, config=_PLOT_CFG)
         elif "country" in df.columns:
             ai_df = df[df["is_ai"]].copy()
             norm = {"USA": "United States", "US": "United States", "usa": "United States",
@@ -2425,27 +2569,27 @@ def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None,
                 y="country_norm",
                 orientation="h",
                 color="count",
-                color_continuous_scale=[[0, "#cce3ff"], [1, "#00356b"]],
+                color_continuous_scale=SEQ_SCALE,
                 labels={"count": "AI Startups", "country_norm": ""},
                 title="AI Startups by Country (top 15)",
                 text="count",
             )
             fig_ctry.update_traces(textposition="outside")
             fig_ctry.update_layout(**_layout(height=440))
-            st.plotly_chart(fig_ctry, use_container_width=True)
+            st.plotly_chart(fig_ctry, use_container_width=True, config=_PLOT_CFG)
 
     with col_right:
         # AI vs non-AI donut
         fig_d = go.Figure(go.Pie(
             labels=["AI-focused", "Non-AI"],
             values=[ai_cos, non_ai],
-            marker_colors=["#286dc0", "#e3e7ee"],
+            marker_colors=[ACCENT, GRAY_CTX],
             hole=0.55,
             textinfo="label+percent",
             hovertemplate="%{label}: %{value:,}<extra></extra>",
         ))
         fig_d.update_layout(**_layout(height=280, title_text="AI vs. Non-AI"))
-        st.plotly_chart(fig_d, use_container_width=True)
+        st.plotly_chart(fig_d, use_container_width=True, config=_PLOT_CFG)
 
         # Score histogram
         if "ai_score" in df.columns:
@@ -2454,14 +2598,14 @@ def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None,
                 score_df,
                 x="ai_score",
                 nbins=20,
-                color_discrete_sequence=["#286dc0"],
+                color_discrete_sequence=[ACCENT],
                 labels={"ai_score": "AI Score", "count": "Companies"},
                 title="AI Score Distribution",
             )
             fig_hist.add_vline(x=0.3, line_dash="dash", line_color=RED,
                                annotation_text="AI threshold (0.3)")
             fig_hist.update_layout(**_layout(height=240))
-            st.plotly_chart(fig_hist, use_container_width=True)
+            st.plotly_chart(fig_hist, use_container_width=True, config=_PLOT_CFG)
 
     # ── Discovery over time ──────────────────────────────────────────
     st.markdown("<br/>", unsafe_allow_html=True)
@@ -2478,8 +2622,8 @@ def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None,
             .tail(24)
         )
         fig_time = go.Figure()
-        fig_time.add_bar(x=monthly["month"], y=monthly["total"], name="All", marker_color="#e3e7ee")
-        fig_time.add_bar(x=monthly["month"], y=monthly["ai"], name="AI", marker_color="#286dc0")
+        fig_time.add_bar(x=monthly["month"], y=monthly["total"], name="All", marker_color=GRAY_CTX)
+        fig_time.add_bar(x=monthly["month"], y=monthly["ai"], name="AI", marker_color=ACCENT)
         fig_time.update_layout(
             barmode="overlay",
             title_text="Monthly Company Discovery (AI in blue, all in grey)",
@@ -2487,7 +2631,7 @@ def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None,
             yaxis_title="Companies",
             **_layout(height=280),
         )
-        st.plotly_chart(fig_time, use_container_width=True)
+        st.plotly_chart(fig_time, use_container_width=True, config=_PLOT_CFG)
 
     # ── Recently discovered AI companies ────────────────────────────
     st.markdown("<br/>", unsafe_allow_html=True)
@@ -2557,26 +2701,27 @@ def page_research():
         fig.add_trace(go.Bar(
             x=curve["founded_year"], y=curve["total"],
             name="All tech companies",
-            marker_color="rgba(0,53,107,0.18)",
+            marker_color=GRAY_CTX,
             yaxis="y2",
         ))
         fig.add_trace(go.Scatter(
             x=curve["founded_year"], y=curve["ai_pct"],
             name="AI share (%)",
             mode="lines+markers",
-            line=dict(color="#0d9668", width=3),
-            marker=dict(size=7),
+            line=dict(color=TEAL, width=2.5),
+            marker=dict(size=6),
         ))
         fig.update_layout(
             **_layout(
                 height=380,
                 yaxis=dict(title="AI share (%)", ticksuffix="%", rangemode="tozero", gridcolor=BORDER_LIGHT),
                 yaxis2=dict(title="Total companies", overlaying="y", side="right", showgrid=False),
+                legend=dict(orientation="h", y=1.08, font=dict(size=11, color=TXT2),
+                            bgcolor="rgba(0,0,0,0)"),
             ),
-            legend=dict(orientation="h", y=1.08),
             hovermode="x unified",
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, config=_PLOT_CFG)
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
@@ -2596,11 +2741,11 @@ def page_research():
                 top30, x="ai_pct", y="country", orientation="h",
                 labels={"ai_pct": "AI share (%)", "country": ""},
                 color="ai_pct",
-                color_continuous_scale=[[0, "#e3e7ee"], [0.5, "#286dc0"], [1, "#00356b"]],
+                color_continuous_scale=SEQ_SCALE,
             )
             fig_geo.update_coloraxes(showscale=False)
             fig_geo.update_layout(**_layout(height=max(400, len(top30) * 22)))
-            st.plotly_chart(fig_geo, use_container_width=True)
+            st.plotly_chart(fig_geo, use_container_width=True, config=_PLOT_CFG)
 
         with col_right:
             tbl = country_stats.head(30)[["country", "total", "ai", "ai_pct"]].copy()
@@ -2625,11 +2770,11 @@ def page_research():
                 sorted_v, x="ai_pct", y="vertical", orientation="h",
                 labels={"ai_pct": "AI share (%)", "vertical": ""},
                 color="ai_pct",
-                color_continuous_scale=[[0, "#e3e7ee"], [0.5, "#286dc0"], [1, "#00356b"]],
+                color_continuous_scale=SEQ_SCALE,
             )
             fig_vert.update_coloraxes(showscale=False)
             fig_vert.update_layout(**_layout(height=max(380, len(sorted_v) * 26)))
-            st.plotly_chart(fig_vert, use_container_width=True)
+            st.plotly_chart(fig_vert, use_container_width=True, config=_PLOT_CFG)
         with col_vr:
             tbl_v = vertical_stats[["vertical", "total", "ai", "ai_pct"]].copy()
             tbl_v = tbl_v.sort_values("ai_pct", ascending=False)
@@ -2656,13 +2801,13 @@ def page_research():
         fig_heat = px.imshow(
             pivot,
             labels=dict(x="Founded Year", y="Country", color="AI share (%)"),
-            color_continuous_scale=[[0, "#f0f4fa"], [0.3, "#286dc0"], [1, "#00356b"]],
+            color_continuous_scale=[[0, "#f4f7fb"], [0.5, "#4f8fd9"], [1, "#00356b"]],
             aspect="auto",
             zmin=0, zmax=50,
         )
         fig_heat.update_layout(**_layout(height=max(500, len(pivot) * 22)))
         fig_heat.update_xaxes(side="bottom")
-        st.plotly_chart(fig_heat, use_container_width=True)
+        st.plotly_chart(fig_heat, use_container_width=True, config=_PLOT_CFG)
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
@@ -2678,12 +2823,14 @@ def page_research():
 
         with col_vol:
             st.markdown("**Deal volume by stage (2010–2024)**")
+            # Ordered stages take the single-hue ordinal ramp (light→dark);
+            # the unordered catch-all bucket stays neutral gray.
             STAGE_COLORS = {
-                "Pre-Seed / Accel": "#a8c8e8",
-                "Seed":             "#286dc0",
-                "Early VC":         "#00356b",
-                "Growth":           "#0d9668",
-                "Corporate / Other":"#888888",
+                "Pre-Seed / Accel": BLUE_RAMP[0],
+                "Seed":             BLUE_RAMP[1],
+                "Early VC":         BLUE_RAMP[2],
+                "Growth":           BLUE_RAMP[3],
+                "Corporate / Other":"#9aa5b3",
             }
             bucket_order = ["Pre-Seed / Accel", "Seed", "Early VC", "Growth", "Corporate / Other"]
             fig_vol = go.Figure()
@@ -2699,18 +2846,20 @@ def page_research():
             fig_vol.update_layout(
                 **_layout(
                     height=340,
-                    xaxis=dict(title="", tickformat="d"),
+                    xaxis=dict(title="", tickformat="d", showgrid=False, zeroline=False,
+                               linecolor=BORDER, ticks="outside", tickcolor=BORDER, ticklen=4),
                     yaxis=dict(title="Deals", gridcolor=BORDER_LIGHT),
+                    legend=dict(orientation="h", y=1.08, font=dict(size=11, color=TXT2),
+                                bgcolor="rgba(0,0,0,0)"),
                 ),
                 barmode="stack",
-                legend=dict(orientation="h", y=1.08, font=dict(size=11)),
                 hovermode="x unified",
             )
-            st.plotly_chart(fig_vol, use_container_width=True)
+            st.plotly_chart(fig_vol, use_container_width=True, config=_PLOT_CFG)
 
         with col_size:
             st.markdown("**Median deal size by stage ($M, 2010–2024)**")
-            SIZE_COLORS = {"Seed": "#286dc0", "Early VC": "#00356b", "Growth": "#0d9668"}
+            SIZE_COLORS = {"Seed": GOLD, "Early VC": TEAL, "Growth": ACCENT}
             fig_size = go.Figure()
             for bucket, color in SIZE_COLORS.items():
                 sub = deal_sizes[deal_sizes["stage_bucket"] == bucket]
@@ -2725,13 +2874,15 @@ def page_research():
             fig_size.update_layout(
                 **_layout(
                     height=340,
-                    xaxis=dict(title="", tickformat="d"),
+                    xaxis=dict(title="", tickformat="d", showgrid=False, zeroline=False,
+                               linecolor=BORDER, ticks="outside", tickcolor=BORDER, ticklen=4),
                     yaxis=dict(title="Median deal size ($M)", gridcolor=BORDER_LIGHT),
+                    legend=dict(orientation="h", y=1.08, font=dict(size=11, color=TXT2),
+                                bgcolor="rgba(0,0,0,0)"),
                 ),
-                legend=dict(orientation="h", y=1.08, font=dict(size=11)),
                 hovermode="x unified",
             )
-            st.plotly_chart(fig_size, use_container_width=True)
+            st.plotly_chart(fig_size, use_container_width=True, config=_PLOT_CFG)
 
     if not first_fin.empty:
         st.markdown("**First financing year: AI vs non-AI companies**")
@@ -2744,23 +2895,26 @@ def page_research():
         fig_ff.add_trace(go.Scatter(
             x=ai_df["first_year"], y=(ai_df["companies"] / ai_total * 100).round(2),
             name="AI companies", mode="lines+markers",
-            line=dict(color="#0d9668", width=2), marker=dict(size=6),
+            line=dict(color=ACCENT, width=2.5), marker=dict(size=6),
         ))
         fig_ff.add_trace(go.Scatter(
             x=non_df["first_year"], y=(non_df["companies"] / non_total * 100).round(2),
             name="Non-AI companies", mode="lines+markers",
-            line=dict(color="#286dc0", width=2, dash="dot"), marker=dict(size=6),
+            line=dict(color=TXT3, width=2, dash="dot"), marker=dict(size=5),
         ))
         fig_ff.update_layout(
             **_layout(
                 height=300,
-                xaxis=dict(title="Year of first financing", tickformat="d"),
+                xaxis=dict(title="Year of first financing", tickformat="d", showgrid=False,
+                           zeroline=False, linecolor=BORDER, ticks="outside",
+                           tickcolor=BORDER, ticklen=4),
                 yaxis=dict(title="Share of cohort (%)", ticksuffix="%", gridcolor=BORDER_LIGHT),
+                legend=dict(orientation="h", y=1.08, font=dict(size=11, color=TXT2),
+                            bgcolor="rgba(0,0,0,0)"),
             ),
-            legend=dict(orientation="h", y=1.08),
             hovermode="x unified",
         )
-        st.plotly_chart(fig_ff, use_container_width=True)
+        st.plotly_chart(fig_ff, use_container_width=True, config=_PLOT_CFG)
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
@@ -2868,16 +3022,481 @@ def page_research():
         st.dataframe(export_df.head(200), hide_index=True, use_container_width=True)
 
 
+# ── Info Sheet ───────────────────────────────────────────────────────
+
+def _utcnow() -> datetime:
+    """Naive UTC now — DB timestamps are timezone-naive UTC."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+@st.cache_data(ttl=1800)
+def _load_contribution_stats() -> dict:
+    """Non-overlapping source buckets + scraper detail for the Info Sheet.
+
+    Bucket priority: CB / PB first (standard databases), then companies our
+    scrapers found (has an incubator_signal), then GitHub-only. Buckets are
+    mutually exclusive and sum exactly to the companies total.
+    """
+    engine = get_engine()
+    with engine.connect() as conn:
+        buckets = dict(conn.execute(text("""
+            SELECT CASE
+                     WHEN c.verification_status = 'verified_cb' THEN 'cb'
+                     WHEN c.verification_status = 'verified_pb' THEN 'pb'
+                     WHEN s.company_id IS NOT NULL THEN 'scraper'
+                     ELSE 'github'
+                   END AS bucket,
+                   COUNT(*) AS n
+            FROM companies c
+            LEFT JOIN (SELECT DISTINCT company_id FROM incubator_signals) s
+                   ON s.company_id = c.id
+            GROUP BY 1
+        """)).fetchall())
+
+        overlap = dict(conn.execute(text("""
+            SELECT c.verification_status::text, COUNT(DISTINCT s.company_id)
+            FROM incubator_signals s
+            JOIN companies c ON c.id = s.company_id
+            WHERE c.verification_status IN ('verified_cb', 'verified_pb')
+            GROUP BY 1
+        """)).fetchall())
+
+        scraper_sources = conn.execute(text("""
+            SELECT s.source::text, COUNT(DISTINCT c.id)
+            FROM companies c
+            JOIN incubator_signals s ON s.company_id = c.id
+            WHERE c.verification_status = 'emerging_github'
+            GROUP BY 1 ORDER BY 2 DESC
+        """)).fetchall()
+
+        funding = conn.execute(text("""
+            SELECT COUNT(*),
+                   (SELECT COUNT(DISTINCT company_id) FROM funding_signals)
+            FROM funding_signals
+        """)).fetchone()
+
+    return {
+        "buckets": buckets,
+        "overlap": overlap,
+        "scraper_sources": [(s, n) for s, n in scraper_sources],
+        "funding_rows": funding[0] if funding else 0,
+        "funded_companies": funding[1] if funding else 0,
+    }
+
+
+_SCRAPER_SOURCE_LABELS = {
+    "agentic_scrape": "Agentic scraper (Claude+Tavily over registered VC/accelerator/university sites)",
+    "yc": "Y Combinator",
+    "techstars": "Techstars",
+    "harvard_ilabs": "Harvard Innovation Labs",
+    "stanford_startx": "Stanford StartX",
+    "entrepreneur_first": "Entrepreneur First",
+    "mit_engine": "MIT The Engine",
+    "berkeley_skydeck": "Berkeley SkyDeck",
+    "princeton_elab": "Princeton eLab",
+    "rice_owlspark": "Rice OwlSpark",
+    "seedcamp": "Seedcamp",
+    "antler": "Antler",
+}
+
+
+@st.cache_data(ttl=1800)
+def _load_scraping_ops() -> dict:
+    """Site inventory, run outcomes and error taxonomy for the Info Sheet."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        site_status = dict(conn.execute(text(
+            "SELECT status, COUNT(*) FROM site_health GROUP BY 1"
+        )).fetchall())
+
+        cat_rows = conn.execute(text("""
+            SELECT COALESCE(category, 'other') AS cat,
+                   COUNT(*) AS sites,
+                   COUNT(*) FILTER (WHERE status = 'healthy') AS healthy
+            FROM site_health GROUP BY 1 ORDER BY 2 DESC
+        """)).fetchall()
+
+        run_stats = conn.execute(text("""
+            SELECT COUNT(*),
+                   COUNT(*) FILTER (WHERE status = 'success'),
+                   COALESCE(SUM(records_new) FILTER (WHERE status = 'success'), 0),
+                   MAX(started_at)
+            FROM scrape_runs
+            WHERE started_at > NOW() - INTERVAL '30 days'
+        """)).fetchone()
+
+        lifetime = conn.execute(text("""
+            SELECT COUNT(*),
+                   COUNT(*) FILTER (WHERE status = 'success'),
+                   MAX(started_at)
+            FROM scrape_runs
+        """)).fetchone()
+
+        errors = conn.execute(text("""
+            SELECT CASE
+                     WHEN error_message ILIKE '%tavily%' THEN 'Tavily API unreachable / timeout'
+                     WHEN error_message ILIKE '%429%' THEN 'Anthropic rate limit (429)'
+                     WHEN error_message ILIKE '%together%' THEN 'Together.ai auth (401)'
+                     WHEN error_message ILIKE '%timed out%' OR error_message ILIKE '%timeout%' THEN 'Site timeout'
+                     ELSE 'Other'
+                   END AS kind, COUNT(*)
+            FROM scrape_runs
+            WHERE status = 'error' AND started_at > NOW() - INTERVAL '60 days'
+            GROUP BY 1 ORDER BY 2 DESC
+        """)).fetchall()
+
+        struggling = pd.DataFrame(conn.execute(text("""
+            SELECT domain, COALESCE(category, 'other') AS category, status,
+                   consecutive_failures, last_success_at,
+                   total_successes, total_runs,
+                   COALESCE(pending_reason, LEFT(last_error, 90)) AS diagnosis
+            FROM site_health
+            WHERE status IN ('broken', 'degraded')
+            ORDER BY total_successes DESC, consecutive_failures DESC
+        """)).mappings().all())
+
+    return {
+        "site_status": site_status,
+        "categories": [tuple(r) for r in cat_rows],
+        "runs_30d": tuple(run_stats),
+        "lifetime": tuple(lifetime),
+        "errors_60d": [tuple(r) for r in errors],
+        "struggling": struggling,
+    }
+
+
+_INFO_CATEGORY_LABELS = {
+    "vc_portfolio": "VC portfolios",
+    "university_incubator": "University incubators",
+    "accelerator": "Accelerators",
+    "government_program": "Government programs",
+    "discovery_aggregator": "Discovery aggregators",
+    "other": "Other / uncategorized",
+}
+
+
+@st.cache_data(ttl=1800)
+def _load_pipeline_status() -> dict:
+    """Live activity signals for every pipeline component (Info Sheet §3)."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        tier_last = dict(conn.execute(text(
+            "SELECT difficulty, MAX(started_at) FROM scrape_runs GROUP BY 1"
+        )).fetchall())
+        gh_signals = conn.execute(text("SELECT COUNT(*) FROM github_signals")).scalar() or 0
+        last_site_added = conn.execute(text("SELECT MAX(created_at) FROM site_health")).scalar()
+        cov = conn.execute(text("""
+            SELECT COUNT(*),
+                   COUNT(founded_year),
+                   COUNT(country),
+                   COUNT(*) FILTER (WHERE categories IS NOT NULL
+                                    AND array_length(categories, 1) > 0)
+            FROM companies
+        """)).fetchone()
+        has_naics = bool(conn.execute(text("""
+            SELECT COUNT(*) FROM information_schema.columns
+            WHERE table_name = 'companies' AND column_name = 'naics_code'
+        """)).scalar())
+    total = cov[0] or 1
+    return {
+        "last_easy": tier_last.get("easy"),
+        "last_hard": tier_last.get("hard"),
+        "gh_signals": gh_signals,
+        "last_site_added": last_site_added,
+        "founded_cov": cov[1] / total,
+        "country_cov": cov[2] / total,
+        "categories_cov": cov[3] / total,
+        "has_naics": has_naics,
+    }
+
+
+def _activity_status(ts, active_days: int = 7):
+    """(status label, last-activity string) from a timestamp."""
+    if ts is None:
+        return "⚪ Never ran", "—"
+    days = (_utcnow() - ts).days
+    if days <= active_days:
+        return "🟢 Running", f"{ts:%b %d, %Y}"
+    return "🔴 Stalled", f"{ts:%b %d, %Y} ({days}d ago)"
+
+
+def _info_pipeline_section():
+    try:
+        ps = _load_pipeline_status()
+    except Exception as e:
+        st.error(f"Could not load pipeline status: {e}")
+        return
+
+    st.markdown(
+        "How the database gets built: the **orchestrator** visits every registered "
+        "site — site-specific *easy* scrapers first, and a Claude+Tavily *agentic* "
+        "scraper for everything else. A **healer** watches outcomes (2 easy failures "
+        "→ escalate to agentic; 3 agentic failures → exclude 90 days). **Discovery** "
+        "agents add new sites, and **enrichment** scripts fill in missing fields."
+    )
+
+    easy_stat, easy_last = _activity_status(ps["last_easy"])
+    hard_stat, hard_last = _activity_status(ps["last_hard"])
+    scout_stat, scout_last = _activity_status(ps["last_site_added"], active_days=14)
+    gh_stat = "⚪ Never ran" if ps["gh_signals"] == 0 else "🟢 Has data"
+    revelio_stat = "🟢 Done" if ps["has_naics"] else "🟠 Incomplete"
+
+    rows = [
+        ("Easy-tier scrapers", "36 site-specific scrapers (YC, Techstars, HuggingFace, …)",
+         easy_stat, easy_last, "scripts/run_orchestrator.py --batch"),
+        ("Agentic scraper", "Claude+Tavily agent that can scrape any registered site",
+         hard_stat, hard_last, "scripts/run_orchestrator.py --batch"),
+        ("Healer / watchdog", "Escalates failing sites between tiers, writes diagnoses",
+         hard_stat, hard_last, "runs inside the orchestrator"),
+        ("International scout", "Finds new VC/accelerator sites to register (KR, IL, CN, …)",
+         scout_stat, f"last new site {scout_last}", "scripts/run_international_scout.py"),
+        ("GitHub discovery", "Weekly scan of GitHub orgs for emerging startups",
+         gh_stat, f"{ps['gh_signals']:,} signals in DB", "scripts/github_weekly_discover.py"),
+        ("LLM classifier", "Tags AI relevance + industry vertical (17-category taxonomy)",
+         f"🟢 {ps['categories_cov']:.0%} coverage", "runs after imports", "scripts/run_llm_classify_failover.py"),
+        ("Revelio enrichment", "LinkedIn workforce data → founded_year, NAICS codes",
+         revelio_stat, "naics_code column present" if ps["has_naics"] else "naics_code column missing",
+         "scripts/enrich_from_revelio.py"),
+        ("Country fill / normalize", "TLD inference + normalizer after bulk imports",
+         f"🟢 {ps['country_cov']:.0%} coverage", "maintenance script", "scripts/infer_country_from_tld.py"),
+    ]
+    comp_df = pd.DataFrame(rows, columns=["Component", "What it does", "Status", "Last activity", "How to run"])
+    st.dataframe(comp_df, hide_index=True, use_container_width=True)
+
+    # Auto-detected gaps — the professor's "want running but currently not running?"
+    gaps = []
+    if ps["last_easy"] is None or (_utcnow() - ps["last_easy"]).days > 7:
+        gaps.append("**Scrapers are not running.** No scheduler is attached: Railway only "
+                    "serves this dashboard, and the local launchd job is not loaded. "
+                    "Scrapes happen only when someone runs the orchestrator manually.")
+    if ps["gh_signals"] == 0:
+        gaps.append("**GitHub discovery has never run** against this database "
+                    "(`github_signals` is empty) — a planned weekly source that isn't wired up.")
+    if not ps["has_naics"]:
+        gaps.append("**Revelio enrichment is unfinished** — the NAICS-code backfill "
+                    "(~292K companies) started Jun 21 but never landed here.")
+    if gaps:
+        st.warning("**Wanted running, but currently not:**\n\n" + "\n\n".join(f"- {g}" for g in gaps))
+    else:
+        st.success("All pipeline components show recent activity.")
+
+
+def _info_scraping_section():
+    try:
+        ops = _load_scraping_ops()
+    except Exception as e:
+        st.error(f"Could not load scraping stats: {e}")
+        return
+
+    ss = ops["site_status"]
+    total_sites = sum(ss.values())
+    healthy = ss.get("healthy", 0)
+    struggling_n = ss.get("broken", 0) + ss.get("degraded", 0)
+
+    runs30, ok30, new30, last30 = ops["runs_30d"]
+    runs_all, ok_all, last_run = ops["lifetime"]
+
+    # Stall banner — the single most important operational fact on this page.
+    if last_run is None:
+        st.error("The scraping pipeline has never run.")
+    else:
+        days_idle = (_utcnow() - last_run).days
+        if days_idle > 7:
+            st.error(
+                f"**Scraping pipeline is STALLED** — last run was {last_run:%b %d, %Y} "
+                f"({days_idle} days ago). Nothing is scheduled to run it automatically; "
+                "see section 3 below."
+            )
+        else:
+            st.success(f"Scraping pipeline active — last run {last_run:%b %d, %Y}.")
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Websites registered", f"{total_sites:,}")
+    m2.metric("Currently healthy", f"{healthy:,}",
+              f"{healthy / total_sites:.0%} of sites" if total_sites else None, delta_color="off")
+    m3.metric("Struggling (broken + degraded)", f"{struggling_n:,}")
+    m4.metric("Lifetime success rate",
+              f"{ok_all / runs_all:.0%}" if runs_all else "—",
+              f"{ok_all:,} of {runs_all:,} runs", delta_color="off")
+
+    col_status, col_cat = st.columns(2)
+    with col_status:
+        st.markdown("**Site status**")
+        order = ["healthy", "degraded", "broken", "pending", "excluded"]
+        desc = {
+            "healthy": "producing records",
+            "degraded": "partially failing",
+            "broken": "failing — needs attention",
+            "pending": "registered, never run",
+            "excluded": "gave up (90-day exclusion)",
+        }
+        stat_df = pd.DataFrame(
+            [(s, ss.get(s, 0), desc[s]) for s in order if ss.get(s, 0)],
+            columns=["Status", "Sites", "Meaning"],
+        )
+        st.dataframe(stat_df, hide_index=True, use_container_width=True)
+    with col_cat:
+        st.markdown("**By site category**")
+        cat_df = pd.DataFrame(
+            [(_INFO_CATEGORY_LABELS.get(c, c), n, h, f"{h / n:.0%}" if n else "—")
+             for c, n, h in ops["categories"]],
+            columns=["Category", "Sites", "Healthy", "Healthy %"],
+        )
+        st.dataframe(cat_df, hide_index=True, use_container_width=True)
+
+    st.markdown("**Recent activity (last 30 days)**")
+    a1, a2, a3 = st.columns(3)
+    a1.metric("Scrape runs", f"{runs30:,}")
+    a2.metric("Successful", f"{ok30:,}",
+              f"{ok30 / runs30:.0%} success rate" if runs30 else None, delta_color="off")
+    a3.metric("New companies collected", f"{int(new30):,}")
+
+    if ops["errors_60d"]:
+        err_total = sum(n for _, n in ops["errors_60d"])
+        st.markdown("**Why runs fail** (errors, last 60 days)")
+        err_df = pd.DataFrame(ops["errors_60d"], columns=["Failure cause", "Runs"])
+        err_df["Share"] = (err_df["Runs"] / err_total).map("{:.0%}".format)
+        st.dataframe(err_df, hide_index=True, use_container_width=True)
+        st.caption(
+            "Nearly all failures are external-API issues (Tavily connectivity, "
+            "Anthropic rate limits), not site problems — retry with backoff "
+            "recovers most of these sites without any new code per site."
+        )
+
+    strug = ops["struggling"]
+    if not strug.empty:
+        with st.expander(f"Monitoring: all {len(strug)} struggling sites", expanded=False):
+            view = strug.rename(columns={
+                "domain": "Domain", "category": "Category", "status": "Status",
+                "consecutive_failures": "Consecutive failures",
+                "last_success_at": "Last success",
+                "total_successes": "Lifetime successes",
+                "total_runs": "Lifetime runs",
+                "diagnosis": "Diagnosis / last error",
+            })
+            view["Category"] = view["Category"].map(lambda c: _INFO_CATEGORY_LABELS.get(c, c))
+            view = view[["Domain", "Category", "Status", "Consecutive failures",
+                         "Last success", "Lifetime successes", "Lifetime runs",
+                         "Diagnosis / last error"]]
+            st.dataframe(view, hide_index=True, use_container_width=True, height=420)
+
+
+def _info_sources_section():
+    try:
+        stats = _load_contribution_stats()
+    except Exception as e:
+        st.error(f"Could not load contribution stats: {e}")
+        return
+
+    b = stats["buckets"]
+    cb, pb = b.get("cb", 0), b.get("pb", 0)
+    scraper, github = b.get("scraper", 0), b.get("github", 0)
+    total = cb + pb + scraper + github
+    unique_ours = scraper + github
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Total companies", f"{total:,}")
+    m2.metric("Covered by Crunchbase", f"{cb:,}", f"{cb / total:.1%} of total" if total else None, delta_color="off")
+    m3.metric("Covered by PitchBook", f"{pb:,}", f"{pb / total:.1%} of total" if total else None, delta_color="off")
+    m4.metric("Only we have", f"{unique_ours:,}", f"{unique_ours / total:.1%} of total" if total else None, delta_color="off")
+
+    rows = [
+        ("Crunchbase", cb, "Standard database — bulk import, used as the enrichment layer"),
+        ("PitchBook", pb, "Standard database — bulk import; also the source of all funding-deal records"),
+        ("Our scrapers", scraper, "NOT in CB/PB — found by our own scraping of accelerator, VC and university sites"),
+        ("GitHub discovery", github, "NOT in CB/PB — emerging companies found via GitHub organization scans"),
+    ]
+    src_df = pd.DataFrame(rows, columns=["Source", "Companies", "What it is"])
+    src_df["Share"] = (src_df["Companies"] / total).map("{:.1%}".format) if total else "—"
+
+    chart_col, table_col = st.columns([2, 3])
+    with chart_col:
+        fig = go.Figure()
+        colors = {"Crunchbase": BLUE_RAMP[2], "PitchBook": BLUE_RAMP[0],
+                  "Our scrapers": CAT[1], "GitHub discovery": CAT[2]}
+        for name, n, _ in rows:
+            fig.add_trace(go.Bar(
+                y=["Companies"], x=[n], name=name, orientation="h",
+                marker_color=colors[name],
+                hovertemplate=f"{name}: {n:,}<extra></extra>",
+            ))
+        fig.update_layout(
+            barmode="stack", height=160, showlegend=True,
+            legend=dict(orientation="h", y=-0.4),
+            margin=dict(l=0, r=0, t=10, b=0),
+            xaxis=dict(title=None), yaxis=dict(visible=False),
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        )
+        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+        st.caption("Buckets are mutually exclusive and sum exactly to the total.")
+    with table_col:
+        st.dataframe(src_df[["Source", "Companies", "Share", "What it is"]],
+                     hide_index=True, use_container_width=True)
+
+    cb_overlap = stats["overlap"].get("verified_cb", 0)
+    pb_overlap = stats["overlap"].get("verified_pb", 0)
+    st.markdown(
+        f"**Cross-validation:** our scrapers independently re-discovered "
+        f"**{cb_overlap:,}** Crunchbase and **{pb_overlap:,}** PitchBook companies "
+        f"(counted once, under CB/PB above). Funding data: "
+        f"**{stats['funding_rows']:,}** deal records covering "
+        f"**{stats['funded_companies']:,}** companies, all from PitchBook."
+    )
+
+    with st.expander(f"Where the {scraper:,} scraper-unique companies came from", expanded=False):
+        det = pd.DataFrame(
+            [(_SCRAPER_SOURCE_LABELS.get(s, s), n) for s, n in stats["scraper_sources"]],
+            columns=["Scraper source", "Unique companies (not in CB/PB)"],
+        )
+        st.dataframe(det, hide_index=True, use_container_width=True)
+
+
+def page_info_sheet():
+    """One-page summary for collaborators: where the data comes from, what
+    runs to build it, and how scraping is doing.
+
+    Sections are filled in incrementally — see reports/INFO_SHEET_PLAN.md
+    for the step plan and how to resume.
+    """
+    st.markdown(
+        '<div class="section-header">Info Sheet</div>'
+        '<div class="section-sub">Everything about this database on one page — '
+        'data provenance, scraping operations, and pipeline status</div>',
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        f"Generated {_utcnow():%Y-%m-%d %H:%M} UTC — "
+        "all numbers query the live production database"
+    )
+
+    st.markdown('<div class="section-header">1 · Where the data comes from</div>'
+                '<div class="section-sub">How much is covered by standard databases '
+                '(Crunchbase / PitchBook), and where the rest came from</div>',
+                unsafe_allow_html=True)
+    _info_sources_section()
+
+    st.markdown('<div class="section-header">2 · Scraping operations</div>'
+                '<div class="section-sub">How many websites we scrape, how many succeed, '
+                'and which ones are struggling</div>',
+                unsafe_allow_html=True)
+    _info_scraping_section()
+
+    st.markdown('<div class="section-header">3 · Pipeline components — running vs. not</div>'
+                '<div class="section-sub">Every agent and script that builds this database, '
+                'and whether it is currently running</div>',
+                unsafe_allow_html=True)
+    _info_pipeline_section()
+
+
 # ── Main ─────────────────────────────────────────────────────────────
 
-def main():
-    df = load_startups()
-    health_df = load_site_health()
-    runs_df = load_recent_runs()
+def _company_frames():
+    """Load companies and split by source.
 
-    # Split companies by source.
-    #   GitHub Discovery: came in via GitHub scan (no incubator_source, has a repo)
-    #   Scraper:          came in via accelerator/incubator scrapers
+    GitHub Discovery: came in via GitHub scan (no incubator_source, has a repo)
+    Scraper:          came in via accelerator/incubator scrapers
+    """
+    df = load_startups()
     if not df.empty:
         inc = df["incubator_source"].astype("string")
         has_repo = df["github_repo"].notna() if "github_repo" in df.columns else pd.Series([False] * len(df))
@@ -2887,35 +3506,71 @@ def main():
 
     scraper_df = df[~is_gh].copy() if not df.empty else df
     github_df_all = df[is_gh].copy() if not df.empty else df
+    return scraper_df, github_df_all
 
-    # LLM filter: only keep repos classified as 'startup' by the LLM
-    if "llm_classification" in github_df_all.columns:
-        github_df = github_df_all[github_df_all["llm_classification"] == "startup"].copy()
-    else:
-        github_df = github_df_all.iloc[0:0].copy()
 
-    tab_overview, tab_ai, tab_github, tab_trends, tab_research, tab_health, tab_inventory, tab_scraper = st.tabs([
-        "Overview", "AI Analysis", "GitHub Discovery", "Trends", "Research", "Pipeline Health", "Inventory", "Scraper",
-    ])
+_NAV_PAGES = [
+    "Overview", "Info Sheet", "AI Analysis", "GitHub Discovery",
+    "Trends", "Research", "Pipeline Health", "Inventory", "Scraper",
+]
 
-    with tab_overview:
-        page_overview(scraper_df, health_df)
-    with tab_ai:
-        page_ai_analysis(scraper_df, _load_overview_stats(),
-                         source_stats=_load_source_ai_stats(),
-                         country_stats=_load_country_ai_stats(min_companies=1))
-    with tab_github:
-        page_github(github_df, github_df_all)
-    with tab_trends:
-        page_trends(scraper_df)
-    with tab_research:
-        page_research()
-    with tab_health:
-        page_health(health_df, runs_df)
-    with tab_inventory:
-        page_inventory()
-    with tab_scraper:
-        page_scraper()
+
+def main():
+    # ── Sidebar: brand, navigation, live stats ──────────────────────
+    with st.sidebar:
+        st.markdown(
+            '<div class="sb-brand">'
+            '<div class="sb-title">AI Startup Tracker</div>'
+            '<div class="sb-sub">Tobin Center &middot; Yale SOM</div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown('<div class="sb-eyebrow">Navigation</div>', unsafe_allow_html=True)
+        page = st.radio("Navigation", _NAV_PAGES, label_visibility="collapsed")
+        st.markdown(
+            f'<div class="sb-foot">'
+            f'<div class="sb-foot-label">Live database</div>'
+            f'<div class="sb-foot-row"><span class="sb-foot-key">Companies</span>'
+            f'<span class="sb-foot-val">{_total:,}</span></div>'
+            f'<div class="sb-foot-row"><span class="sb-foot-key">Sources</span>'
+            f'<span class="sb-foot-val">{_sources:,}</span></div>'
+            f'<div class="sb-foot-row"><span class="sb-foot-key">Countries</span>'
+            f'<span class="sb-foot-val">{_countries:,}</span></div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+    # ── Main content: render only the selected page ──────────────────
+    with st.container(key="page"):
+        if page == "Overview":
+            scraper_df, _gh = _company_frames()
+            page_overview(scraper_df, load_site_health())
+        elif page == "Info Sheet":
+            page_info_sheet()
+        elif page == "AI Analysis":
+            scraper_df, _gh = _company_frames()
+            page_ai_analysis(scraper_df, _load_overview_stats(),
+                             source_stats=_load_source_ai_stats(),
+                             country_stats=_load_country_ai_stats(min_companies=1))
+        elif page == "GitHub Discovery":
+            _sc, github_df_all = _company_frames()
+            # LLM filter: only keep repos classified as 'startup' by the LLM
+            if "llm_classification" in github_df_all.columns:
+                github_df = github_df_all[github_df_all["llm_classification"] == "startup"].copy()
+            else:
+                github_df = github_df_all.iloc[0:0].copy()
+            page_github(github_df, github_df_all)
+        elif page == "Trends":
+            scraper_df, _gh = _company_frames()
+            page_trends(scraper_df)
+        elif page == "Research":
+            page_research()
+        elif page == "Pipeline Health":
+            page_health(load_site_health(), load_recent_runs())
+        elif page == "Inventory":
+            page_inventory()
+        elif page == "Scraper":
+            page_scraper()
 
 
 if __name__ == "__main__":
