@@ -123,7 +123,9 @@ class Orchestrator:
             if health.last_success_at is None:
                 return False
             cooldown_until = health.last_success_at + timedelta(days=self.cooldown_days)
-            return datetime.now(timezone.utc) < cooldown_until
+            # DB timestamps are timezone-naive UTC; compare naive-to-naive.
+            now = datetime.now(timezone.utc).replace(tzinfo=None)
+            return now < cooldown_until
 
     def run_all_due(self, workers: int = 3) -> List[ScrapeRunResult]:
         """Run all sites that are due for scraping (past cooldown, not excluded)."""
