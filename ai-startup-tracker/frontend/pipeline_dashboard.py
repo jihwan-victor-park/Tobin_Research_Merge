@@ -1050,7 +1050,7 @@ def _load_deal_size_trend() -> pd.DataFrame:
 def _load_ai_first_financing() -> pd.DataFrame:
     """First financing year distribution for AI vs non-AI companies (2010-2024)."""
     engine = get_engine()
-    query = """
+    query = f"""
         SELECT first_year, company_type, COUNT(*) AS companies
         FROM (
             SELECT
