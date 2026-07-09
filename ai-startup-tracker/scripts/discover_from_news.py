@@ -244,54 +244,63 @@ def main():
     stats = {"articles": 0, "new_companies": 0, "enriched": 0, "funding_signals": 0}
     engine = get_engine()
 
-    with session_scope() as db:
-        existing_domains: Dict[str, int] = {}
-        existing_norm: Dict[str, int] = {}
-        for c in db.query(Company.id, Company.domain, Company.normalized_name).all():
-            if c.domain:
-                existing_domains[c.domain.lower()] = c.id
-            if c.normalized_name:
-                existing_norm[c.normalized_name.lower()] = c.id
+    existing_domains: Dict[str, int] = {}
+    existing_norm: Dict[str, int] = {}
+    with engine.connect() as conn:
+        for cid, dom, norm in conn.execute(sql_text(
+                "SELECT id, domain, normalized_name FROM companies")):
+            if dom:
+                existing_domains[dom.lower()] = cid
+            if norm:
+                existing_norm[norm.lower()] = cid
 
-        for feed_domain, feed_url in feeds:
-            try:
-                entries = _fetch_feed_entries(feed_url)
-            except Exception as e:
-                logger.warning(f"feed failed {feed_domain}: {e}")
-                continue
-            fresh = [e for e in entries if e["url"] not in seen]
-            logger.info(f"{feed_domain}: {len(entries)} entries, {len(fresh)} new")
+    for feed_domain, feed_url in feeds:
+        try:
+            entries = _fetch_feed_entries(feed_url)
+        except Exception as e:
+            logger.warning(f"feed failed {feed_domain}: {e}")
+            continue
+        fresh = [e for e in entries if e["url"] not in seen]
+        logger.info(f"{feed_domain}: {len(entries)} entries, {len(fresh)} new")
 
-            for entry in fresh:
-                if stats["articles"] >= args.max_articles:
-                    break
-                text = _fetch_article_text(entry["url"])
-                found = 0
-                if text:
+        for entry in fresh:
+            if stats["articles"] >= args.max_articles:
+                break
+            text = _fetch_article_text(entry["url"])
+            found = 0
+            if text:
+                try:
+                    recs = _extract_companies(client, text, entry["title"])
+                except Exception as e:
+                    logger.warning(f"LLM failed on {entry['url']}: {e}")
+                    recs = []
+                if recs and not args.dry_run:
+                    # Short transaction per article — survives remote-DB resets.
                     try:
-                        recs = _extract_companies(client, text, entry["title"])
+                        with session_scope() as db:
+                            for rec in recs:
+                                _upsert(db, existing_domains, existing_norm, rec,
+                                        feed_domain, entry["url"], entry["published"], now, stats)
                     except Exception as e:
-                        logger.warning(f"LLM failed on {entry['url']}: {e}")
-                        recs = []
-                    for rec in recs:
-                        if not args.dry_run:
-                            _upsert(db, existing_domains, existing_norm, rec,
-                                    feed_domain, entry["url"], entry["published"], now, stats)
-                        found += 1
-                stats["articles"] += 1
-                if not args.dry_run:
+                        logger.warning(f"DB write failed for {entry['url']}: {str(e)[:120]}")
+                found = len(recs)
+            stats["articles"] += 1
+            if not args.dry_run:
+                try:
                     with engine.connect() as conn:
                         conn.execute(sql_text(
                             "INSERT INTO news_articles (url, feed, processed_at, companies_found) "
                             "VALUES (:u, :f, :t, :n) ON CONFLICT (url) DO NOTHING"),
                             {"u": entry["url"][:1024], "f": feed_domain, "t": now, "n": found})
                         conn.commit()
-                if args.dry_run and found:
-                    logger.info(f"  [{entry['title'][:60]}] → {found} companies")
-                time.sleep(0.3)
-            if stats["articles"] >= args.max_articles:
-                logger.info("Hit --max-articles cap")
-                break
+                except Exception as e:
+                    logger.warning(f"state write failed: {str(e)[:80]}")
+            if args.dry_run and found:
+                logger.info(f"  [{entry['title'][:60]}] → {found} companies")
+            time.sleep(0.3)
+        if stats["articles"] >= args.max_articles:
+            logger.info("Hit --max-articles cap")
+            break
 
     logger.info(f"Done: {stats}")
 
