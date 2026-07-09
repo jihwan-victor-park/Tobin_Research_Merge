@@ -32,10 +32,10 @@ from backend.utils.denylist import BIG_TECH_DENYLIST
 load_dotenv()
 
 # ── Design tokens ────────────────────────────────────────────────────
-YALE_BLUE = "#00356b"   # brand ink: text, hero, darkest ramp step
+YALE_BLUE = "#00356b"   # brand ink: headings, table accents
 YALE_MID = "#1a4f8a"
 YALE_LIGHT = "#2a6cb5"
-ACCENT = "#1c5cab"      # primary data series (>=3:1 on white, CVD-validated)
+ACCENT = "#29568c"      # primary data series (validated: chroma, CVD, >=3:1)
 BG = "#ffffff"
 BG_OFF = "#f7f8fb"
 BG_CARD = "#f9fafb"
@@ -48,14 +48,23 @@ GREEN = "#0d9668"       # status: working / healthy
 AMBER = "#d97706"       # status: pending / degraded
 RED = "#dc2626"         # status: broken / failed
 
+# Chrome (PitchBook-style shell)
+SIDEBAR_BG = "#152943"          # dark navy left rail
+SIDEBAR_TXT = "#b7c4d6"
+CREAM = "#f5f2e9"               # top bar
+CREAM_BORDER = "#e4ddc9"
+
 # Chart palette (validated with the dataviz palette checker on white):
-#   BLUE_RAMP  — single-hue ordinal ramp, light→dark, for ordered series
-#   CAT        — categorical slots for unordered identities, fixed order
+#   BLUE_RAMP  — single-hue steel-blue ordinal ramp, light→dark, ordered series
+#   CAT        — categorical slots (navy / teal / gold / light blue), fixed order;
+#                gold is sub-3:1 on white → use only with legend + labels/table
 #   SEQ_SCALE  — continuous sequential scale (heatmaps, color-by-value bars)
 #   GRAY_CTX   — context / "everything else" marks (never carries identity)
-BLUE_RAMP = ["#86b6ef", "#4f8fd9", "#1c5cab", "#00356b"]
-CAT = ["#1c5cab", "#0d9668", "#d97706", "#7c5cd6"]
-SEQ_SCALE = [[0, "#dbe7f5"], [0.5, "#4f8fd9"], [1, "#00356b"]]
+BLUE_RAMP = ["#8fb3dd", "#5f8cbf", "#33608f", "#1f3a5f"]
+CAT = ["#29568c", "#178a66", "#cf9008", "#5c95d6"]
+TEAL = CAT[1]
+GOLD = CAT[2]
+SEQ_SCALE = [[0, "#e3ebf5"], [0.5, "#5f8cbf"], [1, "#1f3a5f"]]
 GRAY_CTX = "#d7dde6"
 
 # ── US city coordinates (for geography map) ──────────────────────────
@@ -141,14 +150,14 @@ US_CITIES = {
 st.set_page_config(
     page_title="AI Startup Tracker",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # ── CSS ──────────────────────────────────────────────────────────────
 
 st.markdown(f"""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
     html, body, .stApp {{
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -166,8 +175,7 @@ st.markdown(f"""
         font-family: "Material Symbols Rounded","Material Icons" !important;
     }}
 
-    /* Hide sidebar + streamlit chrome */
-    section[data-testid="stSidebar"] {{ display: none !important; }}
+    /* Hide streamlit chrome */
     #MainMenu, footer {{ visibility: hidden; }}
     header {{ display: none !important; }}
 
@@ -175,20 +183,126 @@ st.markdown(f"""
     [data-testid="stMain"] {{ background: {BG} !important; }}
     .block-container {{
         padding-top: 0 !important;
-        padding-bottom: 2rem;
+        padding-bottom: 3rem;
         max-width: 100% !important;
         padding-left: 0 !important;
         padding-right: 0 !important;
     }}
 
-    /* ── Top nav bar (white, with logo + tabs) ── */
+    /* ── Dark navy sidebar (primary navigation) ── */
+    section[data-testid="stSidebar"] {{
+        background: {SIDEBAR_BG} !important;
+        border-right: none;
+        min-width: 240px !important;
+        max-width: 240px !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stSidebarHeader"] {{
+        padding: 0; height: 0;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
+    [data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
+    section[data-testid="stSidebar"] .block-container {{
+        padding: 0 !important;
+    }}
+    .sb-brand {{
+        padding: 22px 20px 18px 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        margin-bottom: 14px;
+    }}
+    .sb-title {{
+        color: #ffffff;
+        font-size: 0.98rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        line-height: 1.3;
+    }}
+    .sb-sub {{
+        color: rgba(255,255,255,0.45);
+        font-size: 0.64rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-top: 5px;
+    }}
+    .sb-eyebrow {{
+        color: rgba(255,255,255,0.35);
+        font-size: 0.6rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        padding: 4px 20px 6px 20px;
+    }}
+    /* nav radio → nav list */
+    section[data-testid="stSidebar"] [role="radiogroup"] {{
+        gap: 1px;
+        padding: 0 10px;
+    }}
+    section[data-testid="stSidebar"] [role="radiogroup"] label > div:first-child {{
+        display: none;
+    }}
+    section[data-testid="stSidebar"] [role="radiogroup"] label {{
+        padding: 8px 12px;
+        border-radius: 6px;
+        width: 100%;
+        margin: 0;
+        border-left: 2px solid transparent;
+        transition: background 0.12s;
+    }}
+    section[data-testid="stSidebar"] [role="radiogroup"] label:hover {{
+        background: rgba(255,255,255,0.05);
+    }}
+    section[data-testid="stSidebar"] [role="radiogroup"] label p {{
+        color: {SIDEBAR_TXT};
+        font-size: 0.85rem;
+        font-weight: 400;
+    }}
+    section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {{
+        background: #e9eef5;
+        border-left: 2px solid {GOLD};
+    }}
+    section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) p {{
+        color: {YALE_BLUE};
+        font-weight: 600;
+    }}
+    .sb-foot {{
+        padding: 16px 20px;
+        margin-top: 18px;
+        border-top: 1px solid rgba(255,255,255,0.08);
+    }}
+    .sb-foot-val {{
+        color: #ffffff;
+        font-size: 0.92rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }}
+    .sb-foot-label {{
+        color: rgba(255,255,255,0.4);
+        font-size: 0.6rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 10px;
+    }}
+    .sb-foot-row {{
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 6px;
+    }}
+    .sb-foot-key {{
+        color: rgba(255,255,255,0.5);
+        font-size: 0.72rem;
+    }}
+
+    /* ── Cream top bar ── */
     .topnav {{
-        background: {BG};
-        border-bottom: 1px solid {BORDER};
-        padding: 0 40px;
+        background: {CREAM};
+        border-bottom: 1px solid {CREAM_BORDER};
+        padding: 0 32px;
         display: flex;
         align-items: center;
         gap: 0;
+        height: 52px;
         position: sticky;
         top: 0;
         z-index: 999;
@@ -197,20 +311,23 @@ st.markdown(f"""
         display: flex;
         align-items: center;
         gap: 14px;
-        padding: 11px 0;
-        margin-right: 36px;
         flex-shrink: 0;
     }}
     .topnav-logo {{
         height: 30px;
+        background: #ffffff;
+        padding: 3px 7px;
+        border-radius: 4px;
+        border: 1px solid {CREAM_BORDER};
+        box-sizing: content-box;
     }}
     .topnav-sep {{
         width: 1px;
-        height: 22px;
-        background: {BORDER};
+        height: 20px;
+        background: {CREAM_BORDER};
     }}
     .topnav-title {{
-        font-size: 0.9rem;
+        font-size: 0.88rem;
         font-weight: 600;
         color: {YALE_BLUE};
         letter-spacing: -0.01em;
@@ -218,82 +335,44 @@ st.markdown(f"""
     }}
     .topnav-right {{
         margin-left: auto;
+        display: flex;
+        align-items: baseline;
+        gap: 22px;
+        white-space: nowrap;
+    }}
+    .topnav-stat {{
+        color: {TXT2};
+        font-size: 0.76rem;
+        font-variant-numeric: tabular-nums;
+    }}
+    .topnav-stat b {{
+        color: {YALE_BLUE};
+        font-weight: 600;
+    }}
+    .topnav-meta {{
         color: {TXT3};
-        font-size: 0.66rem;
+        font-size: 0.64rem;
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.09em;
-        white-space: nowrap;
     }}
 
-    /* Hero banner — flat institutional navy, hairline-divided stats */
-    .hero {{
-        background: {YALE_BLUE};
-        padding: 26px 40px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 32px;
-    }}
-    .hero-eyebrow {{
-        color: rgba(255,255,255,0.5);
-        font-size: 0.62rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.14em;
-        margin-bottom: 6px;
-    }}
-    .hero-title {{
-        color: #fff;
-        font-family: 'Source Serif 4', Georgia, serif;
-        font-size: 1.45rem;
-        font-weight: 600;
-        letter-spacing: 0;
-        line-height: 1.25;
-    }}
-    .hero-sub {{
-        color: rgba(255,255,255,0.55);
-        font-size: 0.8rem;
-        margin-top: 4px;
-    }}
-    .hero-stats {{
-        display: flex;
-        flex-shrink: 0;
-    }}
-    .hero-stat {{
-        text-align: left;
-        padding: 2px 28px;
-        border-left: 1px solid rgba(255,255,255,0.18);
-    }}
-    .hero-stat:last-child {{ padding-right: 0; }}
-    .hero-stat-val {{
-        color: #fff;
-        font-size: 1.4rem;
-        font-weight: 600;
-        line-height: 1.2;
-        font-variant-numeric: tabular-nums;
-        letter-spacing: -0.01em;
-    }}
-    .hero-stat-label {{
-        color: rgba(255,255,255,0.5);
-        font-size: 0.6rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.11em;
-        margin-top: 3px;
+    /* Page content wrapper */
+    .st-key-page {{
+        padding: 24px 32px 0 32px;
     }}
 
-    /* ── Nav tabs (flush under hero, act as page nav) ── */
+    /* ── Inner tabs (within a page, e.g. working/pending tables) ── */
     .stTabs {{ margin-top: 0; }}
     .stTabs [data-baseweb="tab-list"] {{
-        gap: 4px;
-        background: {BG};
+        gap: 22px;
+        background: transparent;
         border-bottom: 1px solid {BORDER};
-        padding: 0 40px;
+        padding: 0;
     }}
     .stTabs [data-baseweb="tab"] {{
         border-radius: 0;
-        padding: 14px 16px;
+        padding: 9px 2px;
         font-size: 0.83rem;
         font-weight: 500;
         color: {TXT3};
@@ -301,7 +380,6 @@ st.markdown(f"""
         border-bottom: 2px solid transparent;
         margin-bottom: -1px;
         white-space: nowrap;
-        letter-spacing: 0.005em;
     }}
     .stTabs [data-baseweb="tab"]:hover {{
         color: {TXT};
@@ -315,7 +393,7 @@ st.markdown(f"""
         font-weight: 600;
     }}
     .stTabs [data-baseweb="tab-panel"] {{
-        padding: 1.75rem 40px 0 40px;
+        padding: 1rem 0 0 0;
     }}
 
     /* ── Section headers ── */
@@ -542,7 +620,7 @@ _logo_img = (
     if _logo_b64 else '<span class="topnav-title">Yale SOM</span>'
 )
 
-# 1) White navigation bar with logo
+# Cream top bar: logo + title left, live stats right
 st.markdown(
     f'<div class="topnav">'
     f'<div class="topnav-brand">'
@@ -550,26 +628,8 @@ st.markdown(
     f'<div class="topnav-sep"></div>'
     f'<span class="topnav-title">AI Startup Tracker</span>'
     f'</div>'
-    f'<div class="topnav-right">Tobin Center for Economic Policy &middot; Yale University</div>'
-    f'</div>',
-    unsafe_allow_html=True,
-)
-
-# 2) Flat navy hero strip with live stats
-st.markdown(
-    f'<div class="hero">'
-    f'<div>'
-    f'<div class="hero-eyebrow">Tobin Center for Economic Policy</div>'
-    f'<div class="hero-title">Tracking the Global AI Startup Ecosystem</div>'
-    f'<div class="hero-sub">Automated discovery across accelerators, VC portfolios, and university incubators</div>'
-    f'</div>'
-    f'<div class="hero-stats">'
-    f'<div class="hero-stat"><div class="hero-stat-val">{_total:,}</div>'
-    f'<div class="hero-stat-label">Companies</div></div>'
-    f'<div class="hero-stat"><div class="hero-stat-val">{_sources:,}</div>'
-    f'<div class="hero-stat-label">Sources</div></div>'
-    f'<div class="hero-stat"><div class="hero-stat-val">{_countries:,}</div>'
-    f'<div class="hero-stat-label">Countries</div></div>'
+    f'<div class="topnav-right">'
+    f'<span class="topnav-meta">Tobin Center for Economic Policy &middot; Yale University</span>'
     f'</div>'
     f'</div>',
     unsafe_allow_html=True,
@@ -1191,7 +1251,7 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
         mc1, mc2 = st.columns([3, 1])
         with mc1:
             st.map(map_df, latitude="lat", longitude="lon", size="size",
-                   color="#0F4D92", zoom=3, width="stretch")
+                   color="#1f3a5f", zoom=3, width="stretch")
         with mc2:
             top_cities = (
                 city_agg.nlargest(10, "count")[["city", "count"]]
@@ -1515,7 +1575,7 @@ def page_trends(df: pd.DataFrame):
         fig2 = px.bar(gs, x="growth_pct", y="subdomain", orientation="h",
                       title="Growth rate (vs prior 30d)",
                       labels={"growth_pct": "% Growth", "subdomain": ""})
-        fig2.update_traces(marker_color=BLUE_RAMP[1])
+        fig2.update_traces(marker_color=TEAL)
         fig2.update_layout(**_layout(height=420,
             xaxis=dict(showgrid=True, gridcolor=BORDER_LIGHT, zeroline=False,
                        linecolor="rgba(0,0,0,0)", tickfont=dict(size=11)),
@@ -2637,7 +2697,7 @@ def page_research():
             x=curve["founded_year"], y=curve["ai_pct"],
             name="AI share (%)",
             mode="lines+markers",
-            line=dict(color=ACCENT, width=2.5),
+            line=dict(color=TEAL, width=2.5),
             marker=dict(size=6),
         ))
         fig.update_layout(
@@ -2788,7 +2848,7 @@ def page_research():
 
         with col_size:
             st.markdown("**Median deal size by stage ($M, 2010–2024)**")
-            SIZE_COLORS = {"Seed": BLUE_RAMP[1], "Early VC": BLUE_RAMP[2], "Growth": BLUE_RAMP[3]}
+            SIZE_COLORS = {"Seed": GOLD, "Early VC": TEAL, "Growth": ACCENT}
             fig_size = go.Figure()
             for bucket, color in SIZE_COLORS.items():
                 sub = deal_sizes[deal_sizes["stage_bucket"] == bucket]
@@ -3419,14 +3479,13 @@ def page_info_sheet():
 
 # ── Main ─────────────────────────────────────────────────────────────
 
-def main():
-    df = load_startups()
-    health_df = load_site_health()
-    runs_df = load_recent_runs()
+def _company_frames():
+    """Load companies and split by source.
 
-    # Split companies by source.
-    #   GitHub Discovery: came in via GitHub scan (no incubator_source, has a repo)
-    #   Scraper:          came in via accelerator/incubator scrapers
+    GitHub Discovery: came in via GitHub scan (no incubator_source, has a repo)
+    Scraper:          came in via accelerator/incubator scrapers
+    """
+    df = load_startups()
     if not df.empty:
         inc = df["incubator_source"].astype("string")
         has_repo = df["github_repo"].notna() if "github_repo" in df.columns else pd.Series([False] * len(df))
@@ -3436,37 +3495,71 @@ def main():
 
     scraper_df = df[~is_gh].copy() if not df.empty else df
     github_df_all = df[is_gh].copy() if not df.empty else df
+    return scraper_df, github_df_all
 
-    # LLM filter: only keep repos classified as 'startup' by the LLM
-    if "llm_classification" in github_df_all.columns:
-        github_df = github_df_all[github_df_all["llm_classification"] == "startup"].copy()
-    else:
-        github_df = github_df_all.iloc[0:0].copy()
 
-    tab_overview, tab_info, tab_ai, tab_github, tab_trends, tab_research, tab_health, tab_inventory, tab_scraper = st.tabs([
-        "Overview", "Info Sheet", "AI Analysis", "GitHub Discovery", "Trends", "Research", "Pipeline Health", "Inventory", "Scraper",
-    ])
+_NAV_PAGES = [
+    "Overview", "Info Sheet", "AI Analysis", "GitHub Discovery",
+    "Trends", "Research", "Pipeline Health", "Inventory", "Scraper",
+]
 
-    with tab_info:
-        page_info_sheet()
-    with tab_overview:
-        page_overview(scraper_df, health_df)
-    with tab_ai:
-        page_ai_analysis(scraper_df, _load_overview_stats(),
-                         source_stats=_load_source_ai_stats(),
-                         country_stats=_load_country_ai_stats(min_companies=1))
-    with tab_github:
-        page_github(github_df, github_df_all)
-    with tab_trends:
-        page_trends(scraper_df)
-    with tab_research:
-        page_research()
-    with tab_health:
-        page_health(health_df, runs_df)
-    with tab_inventory:
-        page_inventory()
-    with tab_scraper:
-        page_scraper()
+
+def main():
+    # ── Sidebar: brand, navigation, live stats ──────────────────────
+    with st.sidebar:
+        st.markdown(
+            '<div class="sb-brand">'
+            '<div class="sb-title">AI Startup Tracker</div>'
+            '<div class="sb-sub">Tobin Center &middot; Yale SOM</div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown('<div class="sb-eyebrow">Navigation</div>', unsafe_allow_html=True)
+        page = st.radio("Navigation", _NAV_PAGES, label_visibility="collapsed")
+        st.markdown(
+            f'<div class="sb-foot">'
+            f'<div class="sb-foot-label">Live database</div>'
+            f'<div class="sb-foot-row"><span class="sb-foot-key">Companies</span>'
+            f'<span class="sb-foot-val">{_total:,}</span></div>'
+            f'<div class="sb-foot-row"><span class="sb-foot-key">Sources</span>'
+            f'<span class="sb-foot-val">{_sources:,}</span></div>'
+            f'<div class="sb-foot-row"><span class="sb-foot-key">Countries</span>'
+            f'<span class="sb-foot-val">{_countries:,}</span></div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+    # ── Main content: render only the selected page ──────────────────
+    with st.container(key="page"):
+        if page == "Overview":
+            scraper_df, _gh = _company_frames()
+            page_overview(scraper_df, load_site_health())
+        elif page == "Info Sheet":
+            page_info_sheet()
+        elif page == "AI Analysis":
+            scraper_df, _gh = _company_frames()
+            page_ai_analysis(scraper_df, _load_overview_stats(),
+                             source_stats=_load_source_ai_stats(),
+                             country_stats=_load_country_ai_stats(min_companies=1))
+        elif page == "GitHub Discovery":
+            _sc, github_df_all = _company_frames()
+            # LLM filter: only keep repos classified as 'startup' by the LLM
+            if "llm_classification" in github_df_all.columns:
+                github_df = github_df_all[github_df_all["llm_classification"] == "startup"].copy()
+            else:
+                github_df = github_df_all.iloc[0:0].copy()
+            page_github(github_df, github_df_all)
+        elif page == "Trends":
+            scraper_df, _gh = _company_frames()
+            page_trends(scraper_df)
+        elif page == "Research":
+            page_research()
+        elif page == "Pipeline Health":
+            page_health(load_site_health(), load_recent_runs())
+        elif page == "Inventory":
+            page_inventory()
+        elif page == "Scraper":
+            page_scraper()
 
 
 if __name__ == "__main__":
