@@ -27,6 +27,9 @@ import pandas as pd
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from backend.utils.ai_filter import ai_filter_sql  # noqa: E402
+
 load_dotenv()
 
 def _db_url() -> str:
@@ -35,8 +38,10 @@ def _db_url() -> str:
         raise RuntimeError("Set DATABASE_URL or RAILWAY_URL env var")
     return url
 
-AI_FILTER = "(cb_ai_tagged = TRUE OR ai_score >= 0.5 OR ai_mentioned = TRUE)"
-C_AI_FILTER = "(c.cb_ai_tagged = TRUE OR c.ai_score >= 0.5 OR c.ai_mentioned = TRUE)"
+# Canonical AI predicate — see backend/utils/ai_filter.py for the single
+# source of truth (also used by the dashboard).
+AI_FILTER = ai_filter_sql()
+C_AI_FILTER = ai_filter_sql("c")
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -281,7 +286,7 @@ def full_ai_export(engine, out: Path):
     df = q(engine, f"""
         SELECT
             name, domain, country, city, founded_year,
-            ai_score, cb_ai_tagged, ai_mentioned,
+            ai_score, cb_ai_tagged, ai_mentioned, llm_ai_verified,
             total_raised, team_size, stage,
             categories, description
         FROM companies

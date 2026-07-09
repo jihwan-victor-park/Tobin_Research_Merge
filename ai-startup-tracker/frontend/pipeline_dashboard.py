@@ -26,6 +26,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from backend.db.connection import get_engine
 from backend.orchestrator.orchestrator import Orchestrator
 from backend.scrapers.registry import SCRAPER_REGISTRY
+from backend.utils.ai_filter import ai_filter_sql
 from backend.utils.country import count_distinct_countries, normalize_country, GLOBE_COUNTRIES
 from backend.utils.denylist import BIG_TECH_DENYLIST
 
@@ -665,7 +666,7 @@ def load_startups() -> pd.DataFrame:
             c.id, c.name, c.domain,
             LEFT(c.description, 240) AS description,
             c.country, c.city, c.stage, c.ai_score, c.ai_tags,
-            c.cb_ai_tagged, c.ai_mentioned, c.founded_year, c.categories,
+            c.cb_ai_tagged, c.ai_mentioned, c.llm_ai_verified, c.founded_year, c.categories,
             c.first_seen_at, c.incubator_source, c.verification_status,
             lf.deal_date AS last_funding_date,
             lf.deal_size AS last_funding_amount,
@@ -716,7 +717,8 @@ def load_startups() -> pd.DataFrame:
         has_tags = df["ai_tags"].apply(lambda x: isinstance(x, list) and len(x) > 0)
         cb_tagged = df["cb_ai_tagged"].fillna(False).astype(bool) if "cb_ai_tagged" in df.columns else pd.Series(False, index=df.index)
         ai_mentioned = df["ai_mentioned"].fillna(False).astype(bool) if "ai_mentioned" in df.columns else pd.Series(False, index=df.index)
-        df["is_ai"] = cb_tagged | (df["ai_score"].fillna(0) >= 0.3) | has_tags | ai_mentioned
+        llm_verified = df["llm_ai_verified"].fillna(False).astype(bool) if "llm_ai_verified" in df.columns else pd.Series(False, index=df.index)
+        df["is_ai"] = cb_tagged | (df["ai_score"].fillna(0) >= 0.3) | has_tags | ai_mentioned | llm_verified
     return df
 
 
@@ -761,7 +763,7 @@ def _load_overview_stats() -> dict:
     with engine.connect() as conn:
         total = conn.execute(text("SELECT COUNT(*) FROM companies")).scalar() or 0
         ai = conn.execute(text(
-            "SELECT COUNT(*) FROM companies WHERE cb_ai_tagged = TRUE OR ai_score >= 0.5 OR ai_mentioned = TRUE"
+            f"SELECT COUNT(*) FROM companies WHERE {ai_filter_sql()}"
         )).scalar() or 0
         funded = conn.execute(text(
             "SELECT COUNT(DISTINCT company_id) FROM funding_signals"
@@ -777,11 +779,11 @@ def _load_overview_stats() -> dict:
 def _load_ai_adoption_curve() -> pd.DataFrame:
     """Aggregate AI adoption by founding year across all companies."""
     engine = get_engine()
-    query = """
+    query = f"""
         SELECT
             founded_year,
             COUNT(*) AS total,
-            COUNT(*) FILTER (WHERE cb_ai_tagged OR ai_score >= 0.5 OR ai_mentioned) AS ai
+            COUNT(*) FILTER (WHERE {ai_filter_sql()}) AS ai
         FROM companies
         WHERE founded_year BETWEEN 2000 AND 2026
         GROUP BY founded_year
@@ -802,7 +804,7 @@ def _load_country_ai_stats(min_companies: int = 100) -> pd.DataFrame:
     query = f"""
         SELECT country,
                COUNT(*) AS total,
-               COUNT(*) FILTER (WHERE cb_ai_tagged OR ai_score >= 0.5 OR ai_mentioned) AS ai
+               COUNT(*) FILTER (WHERE {ai_filter_sql()}) AS ai
         FROM companies
         WHERE country IS NOT NULL AND country != ''
         GROUP BY country
@@ -821,11 +823,11 @@ def _load_country_ai_stats(min_companies: int = 100) -> pd.DataFrame:
 def _load_source_ai_stats() -> pd.DataFrame:
     """Per-source AI counts across all companies (full DB)."""
     engine = get_engine()
-    query = """
+    query = f"""
         SELECT
             COALESCE(incubator_source::text, '(no source)') AS incubator_source,
             COUNT(*) AS total,
-            COUNT(*) FILTER (WHERE cb_ai_tagged OR ai_score >= 0.5 OR ai_mentioned) AS ai_count
+            COUNT(*) FILTER (WHERE {ai_filter_sql()}) AS ai_count
         FROM companies
         GROUP BY incubator_source
         HAVING COUNT(*) >= 5
@@ -851,7 +853,7 @@ def _load_country_year_matrix(top_n: int = 25) -> pd.DataFrame:
         )
         SELECT c.country, c.founded_year,
                COUNT(*) AS total,
-               COUNT(*) FILTER (WHERE c.cb_ai_tagged OR c.ai_score >= 0.5 OR c.ai_mentioned) AS ai
+               COUNT(*) FILTER (WHERE {ai_filter_sql("c")}) AS ai
         FROM companies c
         JOIN top_countries tc ON c.country = tc.country
         WHERE c.founded_year BETWEEN 2010 AND 2026
@@ -868,14 +870,14 @@ def _load_country_year_matrix(top_n: int = 25) -> pd.DataFrame:
 
 @st.cache_data(ttl=300)
 def _load_research_export() -> pd.DataFrame:
-    """All AI companies (cb_ai_tagged OR ai_score >= 0.5 OR ai_mentioned) with key research fields."""
+    """All AI companies per the canonical filter (see backend/utils/ai_filter.py) with key research fields."""
     engine = get_engine()
-    query = """
+    query = f"""
         SELECT name, domain, country, city, founded_year,
-               ai_score, cb_ai_tagged, ai_mentioned, total_raised,
+               ai_score, cb_ai_tagged, ai_mentioned, llm_ai_verified, total_raised,
                team_size, stage, categories, verification_status
         FROM companies
-        WHERE cb_ai_tagged = TRUE OR ai_score >= 0.5 OR ai_mentioned = TRUE
+        WHERE {ai_filter_sql()}
         ORDER BY founded_year DESC NULLS LAST, country
     """
     with engine.connect() as conn:
@@ -925,7 +927,7 @@ def _load_filtered_companies(
         conditions.append("total_raised >= :min_raised")
         params["min_raised"] = min_raised_m
     if ai_only:
-        conditions.append("(cb_ai_tagged = TRUE OR ai_score >= 0.5 OR ai_mentioned = TRUE)")
+        conditions.append(ai_filter_sql())
     if verticals_t:
         conditions.append("categories && :verticals")
         params["verticals"] = list(verticals_t)
@@ -938,6 +940,7 @@ def _load_filtered_companies(
             ai_score,
             cb_ai_tagged,
             ai_mentioned,
+            llm_ai_verified,
             COALESCE(array_to_string(categories, ', '), '') AS verticals,
             verification_status
         FROM companies
@@ -957,11 +960,11 @@ def _load_filtered_companies(
 def _load_vertical_ai_stats() -> pd.DataFrame:
     """AI share per industry vertical (canonical categories)."""
     engine = get_engine()
-    query = """
+    query = f"""
         SELECT
             unnest(categories) AS vertical,
             COUNT(*) AS total,
-            COUNT(*) FILTER (WHERE cb_ai_tagged = TRUE OR ai_score >= 0.5 OR ai_mentioned = TRUE) AS ai
+            COUNT(*) FILTER (WHERE {ai_filter_sql()}) AS ai
         FROM companies
         WHERE categories IS NOT NULL AND array_length(categories, 1) > 0
         GROUP BY vertical
@@ -1052,12 +1055,12 @@ def _load_ai_first_financing() -> pd.DataFrame:
         FROM (
             SELECT
                 EXTRACT(year FROM MIN(fs.deal_date))::int AS first_year,
-                CASE WHEN c.cb_ai_tagged = TRUE OR c.ai_score >= 0.5 OR c.ai_mentioned = TRUE
+                CASE WHEN {ai_filter_sql("c")}
                      THEN 'AI' ELSE 'Non-AI' END AS company_type
             FROM funding_signals fs
             JOIN companies c ON c.id = fs.company_id
             WHERE fs.deal_date IS NOT NULL
-            GROUP BY c.id, c.cb_ai_tagged, c.ai_score
+            GROUP BY c.id, c.cb_ai_tagged, c.ai_score, c.ai_mentioned, c.llm_ai_verified
         ) sub
         WHERE first_year BETWEEN 2010 AND 2024
         GROUP BY first_year, company_type
@@ -2472,7 +2475,8 @@ def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None,
     has_tags = df["ai_tags"].apply(lambda x: bool(x)) if "ai_tags" in df.columns else pd.Series(False, index=df.index)
     cb_tagged = df["cb_ai_tagged"].fillna(False).astype(bool) if "cb_ai_tagged" in df.columns else pd.Series(False, index=df.index)
     ai_mentioned = df["ai_mentioned"].fillna(False).astype(bool) if "ai_mentioned" in df.columns else pd.Series(False, index=df.index)
-    is_ai = cb_tagged | ((df["ai_score"].fillna(0) >= 0.3) | has_tags | ai_mentioned) if "ai_score" in df.columns else has_tags
+    llm_verified = df["llm_ai_verified"].fillna(False).astype(bool) if "llm_ai_verified" in df.columns else pd.Series(False, index=df.index)
+    is_ai = cb_tagged | ((df["ai_score"].fillna(0) >= 0.3) | has_tags | ai_mentioned | llm_verified) if "ai_score" in df.columns else has_tags
     df = df.copy()
     df["is_ai"] = is_ai
 
@@ -2486,7 +2490,7 @@ def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None,
     # ── Headline metrics ─────────────────────────────────────────────
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Total companies", f"{total:,}")
-    m2.metric("AI companies", f"{ai_cos:,}", help="cb_ai_tagged OR ai_score ≥ 0.3 OR ai_mentioned")
+    m2.metric("AI companies", f"{ai_cos:,}", help="cb_ai_tagged OR ai_score ≥ 0.5 OR ai_mentioned OR llm_ai_verified")
     m3.metric("AI share", f"{ai_pct}%")
     m4.metric("Unclassified", f"{unclassified:,}", help="ai_score is NULL")
 
