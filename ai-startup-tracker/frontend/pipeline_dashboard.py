@@ -32,10 +32,10 @@ from backend.utils.denylist import BIG_TECH_DENYLIST
 load_dotenv()
 
 # ── Design tokens ────────────────────────────────────────────────────
-YALE_BLUE = "#00356b"
+YALE_BLUE = "#00356b"   # brand ink: text, hero, darkest ramp step
 YALE_MID = "#1a4f8a"
 YALE_LIGHT = "#2a6cb5"
-ACCENT = "#286dc0"
+ACCENT = "#1c5cab"      # primary data series (>=3:1 on white, CVD-validated)
 BG = "#ffffff"
 BG_OFF = "#f7f8fb"
 BG_CARD = "#f9fafb"
@@ -44,9 +44,19 @@ BORDER_LIGHT = "#eef1f6"
 TXT = "#1a1f2e"
 TXT2 = "#4a5568"
 TXT3 = "#8492a6"
-GREEN = "#0d9668"
-AMBER = "#d97706"
-RED = "#dc2626"
+GREEN = "#0d9668"       # status: working / healthy
+AMBER = "#d97706"       # status: pending / degraded
+RED = "#dc2626"         # status: broken / failed
+
+# Chart palette (validated with the dataviz palette checker on white):
+#   BLUE_RAMP  — single-hue ordinal ramp, light→dark, for ordered series
+#   CAT        — categorical slots for unordered identities, fixed order
+#   SEQ_SCALE  — continuous sequential scale (heatmaps, color-by-value bars)
+#   GRAY_CTX   — context / "everything else" marks (never carries identity)
+BLUE_RAMP = ["#86b6ef", "#4f8fd9", "#1c5cab", "#00356b"]
+CAT = ["#1c5cab", "#0d9668", "#d97706", "#7c5cd6"]
+SEQ_SCALE = [[0, "#dbe7f5"], [0.5, "#4f8fd9"], [1, "#00356b"]]
+GRAY_CTX = "#d7dde6"
 
 # ── US city coordinates (for geography map) ──────────────────────────
 US_CITIES = {
@@ -138,11 +148,12 @@ st.set_page_config(
 
 st.markdown(f"""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap');
 
     html, body, .stApp {{
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
         background: {BG} !important;
     }}
     p, span:not([data-testid*="Icon"]):not([class*="icon"]):not([class*="Icon"]),
@@ -186,94 +197,117 @@ st.markdown(f"""
         display: flex;
         align-items: center;
         gap: 14px;
-        padding: 10px 0;
+        padding: 11px 0;
         margin-right: 36px;
         flex-shrink: 0;
     }}
     .topnav-logo {{
-        height: 34px;
+        height: 30px;
     }}
     .topnav-sep {{
         width: 1px;
-        height: 26px;
+        height: 22px;
         background: {BORDER};
     }}
     .topnav-title {{
-        font-size: 0.95rem;
-        font-weight: 700;
+        font-size: 0.9rem;
+        font-weight: 600;
         color: {YALE_BLUE};
-        letter-spacing: -0.02em;
+        letter-spacing: -0.01em;
         white-space: nowrap;
     }}
     .topnav-right {{
         margin-left: auto;
         color: {TXT3};
-        font-size: 0.72rem;
+        font-size: 0.66rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
         white-space: nowrap;
     }}
 
-    /* Hero banner */
+    /* Hero banner — flat institutional navy, hairline-divided stats */
     .hero {{
-        background: linear-gradient(135deg, {YALE_BLUE} 0%, {YALE_MID} 60%, {YALE_LIGHT} 100%);
-        padding: 26px 40px 22px 40px;
+        background: {YALE_BLUE};
+        padding: 26px 40px;
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: 32px;
+    }}
+    .hero-eyebrow {{
+        color: rgba(255,255,255,0.5);
+        font-size: 0.62rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        margin-bottom: 6px;
     }}
     .hero-title {{
         color: #fff;
-        font-size: 1.5rem;
-        font-weight: 700;
-        letter-spacing: -0.025em;
+        font-family: 'Source Serif 4', Georgia, serif;
+        font-size: 1.45rem;
+        font-weight: 600;
+        letter-spacing: 0;
+        line-height: 1.25;
     }}
     .hero-sub {{
         color: rgba(255,255,255,0.55);
-        font-size: 0.82rem;
-        margin-top: 2px;
+        font-size: 0.8rem;
+        margin-top: 4px;
     }}
     .hero-stats {{
         display: flex;
-        gap: 32px;
+        flex-shrink: 0;
     }}
     .hero-stat {{
-        text-align: center;
+        text-align: left;
+        padding: 2px 28px;
+        border-left: 1px solid rgba(255,255,255,0.18);
     }}
+    .hero-stat:last-child {{ padding-right: 0; }}
     .hero-stat-val {{
         color: #fff;
-        font-size: 1.35rem;
-        font-weight: 700;
+        font-size: 1.4rem;
+        font-weight: 600;
         line-height: 1.2;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.01em;
     }}
     .hero-stat-label {{
-        color: rgba(255,255,255,0.45);
-        font-size: 0.58rem;
+        color: rgba(255,255,255,0.5);
+        font-size: 0.6rem;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.11em;
+        margin-top: 3px;
     }}
 
     /* ── Nav tabs (flush under hero, act as page nav) ── */
     .stTabs {{ margin-top: 0; }}
     .stTabs [data-baseweb="tab-list"] {{
-        gap: 0;
+        gap: 4px;
         background: {BG};
         border-bottom: 1px solid {BORDER};
         padding: 0 40px;
     }}
     .stTabs [data-baseweb="tab"] {{
         border-radius: 0;
-        padding: 13px 24px;
-        font-size: 0.88rem;
+        padding: 14px 16px;
+        font-size: 0.83rem;
         font-weight: 500;
         color: {TXT3};
         background: transparent;
         border-bottom: 2px solid transparent;
         margin-bottom: -1px;
         white-space: nowrap;
+        letter-spacing: 0.005em;
     }}
     .stTabs [data-baseweb="tab"]:hover {{
-        color: {TXT2};
+        color: {TXT};
     }}
+    .stTabs [data-baseweb="tab-highlight"],
+    .stTabs [data-baseweb="tab-border"] {{ display: none; }}
     .stTabs [aria-selected="true"] {{
         color: {YALE_BLUE} !important;
         background: transparent !important;
@@ -281,63 +315,74 @@ st.markdown(f"""
         font-weight: 600;
     }}
     .stTabs [data-baseweb="tab-panel"] {{
-        padding: 1.5rem 40px 0 40px;
+        padding: 1.75rem 40px 0 40px;
     }}
 
     /* ── Section headers ── */
-    h1 {{ color: {YALE_BLUE}; font-weight: 700; font-size: 1.4rem !important;
+    h1 {{ color: {YALE_BLUE}; font-weight: 700; font-size: 1.35rem !important;
          letter-spacing: -0.02em; margin-bottom: 0.2rem !important; }}
-    h2 {{ color: {TXT}; font-weight: 600; font-size: 1.1rem !important; }}
-    h3 {{ color: {TXT2}; font-weight: 600; font-size: 0.8rem !important;
-         text-transform: uppercase; letter-spacing: 0.06em; }}
+    h2 {{ color: {TXT}; font-weight: 600; font-size: 1.05rem !important; }}
+    h3 {{ color: {TXT2}; font-weight: 600; font-size: 0.76rem !important;
+         text-transform: uppercase; letter-spacing: 0.07em; }}
     p {{ color: {TXT2}; font-size: 0.85rem; }}
-    .stCaption {{ color: {TXT3}; }}
+    .stCaption, [data-testid="stCaptionContainer"] {{ color: {TXT3}; font-size: 0.76rem; }}
 
     .section-header {{
         color: {TXT};
-        font-size: 1.05rem;
+        font-size: 1rem;
         font-weight: 600;
         letter-spacing: -0.01em;
-        margin: 0 0 4px 0;
+        margin: 0 0 3px 0;
     }}
     .section-sub {{
         color: {TXT3};
-        font-size: 0.82rem;
+        font-size: 0.8rem;
+        line-height: 1.5;
         margin: 0 0 16px 0;
     }}
 
     /* ── Metric cards ── */
     [data-testid="stMetric"] {{
         background: {BG};
-        padding: 18px 20px;
-        border-radius: 10px;
+        padding: 14px 18px 13px 18px;
+        border-radius: 6px;
         border: 1px solid {BORDER};
+        box-shadow: 0 1px 2px rgba(16,24,40,0.03);
     }}
     [data-testid="stMetricValue"] {{
-        font-size: 1.5rem;
-        font-weight: 700;
+        font-size: 1.4rem;
+        font-weight: 600;
         color: {YALE_BLUE};
         font-family: 'Inter', sans-serif;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.01em;
+        line-height: 1.25;
     }}
     [data-testid="stMetricLabel"] {{
-        font-size: 0.66rem;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        color: {TXT3};
-        font-weight: 500;
+    }}
+    [data-testid="stMetricLabel"] p {{
+        font-size: 0.64rem !important;
+        color: {TXT3} !important;
+        font-weight: 600;
+    }}
+    [data-testid="stMetricDelta"] {{
+        font-size: 0.74rem;
+        font-variant-numeric: tabular-nums;
     }}
 
     /* ── Cards ── */
     .card {{
         background: {BG};
         border: 1px solid {BORDER};
-        border-radius: 12px;
+        border-radius: 6px;
         padding: 20px 24px;
     }}
     .card-muted {{
         background: {BG_OFF};
         border: 1px solid {BORDER_LIGHT};
-        border-radius: 12px;
+        border-radius: 6px;
         padding: 20px 24px;
     }}
 
@@ -345,44 +390,58 @@ st.markdown(f"""
     .filter-bar {{
         background: {BG_OFF};
         border: 1px solid {BORDER_LIGHT};
-        border-radius: 10px;
-        padding: 16px 20px;
+        border-radius: 6px;
+        padding: 14px 18px;
         margin-bottom: 16px;
     }}
     .filter-bar-label {{
         color: {TXT3};
-        font-size: 0.68rem;
+        font-size: 0.64rem;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.07em;
+        letter-spacing: 0.08em;
         margin-bottom: 6px;
     }}
 
     /* ── Inputs ── */
-    .stTextInput input, .stSelectbox > div > div, .stMultiSelect > div > div {{
+    .stTextInput input, .stNumberInput input,
+    .stSelectbox > div > div, .stMultiSelect > div > div {{
         background: {BG} !important;
         border: 1px solid {BORDER} !important;
         color: {TXT} !important;
-        font-size: 0.85rem !important;
-        border-radius: 8px !important;
+        font-size: 0.84rem !important;
+        border-radius: 6px !important;
     }}
+    .stTextInput input::placeholder {{ color: {TXT3} !important; }}
     .stTextInput input:focus {{
         border-color: {ACCENT} !important;
         box-shadow: 0 0 0 2px rgba(0,53,107,0.08) !important;
     }}
     .stCheckbox label {{ color: {TXT2} !important; font-size: 0.82rem !important; }}
+    .stMultiSelect span[data-baseweb="tag"] {{
+        background: #eaf0f8 !important;
+        color: {YALE_BLUE} !important;
+        border-radius: 4px !important;
+        font-size: 0.76rem !important;
+    }}
+    .stMultiSelect span[data-baseweb="tag"] span {{ color: {YALE_BLUE} !important; }}
+    label[data-testid="stWidgetLabel"] p {{
+        font-size: 0.72rem !important;
+        font-weight: 500;
+        color: {TXT2} !important;
+    }}
 
     /* ── Data table ── */
     [data-testid="stDataFrame"] {{
-        border-radius: 10px;
+        border-radius: 6px;
         overflow: hidden;
         border: 1px solid {BORDER};
     }}
 
     /* ── Buttons ── */
     .stButton > button {{
-        border-radius: 8px;
-        font-size: 0.84rem;
+        border-radius: 6px;
+        font-size: 0.82rem;
         font-weight: 500;
         border: 1px solid {BORDER};
         background: {BG};
@@ -409,7 +468,7 @@ st.markdown(f"""
         border: 1px solid {BORDER} !important;
         color: {TXT2} !important;
         font-size: 0.8rem !important;
-        border-radius: 8px !important;
+        border-radius: 6px !important;
     }}
     .stDownloadButton > button:hover {{
         border-color: {ACCENT} !important;
@@ -420,7 +479,7 @@ st.markdown(f"""
     .scraper-card {{
         background: {BG};
         border: 1px solid {BORDER};
-        border-radius: 10px;
+        border-radius: 6px;
         padding: 14px 16px;
         height: 100%;
     }}
@@ -445,16 +504,16 @@ st.markdown(f"""
     /* Expander */
     [data-testid="stExpander"] {{
         border: 1px solid {BORDER} !important;
-        border-radius: 10px;
+        border-radius: 6px;
         background: {BG};
     }}
     [data-testid="stExpander"] summary {{
-        font-size: 0.85rem;
+        font-size: 0.84rem;
         padding: 10px 14px !important;
         color: {TXT};
     }}
 
-    hr {{ border-color: {BORDER_LIGHT}; margin: 16px 0; }}
+    hr {{ border: none; border-top: 1px solid {BORDER_LIGHT}; margin: 24px 0 20px 0; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -496,12 +555,13 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 2) Blue hero strip with live stats
+# 2) Flat navy hero strip with live stats
 st.markdown(
     f'<div class="hero">'
     f'<div>'
-    f'<div class="hero-title">Tracking the AI startup ecosystem</div>'
-    f'<div class="hero-sub">Automated discovery and trend intelligence</div>'
+    f'<div class="hero-eyebrow">Tobin Center for Economic Policy</div>'
+    f'<div class="hero-title">Tracking the Global AI Startup Ecosystem</div>'
+    f'<div class="hero-sub">Automated discovery across accelerators, VC portfolios, and university incubators</div>'
     f'</div>'
     f'<div class="hero-stats">'
     f'<div class="hero-stat"><div class="hero-stat-val">{_total:,}</div>'
@@ -1001,13 +1061,25 @@ def _load_site_countries() -> dict[str, str]:
 
 # ── Plotly helpers ───────────────────────────────────────────────────
 
+_PLOT_CFG = {"displayModeBar": False}
+
+
 def _layout(**kw):
     base = dict(
-        paper_bgcolor=BG, plot_bgcolor=BG_OFF,
-        font=dict(family="Inter", color=TXT2, size=12),
-        title=dict(text="", font=dict(color=TXT, size=14, family="Inter")),
-        xaxis=dict(gridcolor=BORDER_LIGHT, zerolinecolor=BORDER),
-        yaxis=dict(gridcolor=BORDER_LIGHT, zerolinecolor=BORDER),
+        paper_bgcolor=BG, plot_bgcolor=BG,
+        font=dict(family="Inter", color=TXT3, size=11.5),
+        title=dict(text="", font=dict(color=TXT, size=13, family="Inter"),
+                   x=0, xanchor="left"),
+        colorway=[ACCENT] + CAT[1:],
+        xaxis=dict(showgrid=False, zeroline=False,
+                   linecolor=BORDER, ticks="outside", tickcolor=BORDER,
+                   ticklen=4, tickfont=dict(size=11)),
+        yaxis=dict(gridcolor=BORDER_LIGHT, zeroline=False,
+                   linecolor="rgba(0,0,0,0)", tickfont=dict(size=11)),
+        legend=dict(font=dict(size=11, color=TXT2), bgcolor="rgba(0,0,0,0)"),
+        hoverlabel=dict(bgcolor="#ffffff", bordercolor=BORDER,
+                        font=dict(family="Inter", size=12, color=TXT)),
+        bargap=0.35,
         margin=dict(l=0, r=0, t=36, b=0),
     )
     base.update(kw)
@@ -1132,8 +1204,9 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
             st.dataframe(top_cities, width="stretch", hide_index=True, height=380)
 
     # ── Filters ──────────────────────────────────────────────────────
-    st.markdown('<div class="filter-bar">', unsafe_allow_html=True)
-    st.markdown('<div class="filter-bar-label">Filters</div>', unsafe_allow_html=True)
+    # (raw-HTML wrappers can't enclose Streamlit widgets, so this is a
+    # labeled divider rather than a boxed container)
+    st.markdown('<hr/><div class="filter-bar-label">Filters</div>', unsafe_allow_html=True)
 
     search = st.text_input("Search", placeholder="Search by name or description...",
                            label_visibility="collapsed")
@@ -1196,8 +1269,6 @@ def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
         yr_range = st.slider("Founded year", yr_min, yr_max, (2015, yr_max), key="yr_range")
     else:
         yr_range = None
-
-    st.markdown('</div>', unsafe_allow_html=True)
 
     # Apply
     f = df.copy()
@@ -1376,9 +1447,9 @@ def page_trends(df: pd.DataFrame):
         daily.columns = ["date", "count"]
         fig = px.bar(daily, x="date", y="count",
                      labels={"count": "Companies", "date": "Date"})
-        fig.update_traces(marker_color=YALE_BLUE)
+        fig.update_traces(marker_color=ACCENT)
         fig.update_layout(**_layout(height=260))
-        st.plotly_chart(fig, width="stretch")
+        st.plotly_chart(fig, width="stretch", config=_PLOT_CFG)
 
         preview = week.head(50)[
             ["name", "country", "stage", "last_funding_date", "first_seen_at", "domain"]
@@ -1431,22 +1502,26 @@ def page_trends(df: pd.DataFrame):
         fig1 = px.bar(mg, x="new_30d", y="subdomain", orientation="h",
                       title="New companies (last 30 days)",
                       labels={"new_30d": "Companies", "subdomain": ""})
-        fig1.update_traces(marker_color=YALE_BLUE)
+        fig1.update_traces(marker_color=ACCENT)
         fig1.update_layout(**_layout(height=420,
-            yaxis=dict(autorange="reversed", gridcolor=BORDER_LIGHT),
+            xaxis=dict(showgrid=True, gridcolor=BORDER_LIGHT, zeroline=False,
+                       linecolor="rgba(0,0,0,0)", tickfont=dict(size=11)),
+            yaxis=dict(autorange="reversed", showgrid=False),
             showlegend=False))
-        st.plotly_chart(fig1, width="stretch")
+        st.plotly_chart(fig1, width="stretch", config=_PLOT_CFG)
 
     with t2:
         gs = mg.sort_values("growth_pct", ascending=False)
         fig2 = px.bar(gs, x="growth_pct", y="subdomain", orientation="h",
                       title="Growth rate (vs prior 30d)",
                       labels={"growth_pct": "% Growth", "subdomain": ""})
-        fig2.update_traces(marker_color=GREEN)
+        fig2.update_traces(marker_color=BLUE_RAMP[1])
         fig2.update_layout(**_layout(height=420,
-            yaxis=dict(autorange="reversed", gridcolor=BORDER_LIGHT),
+            xaxis=dict(showgrid=True, gridcolor=BORDER_LIGHT, zeroline=False,
+                       linecolor="rgba(0,0,0,0)", tickfont=dict(size=11)),
+            yaxis=dict(autorange="reversed", showgrid=False),
             showlegend=False))
-        st.plotly_chart(fig2, width="stretch")
+        st.plotly_chart(fig2, width="stretch", config=_PLOT_CFG)
 
     md = mg[["subdomain", "total", "new_30d", "prev_30d", "growth_pct"]].copy()
     md["growth_pct"] = md["growth_pct"].apply(lambda v: f"{v:+.1f}%")
@@ -1501,7 +1576,7 @@ def page_health(health_df: pd.DataFrame, runs_df: pd.DataFrame):
             import plotly.express as px
             fig = px.bar(
                 inv, x="category", y="count", color="worker_state",
-                color_discrete_map={"working": "#1aab68", "pending": "#d97706"},
+                color_discrete_map={"working": GREEN, "pending": AMBER},
                 category_orders={"category": [
                     "university_incubator", "accelerator", "vc_portfolio",
                     "discovery_aggregator", "government_program", "other",
@@ -1509,7 +1584,7 @@ def page_health(health_df: pd.DataFrame, runs_df: pd.DataFrame):
                 barmode="stack",
             )
             fig.update_layout(**_layout(height=260, legend_title_text=""))
-            st.plotly_chart(fig, width="stretch")
+            st.plotly_chart(fig, width="stretch", config=_PLOT_CFG)
         except Exception:
             st.dataframe(inv, hide_index=True, width="stretch")
     else:
@@ -1604,7 +1679,7 @@ def page_health(health_df: pd.DataFrame, runs_df: pd.DataFrame):
         )
 
         fig = go.Figure()
-        for state, color in [("pending", "#f59e0b"), ("healthy", "#22c55e"), ("broken", "#ef4444")]:
+        for state, color in [("pending", AMBER), ("healthy", GREEN), ("broken", RED)]:
             fig.add_bar(
                 y=by_country["country"],
                 x=by_country[state],
@@ -1621,7 +1696,7 @@ def page_health(health_df: pd.DataFrame, runs_df: pd.DataFrame):
             **_layout(),
         )
         fig.update_yaxes(autorange="reversed")
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, config=_PLOT_CFG)
 
         display = by_country.copy()
         display["last_scraped"] = pd.to_datetime(display["last_scraped"], errors="coerce").dt.strftime("%Y-%m-%d")
@@ -1668,15 +1743,13 @@ def page_github(df: pd.DataFrame, df_all: pd.DataFrame):
         return
 
     # Filters
-    st.markdown('<div class="filter-bar">', unsafe_allow_html=True)
-    st.markdown('<div class="filter-bar-label">Filters</div>', unsafe_allow_html=True)
+    st.markdown('<hr/><div class="filter-bar-label">Filters</div>', unsafe_allow_html=True)
     search = st.text_input("Search GitHub", placeholder="Search by repo, owner, description...",
                            label_visibility="collapsed", key="gh_search")
     gc1, gc2, gc3 = st.columns(3)
     min_stars = gc1.number_input("Min stars", min_value=0, value=0, step=100, key="gh_minstars")
     min_conf = gc2.slider("Min LLM confidence", 0.0, 1.0, 0.6, 0.05, key="gh_minconf")
     recent_only = gc3.checkbox("Last 30 days", key="gh_recent")
-    st.markdown('</div>', unsafe_allow_html=True)
 
     f = df.copy()
     if min_stars > 0:
@@ -2165,12 +2238,12 @@ _CATEGORY_ORDER = [
 ]
 
 _CAT_COLORS = {
-    "university_incubator": "#286dc0",
-    "accelerator":          "#1aab68",
-    "vc_portfolio":         "#a855f7",
-    "government_program":   "#d97706",
-    "discovery_aggregator": "#06b6d4",
-    "other":                "#94a3b8",
+    "university_incubator": CAT[0],
+    "accelerator":          CAT[1],
+    "vc_portfolio":         CAT[3],
+    "government_program":   CAT[2],
+    "discovery_aggregator": BLUE_RAMP[0],
+    "other":                "#9aa5b3",
 }
 
 
@@ -2246,7 +2319,7 @@ def page_inventory():
     )
     cat_counts["category_label"] = cat_counts["category"].map(_CATEGORY_LABELS)
 
-    scrape_colors = {"easy": "#1aab68", "agentic": "#286dc0", "challenging": "#dc2626"}
+    scrape_colors = {"easy": GREEN, "agentic": ACCENT, "challenging": RED}
 
     present_tiers = [t for t in ["easy", "agentic", "challenging"] if t in cat_counts["scrapeability"].values]
     fig_cat = px.bar(
@@ -2264,7 +2337,7 @@ def page_inventory():
         title="Sites by Type & Scrapeability",
     )
     fig_cat.update_layout(**_layout(height=320))
-    st.plotly_chart(fig_cat, use_container_width=True)
+    st.plotly_chart(fig_cat, use_container_width=True, config=_PLOT_CFG)
 
     # ── Scrapeability donut ────────────────────────────────────────────
     col_donut, col_table = st.columns([1, 2])
@@ -2278,7 +2351,7 @@ def page_inventory():
             hovertemplate="%{label}: %{value}<extra></extra>",
         ))
         fig_d.update_layout(**_layout(height=280, title_text="Scrapeability split"))
-        st.plotly_chart(fig_d, use_container_width=True)
+        st.plotly_chart(fig_d, use_container_width=True, config=_PLOT_CFG)
 
     # ── Challenging sites table ────────────────────────────────────────
     with col_table:
@@ -2375,14 +2448,14 @@ def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None,
             y="incubator_source",
             orientation="h",
             color="ai_pct",
-            color_continuous_scale=[[0, "#cce3ff"], [1, "#286dc0"]],
+            color_continuous_scale=SEQ_SCALE,
             labels={"ai_count": "AI Companies", "incubator_source": "", "ai_pct": "AI %"},
             title="AI Companies by Source",
             text="ai_count",
         )
         fig_src.update_traces(textposition="outside")
         fig_src.update_layout(**_layout(height=max(300, len(prog) * 26 + 80)))
-        st.plotly_chart(fig_src, use_container_width=True)
+        st.plotly_chart(fig_src, use_container_width=True, config=_PLOT_CFG)
 
     # ── Country distribution ─────────────────────────────────────────
     st.markdown("<br/>", unsafe_allow_html=True)
@@ -2397,14 +2470,14 @@ def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None,
                 y="country",
                 orientation="h",
                 color="ai",
-                color_continuous_scale=[[0, "#cce3ff"], [1, "#00356b"]],
+                color_continuous_scale=SEQ_SCALE,
                 labels={"ai": "AI Startups", "country": ""},
                 title="AI Startups by Country (top 15)",
                 text="ai",
             )
             fig_ctry.update_traces(textposition="outside")
             fig_ctry.update_layout(**_layout(height=440))
-            st.plotly_chart(fig_ctry, use_container_width=True)
+            st.plotly_chart(fig_ctry, use_container_width=True, config=_PLOT_CFG)
         elif "country" in df.columns:
             ai_df = df[df["is_ai"]].copy()
             norm = {"USA": "United States", "US": "United States", "usa": "United States",
@@ -2425,27 +2498,27 @@ def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None,
                 y="country_norm",
                 orientation="h",
                 color="count",
-                color_continuous_scale=[[0, "#cce3ff"], [1, "#00356b"]],
+                color_continuous_scale=SEQ_SCALE,
                 labels={"count": "AI Startups", "country_norm": ""},
                 title="AI Startups by Country (top 15)",
                 text="count",
             )
             fig_ctry.update_traces(textposition="outside")
             fig_ctry.update_layout(**_layout(height=440))
-            st.plotly_chart(fig_ctry, use_container_width=True)
+            st.plotly_chart(fig_ctry, use_container_width=True, config=_PLOT_CFG)
 
     with col_right:
         # AI vs non-AI donut
         fig_d = go.Figure(go.Pie(
             labels=["AI-focused", "Non-AI"],
             values=[ai_cos, non_ai],
-            marker_colors=["#286dc0", "#e3e7ee"],
+            marker_colors=[ACCENT, GRAY_CTX],
             hole=0.55,
             textinfo="label+percent",
             hovertemplate="%{label}: %{value:,}<extra></extra>",
         ))
         fig_d.update_layout(**_layout(height=280, title_text="AI vs. Non-AI"))
-        st.plotly_chart(fig_d, use_container_width=True)
+        st.plotly_chart(fig_d, use_container_width=True, config=_PLOT_CFG)
 
         # Score histogram
         if "ai_score" in df.columns:
@@ -2454,14 +2527,14 @@ def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None,
                 score_df,
                 x="ai_score",
                 nbins=20,
-                color_discrete_sequence=["#286dc0"],
+                color_discrete_sequence=[ACCENT],
                 labels={"ai_score": "AI Score", "count": "Companies"},
                 title="AI Score Distribution",
             )
             fig_hist.add_vline(x=0.3, line_dash="dash", line_color=RED,
                                annotation_text="AI threshold (0.3)")
             fig_hist.update_layout(**_layout(height=240))
-            st.plotly_chart(fig_hist, use_container_width=True)
+            st.plotly_chart(fig_hist, use_container_width=True, config=_PLOT_CFG)
 
     # ── Discovery over time ──────────────────────────────────────────
     st.markdown("<br/>", unsafe_allow_html=True)
@@ -2478,8 +2551,8 @@ def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None,
             .tail(24)
         )
         fig_time = go.Figure()
-        fig_time.add_bar(x=monthly["month"], y=monthly["total"], name="All", marker_color="#e3e7ee")
-        fig_time.add_bar(x=monthly["month"], y=monthly["ai"], name="AI", marker_color="#286dc0")
+        fig_time.add_bar(x=monthly["month"], y=monthly["total"], name="All", marker_color=GRAY_CTX)
+        fig_time.add_bar(x=monthly["month"], y=monthly["ai"], name="AI", marker_color=ACCENT)
         fig_time.update_layout(
             barmode="overlay",
             title_text="Monthly Company Discovery (AI in blue, all in grey)",
@@ -2487,7 +2560,7 @@ def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None,
             yaxis_title="Companies",
             **_layout(height=280),
         )
-        st.plotly_chart(fig_time, use_container_width=True)
+        st.plotly_chart(fig_time, use_container_width=True, config=_PLOT_CFG)
 
     # ── Recently discovered AI companies ────────────────────────────
     st.markdown("<br/>", unsafe_allow_html=True)
@@ -2557,26 +2630,27 @@ def page_research():
         fig.add_trace(go.Bar(
             x=curve["founded_year"], y=curve["total"],
             name="All tech companies",
-            marker_color="rgba(0,53,107,0.18)",
+            marker_color=GRAY_CTX,
             yaxis="y2",
         ))
         fig.add_trace(go.Scatter(
             x=curve["founded_year"], y=curve["ai_pct"],
             name="AI share (%)",
             mode="lines+markers",
-            line=dict(color="#0d9668", width=3),
-            marker=dict(size=7),
+            line=dict(color=ACCENT, width=2.5),
+            marker=dict(size=6),
         ))
         fig.update_layout(
             **_layout(
                 height=380,
                 yaxis=dict(title="AI share (%)", ticksuffix="%", rangemode="tozero", gridcolor=BORDER_LIGHT),
                 yaxis2=dict(title="Total companies", overlaying="y", side="right", showgrid=False),
+                legend=dict(orientation="h", y=1.08, font=dict(size=11, color=TXT2),
+                            bgcolor="rgba(0,0,0,0)"),
             ),
-            legend=dict(orientation="h", y=1.08),
             hovermode="x unified",
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, config=_PLOT_CFG)
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
@@ -2596,11 +2670,11 @@ def page_research():
                 top30, x="ai_pct", y="country", orientation="h",
                 labels={"ai_pct": "AI share (%)", "country": ""},
                 color="ai_pct",
-                color_continuous_scale=[[0, "#e3e7ee"], [0.5, "#286dc0"], [1, "#00356b"]],
+                color_continuous_scale=SEQ_SCALE,
             )
             fig_geo.update_coloraxes(showscale=False)
             fig_geo.update_layout(**_layout(height=max(400, len(top30) * 22)))
-            st.plotly_chart(fig_geo, use_container_width=True)
+            st.plotly_chart(fig_geo, use_container_width=True, config=_PLOT_CFG)
 
         with col_right:
             tbl = country_stats.head(30)[["country", "total", "ai", "ai_pct"]].copy()
@@ -2625,11 +2699,11 @@ def page_research():
                 sorted_v, x="ai_pct", y="vertical", orientation="h",
                 labels={"ai_pct": "AI share (%)", "vertical": ""},
                 color="ai_pct",
-                color_continuous_scale=[[0, "#e3e7ee"], [0.5, "#286dc0"], [1, "#00356b"]],
+                color_continuous_scale=SEQ_SCALE,
             )
             fig_vert.update_coloraxes(showscale=False)
             fig_vert.update_layout(**_layout(height=max(380, len(sorted_v) * 26)))
-            st.plotly_chart(fig_vert, use_container_width=True)
+            st.plotly_chart(fig_vert, use_container_width=True, config=_PLOT_CFG)
         with col_vr:
             tbl_v = vertical_stats[["vertical", "total", "ai", "ai_pct"]].copy()
             tbl_v = tbl_v.sort_values("ai_pct", ascending=False)
@@ -2656,13 +2730,13 @@ def page_research():
         fig_heat = px.imshow(
             pivot,
             labels=dict(x="Founded Year", y="Country", color="AI share (%)"),
-            color_continuous_scale=[[0, "#f0f4fa"], [0.3, "#286dc0"], [1, "#00356b"]],
+            color_continuous_scale=[[0, "#f4f7fb"], [0.5, "#4f8fd9"], [1, "#00356b"]],
             aspect="auto",
             zmin=0, zmax=50,
         )
         fig_heat.update_layout(**_layout(height=max(500, len(pivot) * 22)))
         fig_heat.update_xaxes(side="bottom")
-        st.plotly_chart(fig_heat, use_container_width=True)
+        st.plotly_chart(fig_heat, use_container_width=True, config=_PLOT_CFG)
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
@@ -2678,12 +2752,14 @@ def page_research():
 
         with col_vol:
             st.markdown("**Deal volume by stage (2010–2024)**")
+            # Ordered stages take the single-hue ordinal ramp (light→dark);
+            # the unordered catch-all bucket stays neutral gray.
             STAGE_COLORS = {
-                "Pre-Seed / Accel": "#a8c8e8",
-                "Seed":             "#286dc0",
-                "Early VC":         "#00356b",
-                "Growth":           "#0d9668",
-                "Corporate / Other":"#888888",
+                "Pre-Seed / Accel": BLUE_RAMP[0],
+                "Seed":             BLUE_RAMP[1],
+                "Early VC":         BLUE_RAMP[2],
+                "Growth":           BLUE_RAMP[3],
+                "Corporate / Other":"#9aa5b3",
             }
             bucket_order = ["Pre-Seed / Accel", "Seed", "Early VC", "Growth", "Corporate / Other"]
             fig_vol = go.Figure()
@@ -2699,18 +2775,20 @@ def page_research():
             fig_vol.update_layout(
                 **_layout(
                     height=340,
-                    xaxis=dict(title="", tickformat="d"),
+                    xaxis=dict(title="", tickformat="d", showgrid=False, zeroline=False,
+                               linecolor=BORDER, ticks="outside", tickcolor=BORDER, ticklen=4),
                     yaxis=dict(title="Deals", gridcolor=BORDER_LIGHT),
+                    legend=dict(orientation="h", y=1.08, font=dict(size=11, color=TXT2),
+                                bgcolor="rgba(0,0,0,0)"),
                 ),
                 barmode="stack",
-                legend=dict(orientation="h", y=1.08, font=dict(size=11)),
                 hovermode="x unified",
             )
-            st.plotly_chart(fig_vol, use_container_width=True)
+            st.plotly_chart(fig_vol, use_container_width=True, config=_PLOT_CFG)
 
         with col_size:
             st.markdown("**Median deal size by stage ($M, 2010–2024)**")
-            SIZE_COLORS = {"Seed": "#286dc0", "Early VC": "#00356b", "Growth": "#0d9668"}
+            SIZE_COLORS = {"Seed": BLUE_RAMP[1], "Early VC": BLUE_RAMP[2], "Growth": BLUE_RAMP[3]}
             fig_size = go.Figure()
             for bucket, color in SIZE_COLORS.items():
                 sub = deal_sizes[deal_sizes["stage_bucket"] == bucket]
@@ -2725,13 +2803,15 @@ def page_research():
             fig_size.update_layout(
                 **_layout(
                     height=340,
-                    xaxis=dict(title="", tickformat="d"),
+                    xaxis=dict(title="", tickformat="d", showgrid=False, zeroline=False,
+                               linecolor=BORDER, ticks="outside", tickcolor=BORDER, ticklen=4),
                     yaxis=dict(title="Median deal size ($M)", gridcolor=BORDER_LIGHT),
+                    legend=dict(orientation="h", y=1.08, font=dict(size=11, color=TXT2),
+                                bgcolor="rgba(0,0,0,0)"),
                 ),
-                legend=dict(orientation="h", y=1.08, font=dict(size=11)),
                 hovermode="x unified",
             )
-            st.plotly_chart(fig_size, use_container_width=True)
+            st.plotly_chart(fig_size, use_container_width=True, config=_PLOT_CFG)
 
     if not first_fin.empty:
         st.markdown("**First financing year: AI vs non-AI companies**")
@@ -2744,23 +2824,26 @@ def page_research():
         fig_ff.add_trace(go.Scatter(
             x=ai_df["first_year"], y=(ai_df["companies"] / ai_total * 100).round(2),
             name="AI companies", mode="lines+markers",
-            line=dict(color="#0d9668", width=2), marker=dict(size=6),
+            line=dict(color=ACCENT, width=2.5), marker=dict(size=6),
         ))
         fig_ff.add_trace(go.Scatter(
             x=non_df["first_year"], y=(non_df["companies"] / non_total * 100).round(2),
             name="Non-AI companies", mode="lines+markers",
-            line=dict(color="#286dc0", width=2, dash="dot"), marker=dict(size=6),
+            line=dict(color=TXT3, width=2, dash="dot"), marker=dict(size=5),
         ))
         fig_ff.update_layout(
             **_layout(
                 height=300,
-                xaxis=dict(title="Year of first financing", tickformat="d"),
+                xaxis=dict(title="Year of first financing", tickformat="d", showgrid=False,
+                           zeroline=False, linecolor=BORDER, ticks="outside",
+                           tickcolor=BORDER, ticklen=4),
                 yaxis=dict(title="Share of cohort (%)", ticksuffix="%", gridcolor=BORDER_LIGHT),
+                legend=dict(orientation="h", y=1.08, font=dict(size=11, color=TXT2),
+                            bgcolor="rgba(0,0,0,0)"),
             ),
-            legend=dict(orientation="h", y=1.08),
             hovermode="x unified",
         )
-        st.plotly_chart(fig_ff, use_container_width=True)
+        st.plotly_chart(fig_ff, use_container_width=True, config=_PLOT_CFG)
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
@@ -3258,8 +3341,8 @@ def _info_sources_section():
     chart_col, table_col = st.columns([2, 3])
     with chart_col:
         fig = go.Figure()
-        colors = {"Crunchbase": YALE_BLUE, "PitchBook": YALE_LIGHT,
-                  "Our scrapers": GREEN, "GitHub discovery": AMBER}
+        colors = {"Crunchbase": BLUE_RAMP[2], "PitchBook": BLUE_RAMP[0],
+                  "Our scrapers": CAT[1], "GitHub discovery": CAT[2]}
         for name, n, _ in rows:
             fig.add_trace(go.Bar(
                 y=["Companies"], x=[n], name=name, orientation="h",
