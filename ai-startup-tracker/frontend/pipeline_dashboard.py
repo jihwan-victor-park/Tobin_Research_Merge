@@ -425,12 +425,12 @@ st.markdown(f"""
         margin: 0 0 16px 0;
     }}
 
-    /* ── Metric cards ── */
+    /* ── Metric cards (soft cream, echoes the top bar) ── */
     [data-testid="stMetric"] {{
-        background: {BG};
+        background: #faf8f1;
         padding: 14px 18px 13px 18px;
         border-radius: 6px;
-        border: 1px solid {BORDER};
+        border: 1px solid #eae3d0;
         box-shadow: 0 1px 2px rgba(16,24,40,0.03);
     }}
     [data-testid="stMetricValue"] {{
@@ -585,16 +585,21 @@ st.markdown(f"""
     .dot-broken {{ color: {RED}; }}
     .dot-excluded {{ color: #7c3aed; }}
 
-    /* Expander */
+    /* Expander — cream header strip */
     [data-testid="stExpander"] {{
-        border: 1px solid {BORDER} !important;
+        border: 1px solid #eae3d0 !important;
         border-radius: 6px;
         background: {BG};
+        overflow: hidden;
     }}
     [data-testid="stExpander"] summary {{
         font-size: 0.84rem;
         padding: 10px 14px !important;
         color: {TXT};
+        background: #f8f5eb;
+    }}
+    [data-testid="stExpander"] summary:hover {{
+        background: #f3efe0;
     }}
 
     hr {{ border: none; border-top: 1px solid {BORDER_LIGHT}; margin: 24px 0 20px 0; }}
