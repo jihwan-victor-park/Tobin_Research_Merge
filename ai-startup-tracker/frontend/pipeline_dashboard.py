@@ -188,6 +188,12 @@ st.markdown(f"""
         padding-left: 0 !important;
         padding-right: 0 !important;
     }}
+    /* kill the default flex gap between top-level blocks so the cream
+       bar sits flush against the viewport top (page content re-adds its
+       own padding via .st-key-page) */
+    .block-container > div[data-testid="stVerticalBlock"] {{
+        gap: 0 !important;
+    }}
 
     /* ── Dark navy sidebar (primary navigation) ── */
     section[data-testid="stSidebar"] {{
