@@ -43,6 +43,16 @@ def _db_url() -> str:
 AI_FILTER = ai_filter_sql()
 C_AI_FILTER = ai_filter_sql("c")
 
+# Companies NOT covered by Crunchbase or PitchBook — same definition as
+# Victor's Info Sheet _load_contribution_stats() in pipeline_dashboard.py,
+# collapsed to a single bucket (scraper-unique + GitHub-unique).
+NON_CB_PB_FILTER = "verification_status NOT IN ('verified_cb', 'verified_pb', 'verified_cb_pb')"
+BUCKET_CASE = (
+    "CASE WHEN verification_status = 'verified_cb' THEN 'cb' "
+    "WHEN verification_status = 'verified_pb' THEN 'pb' "
+    "ELSE 'hidden' END"
+)
+
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -298,6 +308,130 @@ def full_ai_export(engine, out: Path):
     return df
 
 
+# ── Section 9: Hidden-company formation & survival trends ───────────────────
+
+def hidden_formation_survival(engine, out: Path):
+    print("\n=== 9. Non-CB/PB ('Hidden') Formation & Survival Trends ===")
+    print("  CAVEATS: founded_year covers a minority of this population (enrichment")
+    print("  is bounded by the ~41% that even have a domain). domain_status is a")
+    print("  liveness PROXY for survival (see scripts/check_domain_liveness.py's")
+    print("  docstring) — not a verified operating-status field. Treat both as")
+    print("  descriptive/exploratory, not a rigorous survival-analysis input.")
+
+    timeline = q(engine, f"""
+        SELECT
+            founded_year,
+            CASE WHEN s.company_id IS NOT NULL THEN 'scraper' ELSE 'github' END AS source,
+            COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE {C_AI_FILTER}) AS ai
+        FROM companies c
+        LEFT JOIN (SELECT DISTINCT company_id FROM incubator_signals) s ON s.company_id = c.id
+        WHERE {NON_CB_PB_FILTER}
+          AND founded_year BETWEEN 2000 AND 2025
+        GROUP BY founded_year, source
+        ORDER BY founded_year, source
+    """)
+    print(f"\n  Formation timeline ({timeline['total'].sum():,} companies with founded_year):")
+    print(timeline.to_string(index=False))
+    save(timeline, "09a_hidden_formation_timeline", out)
+
+    survival = q(engine, f"""
+        SELECT
+            founded_year,
+            COUNT(*) FILTER (WHERE domain_status IS NOT NULL) AS total_checked,
+            COUNT(*) FILTER (WHERE domain_status = 'live') AS live,
+            COUNT(*) FILTER (WHERE domain_status = 'dead') AS dead,
+            ROUND(100.0 * COUNT(*) FILTER (WHERE domain_status = 'live')
+                  / NULLIF(COUNT(*) FILTER (WHERE domain_status IS NOT NULL), 0), 1) AS live_pct
+        FROM companies c
+        WHERE {NON_CB_PB_FILTER}
+          AND founded_year BETWEEN 2000 AND 2025
+        GROUP BY founded_year
+        HAVING COUNT(*) FILTER (WHERE domain_status IS NOT NULL) > 0
+        ORDER BY founded_year
+    """)
+    print(f"\n  Domain-liveness ('survival proxy') by founding cohort "
+          f"({survival['total_checked'].sum():,} checked):")
+    print(survival.to_string(index=False))
+    save(survival, "09b_hidden_survival_proxy_by_cohort", out)
+    return timeline, survival
+
+
+# ── Sections 10-13: Hidden vs. institutional (CB/PB) comparison ─────────────
+
+def hidden_vs_institutional_founding_year(engine, out: Path):
+    print("\n=== 10. Hidden vs. Institutional: Founding-Year Distribution ===")
+    df = q(engine, f"""
+        SELECT founded_year, {BUCKET_CASE} AS bucket, COUNT(*) AS n
+        FROM companies
+        WHERE founded_year BETWEEN 2005 AND 2025
+        GROUP BY founded_year, bucket
+        ORDER BY founded_year, bucket
+    """)
+    df["share_of_bucket_pct"] = (
+        df.groupby("bucket")["n"].transform(lambda s: 100.0 * s / s.sum())
+    ).round(2)
+    print(df.pivot(index="founded_year", columns="bucket", values="share_of_bucket_pct")
+            .fillna(0).to_string())
+    save(df, "10_hidden_vs_institutional_founding_year", out)
+    return df
+
+
+def hidden_vs_institutional_geography(engine, out: Path, top_n: int = 20):
+    print("\n=== 11. Hidden vs. Institutional: Geography ===")
+    df = q(engine, f"""
+        SELECT country, {BUCKET_CASE} AS bucket, COUNT(*) AS n
+        FROM companies
+        WHERE country IS NOT NULL AND country != ''
+        GROUP BY country, bucket
+    """)
+    df["share_of_bucket_pct"] = (
+        df.groupby("bucket")["n"].transform(lambda s: 100.0 * s / s.sum())
+    ).round(2)
+    top_countries = (
+        df.groupby("country")["n"].sum().sort_values(ascending=False).head(top_n).index
+    )
+    view = df[df["country"].isin(top_countries)]
+    pivot = view.pivot(index="country", columns="bucket", values="share_of_bucket_pct").fillna(0)
+    print(pivot.reindex(top_countries).to_string())
+    save(df, "11_hidden_vs_institutional_geography", out)
+    return df
+
+
+def hidden_vs_institutional_verticals(engine, out: Path):
+    print("\n=== 12. Hidden vs. Institutional: Industry Verticals ===")
+    df = q(engine, f"""
+        SELECT unnest(categories) AS vertical, {BUCKET_CASE} AS bucket, COUNT(*) AS n
+        FROM companies
+        WHERE categories IS NOT NULL AND array_length(categories, 1) > 0
+        GROUP BY vertical, bucket
+    """)
+    df["share_of_bucket_pct"] = (
+        df.groupby("bucket")["n"].transform(lambda s: 100.0 * s / s.sum())
+    ).round(2)
+    pivot = df.pivot(index="vertical", columns="bucket", values="share_of_bucket_pct").fillna(0)
+    print(pivot.sort_values("hidden", ascending=False).to_string())
+    save(df, "12_hidden_vs_institutional_verticals", out)
+    return df
+
+
+def hidden_vs_institutional_ai_adoption(engine, out: Path):
+    print("\n=== 13. Hidden vs. Institutional: AI Adoption Rate ===")
+    df = q(engine, f"""
+        SELECT
+            {BUCKET_CASE} AS bucket,
+            COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE {AI_FILTER}) AS ai,
+            ROUND(100.0 * COUNT(*) FILTER (WHERE {AI_FILTER}) / COUNT(*), 1) AS ai_pct
+        FROM companies
+        GROUP BY bucket
+        ORDER BY ai_pct DESC
+    """)
+    print(df.to_string(index=False))
+    save(df, "13_hidden_vs_institutional_ai_adoption", out)
+    return df
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -336,6 +470,12 @@ def main():
 
     us_vs_international(engine, out)
     data_lag_note(engine, out)
+
+    hidden_formation_survival(engine, out)
+    hidden_vs_institutional_founding_year(engine, out)
+    hidden_vs_institutional_geography(engine, out)
+    hidden_vs_institutional_verticals(engine, out)
+    hidden_vs_institutional_ai_adoption(engine, out)
 
     if not args.skip_full_export:
         full_ai_export(engine, out)

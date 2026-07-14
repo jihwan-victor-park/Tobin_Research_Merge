@@ -99,13 +99,36 @@ def main() -> None:
         FROM (VALUES %s) AS v(domain, is_ai)
         WHERE c.domain = v.domain
     """
-    updated = 0
-    for i in range(0, len(rows), args.batch):
+    # Railway's proxy drops long-lived connections after a few minutes even
+    # mid-transfer (observed at both ~70K and ~180K rows in — not a fixed row
+    # count, just time-based). Reconnect and retry the current batch rather
+    # than dying and forcing a full restart from row 0.
+    max_retries = 8
+    i = 0
+    while i < len(rows):
         chunk = rows[i : i + args.batch]
-        psycopg2.extras.execute_values(rcur, update_sql, chunk, template="(%s, %s)")
-        rconn.commit()
-        updated += rcur.rowcount if rcur.rowcount and rcur.rowcount > 0 else len(chunk)
-        print(f"  synced ~{min(i + args.batch, len(rows)):,}/{len(rows):,}", flush=True)
+        for attempt in range(1, max_retries + 1):
+            try:
+                psycopg2.extras.execute_values(rcur, update_sql, chunk, template="(%s, %s)")
+                rconn.commit()
+                break
+            except psycopg2.OperationalError as e:
+                print(f"  connection dropped at row {i:,} (retry {attempt}/{max_retries}): {e}", flush=True)
+                try:
+                    rconn.close()
+                except Exception:
+                    pass
+                import time
+                time.sleep(3)
+                rconn = psycopg2.connect(railway_url)
+                rcur = rconn.cursor()
+        else:
+            sys.exit(
+                f"Giving up after {max_retries} reconnect attempts at row {i:,}/{len(rows):,}. "
+                "Re-run --apply to resume — UPDATEs are idempotent, already-synced rows are a no-op."
+            )
+        i += args.batch
+        print(f"  synced ~{min(i, len(rows)):,}/{len(rows):,}", flush=True)
 
     rcur.execute("SELECT COUNT(*) FROM companies WHERE llm_ai_verified IS NOT NULL")
     print(f"\nRailway companies with llm_ai_verified set now: {rcur.fetchone()[0]:,}")

@@ -91,18 +91,23 @@ def ensure_naics_column(conn):
         print("Added naics_code column to companies table.")
 
 
-def main(dry_run: bool = False):
+NON_CB_PB_FILTER = (
+    "verification_status NOT IN ('verified_cb', 'verified_pb', 'verified_cb_pb')"
+)
+
+
+def main(dry_run: bool = False, non_cb_pb_only: bool = False):
     revelio = load_revelio()
     engine = create_engine(_db_url())
 
     # Pull our companies that either lack founded_year or lack naics_code
-    print("\nFetching our company domains from Railway...")
+    scope_note = " (scoped to non-CB/PB companies only)" if non_cb_pb_only else ""
+    print(f"\nFetching company domains{scope_note}...")
+    fetch_sql = "SELECT id, domain, founded_year FROM companies WHERE domain IS NOT NULL"
+    if non_cb_pb_only:
+        fetch_sql += f" AND {NON_CB_PB_FILTER}"
     with engine.connect() as conn:
-        rows = conn.execute(text(
-            "SELECT id, domain, founded_year, "
-            "CASE WHEN pg_typeof(id)::text = 'integer' THEN NULL ELSE NULL END AS naics_placeholder "
-            "FROM companies WHERE domain IS NOT NULL"
-        )).mappings().all()
+        rows = conn.execute(text(fetch_sql)).mappings().all()
 
     our_df = pd.DataFrame(rows)[["id", "domain", "founded_year"]]
     our_df["domain_lower"] = our_df["domain"].str.lower().str.strip()
@@ -198,16 +203,23 @@ def main(dry_run: bool = False):
             print(f"  naics_code: {result.rowcount:,} updated")
 
     # Summary
-    with engine.connect() as conn:
-        has_year = conn.execute(text("SELECT COUNT(*) FROM companies WHERE founded_year IS NOT NULL")).scalar()
-        total = conn.execute(text("SELECT COUNT(*) FROM companies")).scalar()
-        has_naics = conn.execute(text("SELECT COUNT(*) FROM companies WHERE naics_code IS NOT NULL")).scalar()
+    base_where = [NON_CB_PB_FILTER] if non_cb_pb_only else []
+    def _count(extra: str | None = None) -> int:
+        clauses = base_where + ([extra] if extra else [])
+        where_sql = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        with engine.connect() as conn:
+            return conn.execute(text(f"SELECT COUNT(*) FROM companies{where_sql}")).scalar()
 
-    print(f"\n✓ Done.")
+    has_year = _count("founded_year IS NOT NULL")
+    total = _count()
+    has_naics = _count("naics_code IS NOT NULL")
+
+    print(f"\n✓ Done.{scope_note}")
     print(f"  founded_year coverage: {has_year:,} / {total:,} ({has_year/total*100:.1f}%)")
     print(f"  naics_code coverage:   {has_naics:,} / {total:,} ({has_naics/total*100:.1f}%)")
 
 
 if __name__ == "__main__":
     dry_run = "--dry-run" in sys.argv
-    main(dry_run=dry_run)
+    non_cb_pb_only = "--non-cb-pb-only" in sys.argv
+    main(dry_run=dry_run, non_cb_pb_only=non_cb_pb_only)
