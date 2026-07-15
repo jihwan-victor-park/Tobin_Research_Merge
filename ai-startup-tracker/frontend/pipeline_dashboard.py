@@ -199,89 +199,100 @@ st.markdown(f"""
     section[data-testid="stSidebar"],
     [data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
 
-    /* ── Top bar: brand left, live meta right ── */
-    .topbar {{
+    /* ── Header row: brand left, nav right, one hairline under both ── */
+    .st-key-header {{
+        padding: 16px 0 0 0;
+    }}
+    .st-key-header [data-testid="stHorizontalBlock"] {{
+        align-items: center;
+    }}
+    .brand {{
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 18px 0 14px 0;
+        gap: 11px;
+        white-space: nowrap;
     }}
     .brand-mark {{
-        width: 30px; height: 30px;
-        border-radius: 8px;
-        background: {YALE_BLUE};
+        width: 32px; height: 32px;
+        border-radius: 9px;
+        background: linear-gradient(135deg, {YALE_BLUE} 0%, {YALE_MID} 100%);
         color: #ffffff;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.78rem;
+        font-size: 0.8rem;
         font-weight: 700;
         letter-spacing: 0.02em;
         flex-shrink: 0;
+        box-shadow: 0 1px 2px rgba(16,24,40,0.12);
     }}
+    .brand-text {{ line-height: 1.15; }}
     .brand-name {{
-        font-size: 1.02rem;
+        display: block;
+        font-size: 0.98rem;
         font-weight: 700;
         letter-spacing: -0.02em;
         color: {TXT};
-        white-space: nowrap;
     }}
-    .brand-badge {{
-        font-size: 0.68rem;
-        font-weight: 600;
-        color: {TXT2};
-        background: {BG_OFF};
-        border: 1px solid {BORDER};
-        border-radius: 999px;
-        padding: 3px 10px;
-        white-space: nowrap;
-    }}
-    .topbar-meta {{
-        margin-left: auto;
-        font-family: {MONO};
-        font-size: 0.68rem;
+    .brand-sub {{
+        display: block;
+        font-size: 0.66rem;
+        font-weight: 500;
+        letter-spacing: 0.04em;
         color: {TXT3};
-        font-variant-numeric: tabular-nums;
-        white-space: nowrap;
+        margin-top: 1px;
+    }}
+    .header-rule {{
+        border-bottom: 1px solid {BORDER};
+        margin: 12px 0 0 0;
     }}
 
-    /* ── Primary nav: pill tabs (wrap cleanly, no rule collisions) ── */
+    /* ── Primary nav: quiet text links, active gets a soft pill ── */
     .st-key-lnav [role="radiogroup"] {{
         display: flex;
         flex-wrap: wrap;
-        gap: 6px;
-        padding: 4px;
-        background: {BG_OFF};
-        border: 1px solid {BORDER};
-        border-radius: 10px;
-        width: fit-content;
-        max-width: 100%;
+        justify-content: flex-end;
+        gap: 2px;
+        row-gap: 4px;
     }}
     .st-key-lnav [role="radiogroup"] label {{
         margin: 0 !important;
-        padding: 6px 14px;
-        border-radius: 7px;
+        padding: 7px 13px;
+        border-radius: 8px;
         background: transparent !important;
         transition: background 0.12s;
+        position: relative;
+    }}
+    /* hairline divider before the last item (Internal) */
+    .st-key-lnav [role="radiogroup"] label:last-child {{
+        margin-left: 16px !important;
+    }}
+    .st-key-lnav [role="radiogroup"] label:last-child::before {{
+        content: "";
+        position: absolute;
+        left: -9px;
+        top: 22%;
+        height: 56%;
+        border-left: 1px solid {BORDER};
     }}
     .st-key-lnav [role="radiogroup"] label > div:first-child {{
         display: none;
     }}
     .st-key-lnav [role="radiogroup"] label p {{
-        font-size: 0.82rem;
+        font-size: 0.84rem;
         font-weight: 500;
         color: {TXT2};
         white-space: nowrap;
         line-height: 1.2;
     }}
+    .st-key-lnav [role="radiogroup"] label:hover {{ background: {BG_OFF} !important; }}
     .st-key-lnav [role="radiogroup"] label:hover p {{ color: {TXT}; }}
     .st-key-lnav [role="radiogroup"] label:has(input:checked) {{
-        background: {BG_CARD} !important;
-        box-shadow: 0 1px 2px rgba(16,24,40,0.07), 0 0 0 1px {BORDER};
+        background: {BG_OFF} !important;
     }}
     .st-key-lnav [role="radiogroup"] label:has(input:checked) p {{
         color: {YALE_BLUE};
-        font-weight: 600;
+        font-weight: 650;
     }}
 
     /* Secondary nav (internal pages) — quieter pills */
@@ -383,6 +394,91 @@ st.markdown(f"""
         text-transform: uppercase;
         color: {ACCENT};
         margin: 0 0 6px 0;
+    }}
+
+    /* ── Hero: headline left, lede right, full width ── */
+    .hero-eyebrow {{
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: {TXT3};
+        margin: 0 0 14px 0;
+        font-variant-numeric: tabular-nums;
+    }}
+    .hero-eyebrow .live-dot {{
+        width: 7px; height: 7px;
+        border-radius: 999px;
+        background: {GREEN};
+        box-shadow: 0 0 0 3px rgba(14,159,110,0.15);
+        flex-shrink: 0;
+    }}
+    .hero-title {{
+        font-size: clamp(1.6rem, 3vw, 2.15rem);
+        font-weight: 750;
+        letter-spacing: -0.03em;
+        line-height: 1.12;
+        color: {TXT};
+        text-wrap: balance;
+        margin: 0;
+    }}
+    .hero-lede {{
+        font-size: 0.95rem;
+        line-height: 1.65;
+        color: {TXT2};
+        margin: 0;
+    }}
+    .hero-lede b {{ color: {TXT}; font-weight: 600; }}
+
+    /* ── Stat band: one connected strip, divided columns ── */
+    .statband {{
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        background: {BG_CARD};
+        border: 1px solid {BORDER};
+        border-radius: 12px;
+        box-shadow: 0 1px 2px rgba(16,24,40,0.04);
+        overflow: hidden;
+    }}
+    .statband .stat {{
+        padding: 18px 22px 16px 22px;
+    }}
+    .statband .stat + .stat {{
+        border-left: 1px solid {BORDER_LIGHT};
+    }}
+    .statband .stat-label {{
+        display: block;
+        font-size: 0.64rem;
+        font-weight: 650;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: {TXT3};
+        margin-bottom: 7px;
+    }}
+    .statband .stat-value {{
+        display: block;
+        font-size: 1.72rem;
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        line-height: 1.1;
+        color: {TXT};
+        font-variant-numeric: tabular-nums;
+    }}
+    .statband .stat-sub {{
+        display: block;
+        font-size: 0.72rem;
+        color: {TXT3};
+        margin-top: 5px;
+        font-variant-numeric: tabular-nums;
+    }}
+    .statband .stat-sub b {{ color: {ACCENT}; font-weight: 650; }}
+    @media (max-width: 900px) {{
+        .statband {{ grid-template-columns: repeat(2, 1fr); }}
+        .statband .stat:nth-child(3) {{ border-left: none; }}
+        .statband .stat:nth-child(n+3) {{ border-top: 1px solid {BORDER_LIGHT}; }}
     }}
 
     /* ── KPI cards ── */
@@ -565,26 +661,6 @@ st.markdown(f"""
     hr {{ border: none; border-top: 1px solid {BORDER_LIGHT}; margin: 24px 0 20px 0; }}
 </style>
 """, unsafe_allow_html=True)
-
-
-# ── Top bar ──────────────────────────────────────────────────────────
-
-# Live figures for the top-bar meta line
-_engine = get_engine()
-with _engine.connect() as _conn:
-    _total = _conn.execute(text("SELECT COUNT(*) FROM companies")).scalar() or 0
-
-_now = datetime.now()
-st.markdown(
-    f'<div class="topbar">'
-    f'<span class="brand-mark">AI</span>'
-    f'<span class="brand-name">AI Startup Tracker</span>'
-    f'<span class="brand-badge">Tobin Center &middot; Yale</span>'
-    f'<span class="topbar-meta">{_total:,} companies &middot; updated '
-    f'{_now.strftime("%b %d, %Y")}</span>'
-    f'</div>',
-    unsafe_allow_html=True,
-)
 
 
 # ── Data loaders ─────────────────────────────────────────────────────
@@ -1247,27 +1323,50 @@ def page_home():
         if "verified_cb" in b.index:
             cb_ai_pct = float(b.loc["verified_cb", "ai_pct"])
 
-    # ── Hero ─────────────────────────────────────────────────────────
+    # ── Hero: headline left, lede right, stat band across ────────────
     st.markdown(
-        '<div class="eyebrow">Tobin Center for Economic Policy · Yale University</div>'
-        '<h1>Where new AI companies actually come from</h1>'
-        '<p style="max-width:62ch; margin-top:6px;">We track company formation across '
-        'GitHub, accelerator and VC portfolios, government grant awards, and startup '
-        'media — including tens of thousands of young firms that commercial databases '
-        'have not registered yet.</p>',
+        f'<div class="hero-eyebrow"><span class="live-dot"></span>'
+        f'Live dataset &middot; {stats["total"]:,} companies &middot; updated '
+        f'{datetime.now().strftime("%b %d, %Y")}</div>',
+        unsafe_allow_html=True,
+    )
+    h1col, h2col = st.columns([1.15, 1], gap="large", vertical_alignment="bottom")
+    h1col.markdown(
+        '<div class="hero-title">Where new AI companies actually come from</div>',
+        unsafe_allow_html=True,
+    )
+    h2col.markdown(
+        '<p class="hero-lede">We track company formation across GitHub, accelerator '
+        'and VC portfolios, government grant awards, and startup media — including '
+        '<b>tens of thousands of young firms that commercial databases have not '
+        'registered yet</b>.</p>',
         unsafe_allow_html=True,
     )
 
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Companies tracked", f"{stats['total']:,}")
-    m2.metric("Hidden — not in CB/PB", f"{hidden_total:,}")
-    if hidden_ai_pct is not None and cb_ai_pct is not None:
-        m3.metric("AI share of hidden firms", f"{hidden_ai_pct:.1f}%",
-                  help="Share of hidden companies classified AI-focused, vs "
-                       f"{cb_ai_pct:.1f}% among Crunchbase-registered firms.")
-    else:
-        m3.metric("AI companies", f"{stats['ai']:,}")
-    m4.metric("Countries", f"{stats['countries']:,}")
+    ai_stat = (
+        f'<span class="stat-value">{hidden_ai_pct:.1f}%</span>'
+        f'<span class="stat-sub">vs <b>{cb_ai_pct:.1f}%</b> in Crunchbase</span>'
+        if hidden_ai_pct is not None and cb_ai_pct is not None
+        else f'<span class="stat-value">{stats["ai"]:,}</span>'
+             f'<span class="stat-sub">across all sources</span>'
+    )
+    st.markdown(
+        f'<div style="height:22px"></div>'
+        f'<div class="statband">'
+        f'<div class="stat"><span class="stat-label">Companies tracked</span>'
+        f'<span class="stat-value">{stats["total"]:,}</span>'
+        f'<span class="stat-sub">all discovery channels</span></div>'
+        f'<div class="stat"><span class="stat-label">Hidden companies</span>'
+        f'<span class="stat-value">{hidden_total:,}</span>'
+        f'<span class="stat-sub">in neither Crunchbase nor PitchBook</span></div>'
+        f'<div class="stat"><span class="stat-label">AI share of hidden firms</span>'
+        f'{ai_stat}</div>'
+        f'<div class="stat"><span class="stat-label">Countries</span>'
+        f'<span class="stat-value">{stats["countries"]:,}</span>'
+        f'<span class="stat-sub">headquarters coverage</span></div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
     # ── Key findings ─────────────────────────────────────────────────
     st.markdown('<div style="height:26px"></div>', unsafe_allow_html=True)
@@ -3913,10 +4012,25 @@ _INTERNAL_PAGES = ["AI Analysis", "Trends", "Pipeline Health", "Inventory", "Scr
 
 
 def main():
-    # ── Primary nav: public sections + Internal ─────────────────────
-    with st.container(key="lnav"):
-        section = st.radio("Navigation", _PUBLIC_PAGES + ["Internal"],
-                           horizontal=True, label_visibility="collapsed")
+    # ── Header: brand + primary nav on one row, hairline under both ──
+    with st.container(key="header"):
+        bcol, ncol = st.columns([1, 2.4], vertical_alignment="center")
+        with bcol:
+            st.markdown(
+                '<div class="brand">'
+                '<span class="brand-mark">AI</span>'
+                '<span class="brand-text">'
+                '<span class="brand-name">AI Startup Tracker</span>'
+                '<span class="brand-sub">Tobin Center for Economic Policy &middot; Yale</span>'
+                '</span>'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+        with ncol:
+            with st.container(key="lnav"):
+                section = st.radio("Navigation", _PUBLIC_PAGES + ["Internal"],
+                                   horizontal=True, label_visibility="collapsed")
+        st.markdown('<div class="header-rule"></div>', unsafe_allow_html=True)
 
     page = section
     if section == "Internal":
