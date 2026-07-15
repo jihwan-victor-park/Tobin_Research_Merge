@@ -1,12 +1,12 @@
-# Ledger theme — keeps Streamlit-native widgets (dataframes, selects,
-# toolbar) on the paper palette even when the viewer's OS is dark.
+# Platform theme — keeps Streamlit-native widgets (dataframes, selects,
+# toolbar) on the light palette even when the viewer's OS is dark.
 # Tokens mirror frontend/pipeline_dashboard.py.
 [theme]
 base = "light"
-primaryColor = "#b8912f"              # gilt: focus rings, active states
-backgroundColor = "#f4efe2"           # the paper
-secondaryBackgroundColor = "#ede6d3"  # deeper paper
-textColor = "#17304f"                 # body ink
+primaryColor = "#2a78d6"              # accent: focus rings, active states
+backgroundColor = "#fafbfc"           # app ground
+secondaryBackgroundColor = "#f2f4f7"  # wells, table heads
+textColor = "#101828"                 # primary ink
 font = "sans serif"
 
 [server]
