@@ -1,0 +1,52 @@
+bucket,n,vertical,share_of_bucket_pct
+hidden,1488,Software & IT,21.68
+hidden,647,Healthcare,9.42
+hidden,419,Hardware & Manufacturing,6.1
+pb,37753,E-commerce & Retail,9.34
+pb,34771,Healthcare,8.6
+cb,23268,Transportation,1.52
+cb,22003,Energy & CleanTech,1.43
+cb,148796,Biotech & Pharma,9.7
+cb,211583,Professional Services,13.8
+pb,11744,Food & AgTech,2.91
+cb,50340,Financial Services,3.28
+pb,1152,Social Impact,0.29
+pb,5046,Education,1.25
+hidden,508,Media & Marketing,7.4
+cb,5114,Social Impact,0.33
+hidden,311,Education,4.53
+hidden,116,Security & Privacy,1.69
+cb,110996,Data & Analytics,7.24
+cb,124650,Hardware & Manufacturing,8.13
+pb,12671,Real Estate,3.14
+hidden,196,Transportation,2.86
+hidden,305,Consumer & Lifestyle,4.44
+cb,81626,Media & Marketing,5.32
+pb,12770,Biotech & Pharma,3.16
+cb,20669,Consumer & Lifestyle,1.35
+pb,17667,Energy & CleanTech,4.37
+pb,8580,Data & Analytics,2.12
+hidden,231,Biotech & Pharma,3.36
+hidden,295,Data & Analytics,4.3
+pb,59462,Software & IT,14.71
+hidden,93,Social Impact,1.35
+pb,18818,Consumer & Lifestyle,4.66
+pb,30008,Financial Services,7.42
+hidden,155,Real Estate,2.26
+pb,42443,Hardware & Manufacturing,10.5
+pb,3296,Security & Privacy,0.82
+pb,27083,Media & Marketing,6.7
+pb,66675,Professional Services,16.5
+pb,14237,Transportation,3.52
+cb,6840,Food & AgTech,0.45
+hidden,715,Financial Services,10.42
+cb,46260,E-commerce & Retail,3.02
+hidden,512,E-commerce & Retail,7.46
+cb,37399,Security & Privacy,2.44
+cb,30465,Real Estate,1.99
+hidden,288,Energy & CleanTech,4.2
+hidden,367,Professional Services,5.35
+cb,44189,Education,2.88
+cb,520006,Software & IT,33.91
+hidden,219,Food & AgTech,3.19
+cb,49337,Healthcare,3.22
