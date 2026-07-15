@@ -8,7 +8,6 @@ No sidebar — everything lives in the main content area.
 """
 from __future__ import annotations
 
-import base64
 import os
 import sys
 from datetime import datetime, timedelta, timezone
@@ -27,33 +26,36 @@ from backend.db.connection import get_engine
 from backend.orchestrator.orchestrator import Orchestrator
 from backend.scrapers.registry import SCRAPER_REGISTRY
 from backend.utils.ai_filter import ai_filter_sql
-from backend.utils.country import count_distinct_countries, normalize_country, GLOBE_COUNTRIES
+from backend.utils.country import normalize_country, GLOBE_COUNTRIES
 from backend.utils.denylist import BIG_TECH_DENYLIST
 
 load_dotenv()
 
-# ── Design tokens ────────────────────────────────────────────────────
-YALE_BLUE = "#00356b"   # brand ink: headings, table accents
-YALE_MID = "#1a4f8a"
-YALE_LIGHT = "#2a6cb5"
+# ── Design tokens — "The Ledger" ─────────────────────────────────────
+# The whole UI is one sheet of paper: beige ground, navy ink, serif
+# display figures. Hierarchy comes from rule weight (double rule under
+# the masthead, single rule under section heads, hairlines between rows),
+# not from cards or shadows. Gilt marks "you are here" and nothing else.
+YALE_BLUE = "#12294a"   # ink navy: headings, display figures, strong rules
+YALE_MID = "#1d3c66"
+YALE_LIGHT = "#33608f"
 ACCENT = "#29568c"      # primary data series (validated: chroma, CVD, >=3:1)
-BG = "#ffffff"
-BG_OFF = "#f7f8fb"
-BG_CARD = "#f9fafb"
-BORDER = "#e3e7ee"
-BORDER_LIGHT = "#eef1f6"
-TXT = "#1a1f2e"
-TXT2 = "#4a5568"
-TXT3 = "#8492a6"
-GREEN = "#0d9668"       # status: working / healthy
-AMBER = "#d97706"       # status: pending / degraded
-RED = "#dc2626"         # status: broken / failed
+BG = "#f4efe2"          # the paper
+BG_OFF = "#ede6d3"      # deeper paper: filter wells, expander heads
+BG_CARD = "#faf6ea"     # raised paper: inputs, hover surfaces
+BORDER = "#d9cfb4"      # hairline rule
+BORDER_LIGHT = "#e5ddc6"  # faint hairline: row separators, chart grids
+TXT = "#17304f"         # body ink
+TXT2 = "#44536b"        # secondary ink
+TXT3 = "#6d7a8f"        # muted ink / captions
+KHAKI = "#8a7c54"       # small-caps labels, folio ink
+GREEN = "#0d7a55"       # status: working / healthy (print-muted)
+AMBER = "#a86f10"       # status: pending / degraded
+RED = "#b3382e"         # status: broken / failed
+GILT = "#b8912f"        # active-nav underline; reserved for "you are here"
 
-# Chrome (PitchBook-style shell)
-SIDEBAR_BG = "#152943"          # dark navy left rail
-SIDEBAR_TXT = "#b7c4d6"
-CREAM = "#f5f2e9"               # top bar
-CREAM_BORDER = "#e4ddc9"
+SERIF = "'Source Serif 4', 'Iowan Old Style', Georgia, 'Times New Roman', serif"
+MONO = "'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace"
 
 # Chart palette (validated with the dataviz palette checker on white):
 #   BLUE_RAMP  — single-hue steel-blue ordinal ramp, light→dark, ordered series
@@ -151,14 +153,14 @@ US_CITIES = {
 st.set_page_config(
     page_title="AI Startup Tracker",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # ── CSS ──────────────────────────────────────────────────────────────
 
 st.markdown(f"""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
     html, body, .stApp {{
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -182,194 +184,117 @@ st.markdown(f"""
 
     .main, [data-testid="stAppViewContainer"],
     [data-testid="stMain"] {{ background: {BG} !important; }}
+    /* The document column: measured width, centered like a printed sheet */
     .block-container {{
         padding-top: 0 !important;
-        padding-bottom: 3rem;
-        max-width: 100% !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
+        padding-bottom: 3.5rem;
+        max-width: 1320px !important;
+        margin: 0 auto;
+        padding-left: 40px !important;
+        padding-right: 40px !important;
     }}
-    /* kill the default flex gap between top-level blocks so the cream
-       bar sits flush against the viewport top (page content re-adds its
-       own padding via .st-key-page) */
     .block-container > div[data-testid="stVerticalBlock"] {{
         gap: 0 !important;
     }}
 
-    /* ── Dark navy sidebar (primary navigation) ── */
-    section[data-testid="stSidebar"] {{
-        background: {SIDEBAR_BG} !important;
-        border-right: none;
-        min-width: 240px !important;
-        max-width: 240px !important;
-    }}
-    section[data-testid="stSidebar"] [data-testid="stSidebarHeader"] {{
-        padding: 0; height: 0;
-    }}
-    section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
+    /* Sidebar retired — the running head under the masthead is the nav */
+    section[data-testid="stSidebar"],
     [data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
-    section[data-testid="stSidebar"] .block-container {{
-        padding: 0 !important;
-    }}
-    .sb-brand {{
-        padding: 22px 20px 18px 20px;
-        border-bottom: 1px solid rgba(255,255,255,0.08);
-        margin-bottom: 14px;
-    }}
-    .sb-title {{
-        color: #ffffff;
-        font-size: 0.98rem;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        line-height: 1.3;
-    }}
-    .sb-sub {{
-        color: rgba(255,255,255,0.45);
-        font-size: 0.64rem;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        margin-top: 5px;
-    }}
-    .sb-eyebrow {{
-        color: rgba(255,255,255,0.35);
-        font-size: 0.6rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-        padding: 4px 20px 6px 20px;
-    }}
-    /* nav radio → nav list */
-    section[data-testid="stSidebar"] [role="radiogroup"] {{
-        gap: 1px;
-        padding: 0 10px;
-    }}
-    section[data-testid="stSidebar"] [role="radiogroup"] label > div:first-child {{
-        display: none;
-    }}
-    section[data-testid="stSidebar"] [role="radiogroup"] label {{
-        padding: 8px 12px;
-        border-radius: 6px;
-        width: 100%;
-        margin: 0;
-        border-left: 2px solid transparent;
-        transition: background 0.12s;
-    }}
-    section[data-testid="stSidebar"] [role="radiogroup"] label:hover {{
-        background: rgba(255,255,255,0.05);
-    }}
-    section[data-testid="stSidebar"] [role="radiogroup"] label p {{
-        color: {SIDEBAR_TXT};
-        font-size: 0.85rem;
-        font-weight: 400;
-    }}
-    section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {{
-        background: #e9eef5;
-        border-left: 2px solid {GOLD};
-    }}
-    section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) p {{
-        color: {YALE_BLUE};
-        font-weight: 600;
-    }}
-    .sb-foot {{
-        padding: 16px 20px;
-        margin-top: 18px;
-        border-top: 1px solid rgba(255,255,255,0.08);
-    }}
-    .sb-foot-val {{
-        color: #ffffff;
-        font-size: 0.92rem;
-        font-weight: 600;
-        font-variant-numeric: tabular-nums;
-    }}
-    .sb-foot-label {{
-        color: rgba(255,255,255,0.4);
-        font-size: 0.6rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        margin-bottom: 10px;
-    }}
-    .sb-foot-row {{
+    /* ── Folio line ── */
+    .folio {{
         display: flex;
         justify-content: space-between;
         align-items: baseline;
-        margin-bottom: 6px;
-    }}
-    .sb-foot-key {{
-        color: rgba(255,255,255,0.5);
-        font-size: 0.72rem;
+        padding: 16px 0 6px 0;
+        font-family: {MONO};
+        font-size: 0.62rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: {KHAKI};
     }}
 
-    /* ── Cream top bar ── */
-    .topnav {{
-        background: {CREAM};
-        border-bottom: 1px solid {CREAM_BORDER};
-        padding: 0 32px;
+    /* ── Masthead ── */
+    .masthead {{
         display: flex;
-        align-items: center;
-        gap: 0;
-        height: 52px;
-        position: sticky;
-        top: 0;
-        z-index: 999;
+        justify-content: space-between;
+        align-items: flex-end;
+        padding: 4px 0 10px 0;
     }}
-    .topnav-brand {{
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        flex-shrink: 0;
-    }}
-    .topnav-logo {{
-        height: 30px;
-        background: #ffffff;
-        padding: 3px 7px;
-        border-radius: 4px;
-        border: 1px solid {CREAM_BORDER};
-        box-sizing: content-box;
-    }}
-    .topnav-sep {{
-        width: 1px;
-        height: 20px;
-        background: {CREAM_BORDER};
-    }}
-    .topnav-title {{
-        font-size: 0.88rem;
+    .mast-title {{
+        font-family: {SERIF};
+        font-size: 1.72rem;
         font-weight: 600;
+        letter-spacing: 0.01em;
         color: {YALE_BLUE};
-        letter-spacing: -0.01em;
-        white-space: nowrap;
+        line-height: 1.1;
     }}
-    .topnav-right {{
-        margin-left: auto;
-        display: flex;
-        align-items: baseline;
-        gap: 22px;
-        white-space: nowrap;
+    .mast-kicker {{
+        font-family: 'Inter', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: {KHAKI};
+        vertical-align: 8px;
+        margin-left: 12px;
     }}
-    .topnav-stat {{
-        color: {TXT2};
-        font-size: 0.76rem;
+    .mast-meta {{
+        font-family: {MONO};
+        font-size: 0.66rem;
+        color: {TXT3};
+        padding-bottom: 7px;
         font-variant-numeric: tabular-nums;
     }}
-    .topnav-stat b {{
-        color: {YALE_BLUE};
-        font-weight: 600;
+    /* double rule under the masthead, like a printed abstract */
+    .mast-rules {{
+        border-top: 3px solid {YALE_BLUE};
     }}
-    .topnav-meta {{
-        color: {TXT3};
-        font-size: 0.64rem;
-        font-weight: 500;
+    .mast-rules::after {{
+        content: "";
+        display: block;
+        border-top: 1px solid {YALE_BLUE};
+        margin-top: 2px;
+    }}
+
+    /* ── Running-head navigation (horizontal radio under the rules) ── */
+    .st-key-lnav [role="radiogroup"] {{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 26px;
+        border-bottom: 1px solid {BORDER};
+        padding: 10px 0 0 0;
+    }}
+    .st-key-lnav [role="radiogroup"] label {{
+        margin: 0 !important;
+        padding: 0 1px 8px 1px;
+        border-bottom: 2px solid transparent;
+        background: transparent !important;
+    }}
+    .st-key-lnav [role="radiogroup"] label > div:first-child {{
+        display: none;
+    }}
+    .st-key-lnav [role="radiogroup"] label p {{
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.13em;
         text-transform: uppercase;
-        letter-spacing: 0.09em;
+        color: {TXT3};
+        white-space: nowrap;
+    }}
+    .st-key-lnav [role="radiogroup"] label:hover p {{ color: {TXT}; }}
+    .st-key-lnav [role="radiogroup"] label:has(input:checked) {{
+        border-bottom-color: {GILT};
+    }}
+    .st-key-lnav [role="radiogroup"] label:has(input:checked) p {{
+        color: {YALE_BLUE};
     }}
 
     /* Page content wrapper */
     .st-key-page {{
-        padding: 24px 32px 0 32px;
+        padding: 28px 0 0 0;
     }}
 
-    /* ── Inner tabs (within a page, e.g. working/pending tables) ── */
+    /* ── Inner tabs — journal running heads within a page ── */
     .stTabs {{ margin-top: 0; }}
     .stTabs [data-baseweb="tab-list"] {{
         gap: 22px;
@@ -380,8 +305,10 @@ st.markdown(f"""
     .stTabs [data-baseweb="tab"] {{
         border-radius: 0;
         padding: 9px 2px;
-        font-size: 0.83rem;
-        font-weight: 500;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
         color: {TXT3};
         background: transparent;
         border-bottom: 2px solid transparent;
@@ -396,117 +323,125 @@ st.markdown(f"""
     .stTabs [aria-selected="true"] {{
         color: {YALE_BLUE} !important;
         background: transparent !important;
-        border-bottom: 2px solid {YALE_BLUE} !important;
-        font-weight: 600;
+        border-bottom: 2px solid {GILT} !important;
     }}
     .stTabs [data-baseweb="tab-panel"] {{
         padding: 1rem 0 0 0;
     }}
 
-    /* ── Section headers ── */
-    h1 {{ color: {YALE_BLUE}; font-weight: 700; font-size: 1.35rem !important;
-         letter-spacing: -0.02em; margin-bottom: 0.2rem !important; }}
-    h2 {{ color: {TXT}; font-weight: 600; font-size: 1.05rem !important; }}
-    h3 {{ color: {TXT2}; font-weight: 600; font-size: 0.76rem !important;
-         text-transform: uppercase; letter-spacing: 0.07em; }}
+    /* ── Section headers — serif, ruled underneath like table captions ── */
+    h1 {{ font-family: {SERIF}; color: {YALE_BLUE}; font-weight: 600;
+         font-size: 1.3rem !important; letter-spacing: 0;
+         margin-bottom: 0.2rem !important; }}
+    h2 {{ font-family: {SERIF}; color: {YALE_BLUE}; font-weight: 600;
+         font-size: 1.05rem !important; }}
+    h3 {{ color: {KHAKI}; font-weight: 600; font-size: 0.7rem !important;
+         text-transform: uppercase; letter-spacing: 0.12em; }}
     p {{ color: {TXT2}; font-size: 0.85rem; }}
     .stCaption, [data-testid="stCaptionContainer"] {{ color: {TXT3}; font-size: 0.76rem; }}
 
     .section-header {{
-        color: {TXT};
-        font-size: 1rem;
+        font-family: {SERIF};
+        color: {YALE_BLUE};
+        font-size: 1.04rem;
         font-weight: 600;
-        letter-spacing: -0.01em;
-        margin: 0 0 3px 0;
+        border-bottom: 1px solid {YALE_BLUE};
+        padding-bottom: 6px;
+        margin: 0 0 4px 0;
     }}
     .section-sub {{
         color: {TXT3};
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         line-height: 1.5;
         margin: 0 0 16px 0;
     }}
 
-    /* ── Metric cards (soft cream, echoes the top bar) ── */
+    /* ── Figures — bare serif numerals with rule separators, no cards ── */
     [data-testid="stMetric"] {{
-        background: #faf8f1;
-        padding: 14px 18px 13px 18px;
-        border-radius: 6px;
-        border: 1px solid #eae3d0;
-        box-shadow: 0 1px 2px rgba(16,24,40,0.03);
+        background: transparent;
+        padding: 2px 18px 4px 0;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+    }}
+    [data-testid="stColumn"]:not(:first-child) [data-testid="stMetric"] {{
+        border-left: 1px solid {BORDER};
+        padding-left: 20px;
     }}
     [data-testid="stMetricValue"] {{
-        font-size: 1.4rem;
+        font-family: {SERIF};
+        font-size: 1.9rem;
         font-weight: 600;
         color: {YALE_BLUE};
-        font-family: 'Inter', sans-serif;
         font-variant-numeric: tabular-nums;
-        letter-spacing: -0.01em;
-        line-height: 1.25;
+        letter-spacing: 0;
+        line-height: 1.1;
     }}
     [data-testid="stMetricLabel"] {{
         text-transform: uppercase;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.12em;
     }}
     [data-testid="stMetricLabel"] p {{
-        font-size: 0.64rem !important;
-        color: {TXT3} !important;
+        font-size: 0.62rem !important;
+        color: {KHAKI} !important;
         font-weight: 600;
     }}
     [data-testid="stMetricDelta"] {{
-        font-size: 0.74rem;
+        font-size: 0.72rem;
         font-variant-numeric: tabular-nums;
     }}
 
-    /* ── Cards ── */
+    /* ── Cards — flat paper panels, hairline-ruled ── */
     .card {{
-        background: {BG};
+        background: transparent;
         border: 1px solid {BORDER};
-        border-radius: 6px;
+        border-radius: 2px;
         padding: 20px 24px;
     }}
     .card-muted {{
         background: {BG_OFF};
-        border: 1px solid {BORDER_LIGHT};
-        border-radius: 6px;
+        border: 1px solid {BORDER};
+        border-radius: 2px;
         padding: 20px 24px;
     }}
 
     /* ── Filter bar ── */
     .filter-bar {{
         background: {BG_OFF};
-        border: 1px solid {BORDER_LIGHT};
-        border-radius: 6px;
+        border: 1px solid {BORDER};
+        border-radius: 2px;
         padding: 14px 18px;
         margin-bottom: 16px;
     }}
     .filter-bar-label {{
-        color: {TXT3};
+        color: {KHAKI};
         font-size: 0.64rem;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.12em;
         margin-bottom: 6px;
     }}
 
-    /* ── Inputs ── */
+    /* ── Inputs — raised paper, hairline rules ── */
     .stTextInput input, .stNumberInput input,
     .stSelectbox > div > div, .stMultiSelect > div > div {{
-        background: {BG} !important;
+        background: {BG_CARD} !important;
         border: 1px solid {BORDER} !important;
         color: {TXT} !important;
         font-size: 0.84rem !important;
-        border-radius: 6px !important;
+        border-radius: 2px !important;
     }}
     .stTextInput input::placeholder {{ color: {TXT3} !important; }}
     .stTextInput input:focus {{
-        border-color: {ACCENT} !important;
-        box-shadow: 0 0 0 2px rgba(0,53,107,0.08) !important;
+        border-color: {YALE_LIGHT} !important;
+        box-shadow: 0 0 0 2px rgba(18,41,74,0.10) !important;
     }}
     .stCheckbox label {{ color: {TXT2} !important; font-size: 0.82rem !important; }}
     .stMultiSelect span[data-baseweb="tag"] {{
-        background: #eaf0f8 !important;
+        background: {BG_OFF} !important;
         color: {YALE_BLUE} !important;
-        border-radius: 4px !important;
+        border: 1px solid {BORDER} !important;
+        border-radius: 2px !important;
         font-size: 0.76rem !important;
     }}
     .stMultiSelect span[data-baseweb="tag"] span {{ color: {YALE_BLUE} !important; }}
@@ -516,55 +451,53 @@ st.markdown(f"""
         color: {TXT2} !important;
     }}
 
-    /* ── Data table ── */
+    /* ── Data table — hairline frame ── */
     [data-testid="stDataFrame"] {{
-        border-radius: 6px;
+        border-radius: 2px;
         overflow: hidden;
         border: 1px solid {BORDER};
     }}
 
-    /* ── Buttons ── */
+    /* ── Buttons — quiet paper; primary is an ink-navy stamp ── */
     .stButton > button {{
-        border-radius: 6px;
-        font-size: 0.82rem;
+        border-radius: 2px;
+        font-size: 0.8rem;
         font-weight: 500;
         border: 1px solid {BORDER};
-        background: {BG};
+        background: {BG_CARD};
         color: {TXT};
-        transition: all 0.15s;
+        transition: border-color 0.15s, color 0.15s;
     }}
     .stButton > button:hover {{
-        border-color: {ACCENT};
+        border-color: {YALE_BLUE};
         color: {YALE_BLUE};
-        box-shadow: 0 1px 4px rgba(0,53,107,0.08);
     }}
     .stButton > button[kind="primary"] {{
         background: {YALE_BLUE} !important;
         border-color: {YALE_BLUE} !important;
-        color: #fff !important;
+        color: {BG} !important;
     }}
     .stButton > button[kind="primary"]:hover {{
         background: {YALE_MID} !important;
-        box-shadow: 0 2px 8px rgba(0,53,107,0.18);
     }}
 
     .stDownloadButton > button {{
-        background: {BG} !important;
+        background: {BG_CARD} !important;
         border: 1px solid {BORDER} !important;
         color: {TXT2} !important;
         font-size: 0.8rem !important;
-        border-radius: 6px !important;
+        border-radius: 2px !important;
     }}
     .stDownloadButton > button:hover {{
-        border-color: {ACCENT} !important;
+        border-color: {YALE_BLUE} !important;
         color: {YALE_BLUE} !important;
     }}
 
     /* ── Scraper cards grid ── */
     .scraper-card {{
-        background: {BG};
+        background: transparent;
         border: 1px solid {BORDER};
-        border-radius: 6px;
+        border-radius: 2px;
         padding: 14px 16px;
         height: 100%;
     }}
@@ -579,71 +512,56 @@ st.markdown(f"""
         color: {TXT3};
     }}
 
-    /* Status dots */
+    /* Status dots — print-muted */
     .dot-healthy {{ color: {GREEN}; }}
     .dot-pending {{ color: {TXT3}; }}
     .dot-degraded {{ color: {AMBER}; }}
     .dot-broken {{ color: {RED}; }}
-    .dot-excluded {{ color: #7c3aed; }}
+    .dot-excluded {{ color: #5b4a8a; }}
 
-    /* Expander — cream header strip */
+    /* Expander — deeper-paper header strip */
     [data-testid="stExpander"] {{
-        border: 1px solid #eae3d0 !important;
-        border-radius: 6px;
-        background: {BG};
+        border: 1px solid {BORDER} !important;
+        border-radius: 2px;
+        background: transparent;
         overflow: hidden;
     }}
     [data-testid="stExpander"] summary {{
-        font-size: 0.84rem;
+        font-size: 0.78rem;
         padding: 10px 14px !important;
         color: {TXT};
-        background: #f8f5eb;
+        background: {BG_OFF};
     }}
     [data-testid="stExpander"] summary:hover {{
-        background: #f3efe0;
+        background: {BORDER_LIGHT};
     }}
 
-    hr {{ border: none; border-top: 1px solid {BORDER_LIGHT}; margin: 24px 0 20px 0; }}
+    hr {{ border: none; border-top: 1px solid {BORDER}; margin: 24px 0 20px 0; }}
 </style>
 """, unsafe_allow_html=True)
 
 
-# ── Header ───────────────────────────────────────────────────────────
+# ── Masthead ─────────────────────────────────────────────────────────
 
-# Encode logo as base64 for inline HTML
-_logo_path = Path(__file__).resolve().parent.parent / "yalesom.png"
-_logo_b64 = ""
-if _logo_path.exists():
-    _logo_b64 = base64.b64encode(_logo_path.read_bytes()).decode()
-
-# Quick stats for hero
+# Live figures for the masthead line
 _engine = get_engine()
 with _engine.connect() as _conn:
     _total = _conn.execute(text("SELECT COUNT(*) FROM companies")).scalar() or 0
     _sources = _conn.execute(text("SELECT COUNT(*) FROM site_health")).scalar() or 0
-    _raw_countries = _conn.execute(text(
-        "SELECT DISTINCT country FROM companies"
-        " WHERE country IS NOT NULL AND country != '' AND country NOT ILIKE '%remote%'"
-    )).scalars().all()
-    _countries = count_distinct_countries(_raw_countries)
 
-_logo_img = (
-    f'<img src="data:image/png;base64,{_logo_b64}" class="topnav-logo" alt="Yale SOM"/>'
-    if _logo_b64 else '<span class="topnav-title">Yale SOM</span>'
-)
-
-# Cream top bar: logo + title left, live stats right
+_now = datetime.now()
 st.markdown(
-    f'<div class="topnav">'
-    f'<div class="topnav-brand">'
-    f'{_logo_img}'
-    f'<div class="topnav-sep"></div>'
-    f'<span class="topnav-title">AI Startup Tracker</span>'
+    f'<div class="folio">'
+    f'<span>Tobin Center for Economic Policy &middot; Yale University</span>'
+    f'<span>Internal &mdash; Vol. {_now.strftime("%B %Y")}</span>'
     f'</div>'
-    f'<div class="topnav-right">'
-    f'<span class="topnav-meta">Tobin Center for Economic Policy &middot; Yale University</span>'
+    f'<div class="masthead">'
+    f'<div class="mast-title">AI Startup Tracker'
+    f'<span class="mast-kicker">Pipeline Abstract</span></div>'
+    f'<div class="mast-meta">{_total:,} companies &middot; {_sources:,} sources'
+    f' &middot; updated {_now.strftime("%Y-%m-%d %H:%M")}</div>'
     f'</div>'
-    f'</div>',
+    f'<div class="mast-rules"></div>',
     unsafe_allow_html=True,
 )
 
@@ -1142,7 +1060,8 @@ def _layout(**kw):
     base = dict(
         paper_bgcolor=BG, plot_bgcolor=BG,
         font=dict(family="Inter", color=TXT3, size=11.5),
-        title=dict(text="", font=dict(color=TXT, size=13, family="Inter"),
+        title=dict(text="", font=dict(color=YALE_BLUE, size=14,
+                                      family="Source Serif 4, Georgia, serif"),
                    x=0, xanchor="left"),
         colorway=[ACCENT] + CAT[1:],
         xaxis=dict(showgrid=False, zeroline=False,
@@ -1151,7 +1070,7 @@ def _layout(**kw):
         yaxis=dict(gridcolor=BORDER_LIGHT, zeroline=False,
                    linecolor="rgba(0,0,0,0)", tickfont=dict(size=11)),
         legend=dict(font=dict(size=11, color=TXT2), bgcolor="rgba(0,0,0,0)"),
-        hoverlabel=dict(bgcolor="#ffffff", bordercolor=BORDER,
+        hoverlabel=dict(bgcolor=BG_CARD, bordercolor=BORDER,
                         font=dict(family="Inter", size=12, color=TXT)),
         bargap=0.35,
         margin=dict(l=0, r=0, t=36, b=0),
@@ -3520,29 +3439,10 @@ _NAV_PAGES = [
 
 
 def main():
-    # ── Sidebar: brand, navigation, live stats ──────────────────────
-    with st.sidebar:
-        st.markdown(
-            '<div class="sb-brand">'
-            '<div class="sb-title">AI Startup Tracker</div>'
-            '<div class="sb-sub">Tobin Center &middot; Yale SOM</div>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown('<div class="sb-eyebrow">Navigation</div>', unsafe_allow_html=True)
-        page = st.radio("Navigation", _NAV_PAGES, label_visibility="collapsed")
-        st.markdown(
-            f'<div class="sb-foot">'
-            f'<div class="sb-foot-label">Live database</div>'
-            f'<div class="sb-foot-row"><span class="sb-foot-key">Companies</span>'
-            f'<span class="sb-foot-val">{_total:,}</span></div>'
-            f'<div class="sb-foot-row"><span class="sb-foot-key">Sources</span>'
-            f'<span class="sb-foot-val">{_sources:,}</span></div>'
-            f'<div class="sb-foot-row"><span class="sb-foot-key">Countries</span>'
-            f'<span class="sb-foot-val">{_countries:,}</span></div>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
+    # ── Running-head navigation (under the masthead rules) ──────────
+    with st.container(key="lnav"):
+        page = st.radio("Navigation", _NAV_PAGES, horizontal=True,
+                        label_visibility="collapsed")
 
     # ── Main content: render only the selected page ──────────────────
     with st.container(key="page"):
