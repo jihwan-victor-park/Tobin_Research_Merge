@@ -175,6 +175,11 @@ class Company(Base):
     stage = Column(String(64), nullable=True)  # pre-seed, seed, series_a, etc.
     total_raised = Column(Float, nullable=True)  # USD, from PitchBook
     operating_status = Column(String(64), nullable=True)  # operating, acquired, closed
+    naics_code = Column(String(10), nullable=True)  # from Revelio company_mapping, scripts/enrich_from_revelio.py
+    # Domain-liveness SURVIVAL PROXY (not verified operating status) — see
+    # scripts/check_domain_liveness.py docstring for the methodology caveat.
+    domain_status = Column(String(16), nullable=True)  # 'live' | 'dead' | NULL (unchecked)
+    domain_checked_at = Column(DateTime, nullable=True)
 
     # Scores
     ai_score = Column(Float, nullable=True)
