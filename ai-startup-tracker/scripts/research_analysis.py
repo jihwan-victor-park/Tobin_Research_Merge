@@ -43,14 +43,27 @@ def _db_url() -> str:
 AI_FILTER = ai_filter_sql()
 C_AI_FILTER = ai_filter_sql("c")
 
-# Companies NOT covered by Crunchbase or PitchBook — same definition as
-# Victor's Info Sheet _load_contribution_stats() in pipeline_dashboard.py,
-# collapsed to a single bucket (scraper-unique + GitHub-unique).
+# Companies NOT covered by Crunchbase or PitchBook.
 NON_CB_PB_FILTER = "verification_status NOT IN ('verified_cb', 'verified_pb', 'verified_cb_pb')"
+
+# STRICT "hidden" = not in ANY of the three major sources (Crunchbase,
+# PitchBook, AND LinkedIn). "Not on LinkedIn" is operationalised as
+# naics_code IS NULL — naics_code is only set by the Revelio/LinkedIn
+# domain-match (scripts/enrich_from_revelio.py), so its absence means the
+# company did not match LinkedIn's workforce data. (Caveat: a domainless
+# company can't be matched regardless, so this reads as "not matched to
+# LinkedIn", the honest operational definition.) This is the population for
+# the "invisible to institutional data" analysis.
+HIDDEN_STRICT_FILTER = f"{NON_CB_PB_FILTER} AND naics_code IS NULL"
+
+# 4-way bucket for comparisons: the strict-invisible 'hidden' plus a distinct
+# 'hidden_on_li' (not CB/PB but DID match LinkedIn) so those stragglers are
+# visible, not silently folded into either side.
 BUCKET_CASE = (
     "CASE WHEN verification_status = 'verified_cb' THEN 'cb' "
     "WHEN verification_status = 'verified_pb' THEN 'pb' "
-    "ELSE 'hidden' END"
+    "WHEN naics_code IS NULL THEN 'hidden' "
+    "ELSE 'hidden_on_li' END"
 )
 
 
@@ -311,25 +324,27 @@ def full_ai_export(engine, out: Path):
 # ── Section 9: Hidden-company formation & survival trends ───────────────────
 
 def hidden_formation_survival(engine, out: Path):
-    print("\n=== 9. Non-CB/PB ('Hidden') Formation & Survival Trends ===")
-    print("  CAVEATS: 'founding year' here is COALESCE(founded_year, cohort_year, grant_first_award_year),")
-    print("  where cohort_year is an accelerator-batch PROXY (a company is founded")
-    print("  then joins an accelerator, so it runs slightly late). Coverage is still")
-    print("  a minority of this population. domain_status is a liveness PROXY for")
-    print("  survival (see scripts/check_domain_liveness.py) — not verified operating")
-    print("  status. Treat both as descriptive/exploratory, not rigorous inputs.")
+    print("\n=== 9. Truly-Invisible (not CB/PB/LinkedIn) Formation & Survival ===")
+    print("  POPULATION: companies in none of Crunchbase, PitchBook, or LinkedIn")
+    print("  (HIDDEN_STRICT_FILTER). CAVEATS: 'founding year' = COALESCE(founded_year,")
+    print("  cohort_year, grant_first_award_year) — the latter two are PROXIES")
+    print("  (accelerator batch / SBIR first-award, both run slightly late) and cover")
+    print("  ~24% of this population, itself selected toward accelerator/grant firms.")
+    print("  domain_status is a liveness PROXY, not verified operating status.")
 
     # Effective founding year: self-reported/Revelio founded_year, else the
     # accelerator cohort-year proxy from scripts/enrich_hidden_from_scraped.py.
     timeline = q(engine, f"""
         SELECT
             COALESCE(founded_year, cohort_year, grant_first_award_year) AS founded_year,
-            CASE WHEN s.company_id IS NOT NULL THEN 'scraper' ELSE 'github' END AS source,
+            CASE WHEN s.company_id IS NOT NULL THEN 'scraper'
+                 WHEN c.source_domain IN ('nih.gov', 'nsf.gov') THEN 'grant'
+                 ELSE 'github' END AS source,
             COUNT(*) AS total,
             COUNT(*) FILTER (WHERE {C_AI_FILTER}) AS ai
         FROM companies c
         LEFT JOIN (SELECT DISTINCT company_id FROM incubator_signals) s ON s.company_id = c.id
-        WHERE {NON_CB_PB_FILTER}
+        WHERE {HIDDEN_STRICT_FILTER}
           AND COALESCE(founded_year, cohort_year, grant_first_award_year) BETWEEN 2000 AND 2025
         GROUP BY 1, source
         ORDER BY 1, source
@@ -347,7 +362,7 @@ def hidden_formation_survival(engine, out: Path):
             ROUND(100.0 * COUNT(*) FILTER (WHERE domain_status = 'live')
                   / NULLIF(COUNT(*) FILTER (WHERE domain_status IS NOT NULL), 0), 1) AS live_pct
         FROM companies c
-        WHERE {NON_CB_PB_FILTER}
+        WHERE {HIDDEN_STRICT_FILTER}
           AND COALESCE(founded_year, cohort_year, grant_first_award_year) BETWEEN 2000 AND 2025
         GROUP BY 1
         HAVING COUNT(*) FILTER (WHERE domain_status IS NOT NULL) > 0

@@ -235,6 +235,36 @@ Free founding-year levers evaluated (2026-07-15):
 The ~32% with no domain and no accelerator/grant signal remain near-unreachable
 for free.
 
+## 4i. STRICT re-cut: not in ANY of the three sources (52,276)
+
+Sections 9–13 re-scoped from "not CB/PB" (54,731) to the strict "not in
+Crunchbase, PitchBook, OR LinkedIn" population (52,276), operationalised as
+`verification_status NOT IN (cb/pb/cb_pb) AND naics_code IS NULL` (naics_code
+is set only by the Revelio/LinkedIn domain match, so its absence = not matched
+to LinkedIn). The comparison sections add a distinct `hidden_on_li` bucket
+(2,455 — not CB/PB but DID match LinkedIn) so those stragglers aren't folded in.
+
+**Strict-population results (Railway, 7/15):**
+- **AI-adoption (the robust headline):** hidden **20.4%** vs CB 12.3%, PB 10.6%
+  (and hidden_on_li 26.3%). Computable for 100% of the population, so this
+  relative gap is the strongest, most defensible finding.
+- **Geography:** hidden is **60.8% US** (vs CB 34%, PB 50%) — but this is
+  driven by the SBIR/NSF grant firms (100% US), not organic.
+- **Founding-year distribution:** hidden skews hard to 2019–2025 (10–12% of the
+  bucket per recent year, vs CB collapsing after 2021) — recency the standard
+  databases haven't caught up to.
+- **Verticals:** hidden over-indexes Healthcare (10.1% vs CB 3.2%), Financial
+  Services (9.5% vs 3.3%), Education, Data & Analytics, Energy; under-indexes
+  Professional Services (4.7% vs 13.8%) and Biotech.
+
+**The composition caveat (critical):** of the ~11,935 strict-hidden companies
+with an effective founding year, **64% (7,637) are SBIR/NSF grant firms**, only
+3,850 scraper and 448 GitHub. So any founding-year or geography finding on the
+"invisible" population is really dominated by US federal-grant deep-tech firms —
+a specific, selected sub-population. Section 9a now splits source 3-way
+(scraper / grant / github) so this is explicit. AI-adoption is the exception:
+it needs no founding-year/geography enrichment, so it's not subject to this bias.
+
 ## 5. Data state / provenance
 
 - All enrichment synced to Railway: founded_year (non-CB/PB 3.0%→9.7% of the
