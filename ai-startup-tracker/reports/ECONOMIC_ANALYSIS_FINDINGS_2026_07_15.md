@@ -194,6 +194,30 @@ state the coverage (8.3% / 35%) and the selection bias (§4b) inline.
 
 ---
 
+## 4h. Enriching the CB/PB/LinkedIn-invisible scraper companies (13,139)
+
+Ways to add data to the ~13K companies our scrapers found that are on none of
+the three major sources. Two free/in-DB paths were executed
+(`scripts/enrich_hidden_from_scraped.py`):
+
+- **cohort_year (DONE)** — decoded accelerator `batch` labels (Techstars
+  '2019', YC 'W26'/'S23', 'Spring 2026') into a year for **2,414 companies**
+  that had no founded_year. It's a FOUNDING-YEAR PROXY (batch runs slightly
+  after founding), stored in a separate `cohort_year` column. Effective
+  founding-year coverage of the hidden population rose **8.3% → 12.7%**
+  (COALESCE(founded_year, cohort_year)). Sections 9a/9b now use the COALESCE.
+- **TLD → country (DEAD END, verified)** — 0 usable results. The 12,825
+  country-NULL hidden companies with a domain overwhelmingly use branded
+  gTLDs (.com 5,798 / .ai 1,145 / .io 1,089 / .app / .dev / .co), which the
+  high-confidence ccTLD map deliberately excludes as non-geographic. Country
+  cannot be inferred from TLD for this startup-heavy population.
+
+Remaining paths (not yet run): Wayback first-capture date → founding proxy
+(free, for the 68% with a domain); cross-match to SBIR/GitHub/OpenCorporates
+(free); homepage re-scrape via `enrich_companies_with_ai.py` (~$70 for country
++ description + founder names). The ~32% with no domain are near-unreachable
+beyond their accelerator batch/source.
+
 ## 5. Data state / provenance
 
 - All enrichment synced to Railway: founded_year (non-CB/PB 3.0%→9.7% of the

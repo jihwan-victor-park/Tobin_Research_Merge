@@ -180,6 +180,11 @@ class Company(Base):
     # scripts/check_domain_liveness.py docstring for the methodology caveat.
     domain_status = Column(String(16), nullable=True)  # 'live' | 'dead' | NULL (unchecked)
     domain_checked_at = Column(DateTime, nullable=True)
+    # Accelerator cohort year decoded from incubator_signals.batch — a
+    # FOUNDING-YEAR PROXY (a company is founded, then joins an accelerator, so
+    # this runs slightly later than true founding). Kept separate from
+    # founded_year; analysis can COALESCE with that caveat. scripts/enrich_hidden_from_scraped.py
+    cohort_year = Column(Integer, nullable=True)
 
     # Scores
     ai_score = Column(Float, nullable=True)

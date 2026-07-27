@@ -312,32 +312,35 @@ def full_ai_export(engine, out: Path):
 
 def hidden_formation_survival(engine, out: Path):
     print("\n=== 9. Non-CB/PB ('Hidden') Formation & Survival Trends ===")
-    print("  CAVEATS: founded_year covers a minority of this population (enrichment")
-    print("  is bounded by the ~41% that even have a domain). domain_status is a")
-    print("  liveness PROXY for survival (see scripts/check_domain_liveness.py's")
-    print("  docstring) — not a verified operating-status field. Treat both as")
-    print("  descriptive/exploratory, not a rigorous survival-analysis input.")
+    print("  CAVEATS: 'founding year' here is COALESCE(founded_year, cohort_year),")
+    print("  where cohort_year is an accelerator-batch PROXY (a company is founded")
+    print("  then joins an accelerator, so it runs slightly late). Coverage is still")
+    print("  a minority of this population. domain_status is a liveness PROXY for")
+    print("  survival (see scripts/check_domain_liveness.py) — not verified operating")
+    print("  status. Treat both as descriptive/exploratory, not rigorous inputs.")
 
+    # Effective founding year: self-reported/Revelio founded_year, else the
+    # accelerator cohort-year proxy from scripts/enrich_hidden_from_scraped.py.
     timeline = q(engine, f"""
         SELECT
-            founded_year,
+            COALESCE(founded_year, cohort_year) AS founded_year,
             CASE WHEN s.company_id IS NOT NULL THEN 'scraper' ELSE 'github' END AS source,
             COUNT(*) AS total,
             COUNT(*) FILTER (WHERE {C_AI_FILTER}) AS ai
         FROM companies c
         LEFT JOIN (SELECT DISTINCT company_id FROM incubator_signals) s ON s.company_id = c.id
         WHERE {NON_CB_PB_FILTER}
-          AND founded_year BETWEEN 2000 AND 2025
-        GROUP BY founded_year, source
-        ORDER BY founded_year, source
+          AND COALESCE(founded_year, cohort_year) BETWEEN 2000 AND 2025
+        GROUP BY 1, source
+        ORDER BY 1, source
     """)
-    print(f"\n  Formation timeline ({timeline['total'].sum():,} companies with founded_year):")
+    print(f"\n  Formation timeline ({timeline['total'].sum():,} companies w/ effective founding year):")
     print(timeline.to_string(index=False))
     save(timeline, "09a_hidden_formation_timeline", out)
 
     survival = q(engine, f"""
         SELECT
-            founded_year,
+            COALESCE(founded_year, cohort_year) AS founded_year,
             COUNT(*) FILTER (WHERE domain_status IS NOT NULL) AS total_checked,
             COUNT(*) FILTER (WHERE domain_status = 'live') AS live,
             COUNT(*) FILTER (WHERE domain_status = 'dead') AS dead,
@@ -345,10 +348,10 @@ def hidden_formation_survival(engine, out: Path):
                   / NULLIF(COUNT(*) FILTER (WHERE domain_status IS NOT NULL), 0), 1) AS live_pct
         FROM companies c
         WHERE {NON_CB_PB_FILTER}
-          AND founded_year BETWEEN 2000 AND 2025
-        GROUP BY founded_year
+          AND COALESCE(founded_year, cohort_year) BETWEEN 2000 AND 2025
+        GROUP BY 1
         HAVING COUNT(*) FILTER (WHERE domain_status IS NOT NULL) > 0
-        ORDER BY founded_year
+        ORDER BY 1
     """)
     print(f"\n  Domain-liveness ('survival proxy') by founding cohort "
           f"({survival['total_checked'].sum():,} checked):")
