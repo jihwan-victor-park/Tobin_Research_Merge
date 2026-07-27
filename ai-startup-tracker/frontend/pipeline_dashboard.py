@@ -400,7 +400,6 @@ st.markdown(f"""
     .hero-eyebrow {{
         display: flex;
         align-items: center;
-        gap: 8px;
         font-size: 0.68rem;
         font-weight: 600;
         letter-spacing: 0.1em;
@@ -408,13 +407,6 @@ st.markdown(f"""
         color: {TXT3};
         margin: 0 0 14px 0;
         font-variant-numeric: tabular-nums;
-    }}
-    .hero-eyebrow .live-dot {{
-        width: 7px; height: 7px;
-        border-radius: 999px;
-        background: {GREEN};
-        box-shadow: 0 0 0 3px rgba(14,159,110,0.15);
-        flex-shrink: 0;
     }}
     .hero-title {{
         font-size: clamp(1.6rem, 3vw, 2.15rem);
@@ -1325,7 +1317,7 @@ def page_home():
 
     # ── Hero: headline left, lede right, stat band across ────────────
     st.markdown(
-        f'<div class="hero-eyebrow"><span class="live-dot"></span>'
+        f'<div class="hero-eyebrow">'
         f'Live dataset &middot; {stats["total"]:,} companies &middot; updated '
         f'{datetime.now().strftime("%b %d, %Y")}</div>',
         unsafe_allow_html=True,
