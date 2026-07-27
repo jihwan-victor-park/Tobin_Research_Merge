@@ -80,14 +80,15 @@ def connect(url: str):
 
 def ensure_column(conn) -> None:
     cur = conn.cursor()
-    cur.execute(
-        "SELECT 1 FROM information_schema.columns "
-        "WHERE table_name='companies' AND column_name='cohort_year'"
-    )
-    if cur.fetchone() is None:
-        cur.execute("ALTER TABLE companies ADD COLUMN cohort_year INTEGER")
-        conn.commit()
-        print("  Added column companies.cohort_year")
+    for col in ("cohort_year", "grant_first_award_year"):
+        cur.execute(
+            "SELECT 1 FROM information_schema.columns "
+            "WHERE table_name='companies' AND column_name=%s", (col,)
+        )
+        if cur.fetchone() is None:
+            cur.execute(f"ALTER TABLE companies ADD COLUMN {col} INTEGER")
+            conn.commit()
+            print(f"  Added column companies.{col}")
 
 
 def write_batches(url, rows, sql, template, label, batch_size=2000, max_retries=6):
@@ -160,6 +161,25 @@ def main() -> None:
     print(f"2. country (TLD): {len(country_updates):,} companies get an inferred country")
     top = sorted(by_country.items(), key=lambda x: -x[1])[:8]
     print(f"   top: {top}")
+
+    # ── 3. grant_first_award_year from SBIR/STTR descriptions ──────────
+    # Victor's import_gov_grants.py writes "SBIR/STTR awardee (first award YYYY)."
+    # First-award year is a founding-year PROXY for deep-tech grant firms (they
+    # typically win their first SBIR grant near founding). Priority below
+    # cohort_year in the COALESCE.
+    cur.execute(f"""
+        SELECT id, description FROM companies
+        WHERE {NON_CB_PB} AND founded_year IS NULL AND cohort_year IS NULL
+          AND source_domain IN ('nih.gov', 'nsf.gov') AND description IS NOT NULL
+    """)
+    grant_updates = []
+    for cid, desc in cur.fetchall():
+        m = re.search(r"first award\D{0,6}((19|20)\d{2})", desc, re.I)
+        if m:
+            y = int(m.group(1))
+            if 1990 <= y <= 2026:
+                grant_updates.append((cid, y))
+    print(f"3. grant_first_award_year: {len(grant_updates):,} SBIR/STTR firms get a first-award year")
     conn.close()
 
     if args.dry_run:
@@ -171,6 +191,10 @@ def main() -> None:
         "UPDATE companies AS c SET cohort_year = v.yr FROM (VALUES %s) AS v(id, yr) "
         "WHERE c.id = v.id AND c.founded_year IS NULL",
         "(%s, %s)", "cohort_year")
+    write_batches(url, grant_updates,
+        "UPDATE companies AS c SET grant_first_award_year = v.yr FROM (VALUES %s) AS v(id, yr) "
+        "WHERE c.id = v.id AND c.founded_year IS NULL AND c.cohort_year IS NULL",
+        "(%s, %s)", "grant_first_award_year")
     write_batches(url, country_updates,
         "UPDATE companies AS c SET country = v.ctry FROM (VALUES %s) AS v(id, ctry) "
         "WHERE c.id = v.id AND c.country IS NULL",

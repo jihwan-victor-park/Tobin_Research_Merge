@@ -185,10 +185,13 @@ class Company(Base):
     # this runs slightly later than true founding). Kept separate from
     # founded_year; analysis can COALESCE with that caveat. scripts/enrich_hidden_from_scraped.py
     cohort_year = Column(Integer, nullable=True)
+    # SBIR/STTR first-award year — founding-year PROXY for grant firms (they win
+    # their first federal grant near founding). scripts/enrich_hidden_from_scraped.py
+    grant_first_award_year = Column(Integer, nullable=True)
     # Wayback first-capture year — LOOSEST founding-year proxy (domain age; can
     # predate the company if the domain was reused). 0 = checked, none found.
     # scripts/wayback_founding_year.py. COALESCE priority: founded_year >
-    # cohort_year > web_first_seen_year.
+    # cohort_year > grant_first_award_year > web_first_seen_year.
     web_first_seen_year = Column(Integer, nullable=True)
 
     # Scores

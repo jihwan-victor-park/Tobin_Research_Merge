@@ -212,11 +212,28 @@ the three major sources. Two free/in-DB paths were executed
   high-confidence ccTLD map deliberately excludes as non-geographic. Country
   cannot be inferred from TLD for this startup-heavy population.
 
-Remaining paths (not yet run): Wayback first-capture date → founding proxy
-(free, for the 68% with a domain); cross-match to SBIR/GitHub/OpenCorporates
-(free); homepage re-scrape via `enrich_companies_with_ai.py` (~$70 for country
-+ description + founder names). The ~32% with no domain are near-unreachable
-beyond their accelerator batch/source.
+- **grant_first_award_year (DONE)** — extracted "first award YYYY" from the
+  SBIR/STTR grant firms' descriptions (Victor's import_gov_grants.py wrote them)
+  for **7,681 companies**. A founding-year PROXY (deep-tech firms win their
+  first federal grant near founding). Combined effective founding-year coverage
+  (COALESCE founded_year > cohort_year > grant_first_award_year) jumped
+  **12.7% → 26.7%** (14,632 of 54,731). Formation timeline now covers 13,813.
+
+Free founding-year levers evaluated (2026-07-15):
+| Lever | Yield | Status |
+|---|---|---|
+| Revelio domain match (0A) | ~3,100 | done |
+| Accelerator cohort_year | 2,414 | done |
+| SBIR first-award year | 7,681 | done |
+| Accelerator batch-number → year | ~494 | not done (needs per-accelerator cadence table) |
+| Description "founded in YYYY" mining | ~47 | not worth it (thin scraped blurbs) |
+| Wayback first-capture | ~unknown | skipped — archive.org rate-limits (~15hr crawl) |
+| Certificate Transparency (crt.sh) | unknown | untested (likely same rate-limit fate) |
+| GitHub repo created_at | 0 reachable | blocked — github_signals empty, repo linkage lost |
+| Homepage re-scrape (Tavily+Claude) | up to ~9K | not done (~$70; also fills country + founder names) |
+
+The ~32% with no domain and no accelerator/grant signal remain near-unreachable
+for free.
 
 ## 5. Data state / provenance
 

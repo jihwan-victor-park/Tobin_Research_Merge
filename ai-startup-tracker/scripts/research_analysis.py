@@ -312,7 +312,7 @@ def full_ai_export(engine, out: Path):
 
 def hidden_formation_survival(engine, out: Path):
     print("\n=== 9. Non-CB/PB ('Hidden') Formation & Survival Trends ===")
-    print("  CAVEATS: 'founding year' here is COALESCE(founded_year, cohort_year),")
+    print("  CAVEATS: 'founding year' here is COALESCE(founded_year, cohort_year, grant_first_award_year),")
     print("  where cohort_year is an accelerator-batch PROXY (a company is founded")
     print("  then joins an accelerator, so it runs slightly late). Coverage is still")
     print("  a minority of this population. domain_status is a liveness PROXY for")
@@ -323,14 +323,14 @@ def hidden_formation_survival(engine, out: Path):
     # accelerator cohort-year proxy from scripts/enrich_hidden_from_scraped.py.
     timeline = q(engine, f"""
         SELECT
-            COALESCE(founded_year, cohort_year) AS founded_year,
+            COALESCE(founded_year, cohort_year, grant_first_award_year) AS founded_year,
             CASE WHEN s.company_id IS NOT NULL THEN 'scraper' ELSE 'github' END AS source,
             COUNT(*) AS total,
             COUNT(*) FILTER (WHERE {C_AI_FILTER}) AS ai
         FROM companies c
         LEFT JOIN (SELECT DISTINCT company_id FROM incubator_signals) s ON s.company_id = c.id
         WHERE {NON_CB_PB_FILTER}
-          AND COALESCE(founded_year, cohort_year) BETWEEN 2000 AND 2025
+          AND COALESCE(founded_year, cohort_year, grant_first_award_year) BETWEEN 2000 AND 2025
         GROUP BY 1, source
         ORDER BY 1, source
     """)
@@ -340,7 +340,7 @@ def hidden_formation_survival(engine, out: Path):
 
     survival = q(engine, f"""
         SELECT
-            COALESCE(founded_year, cohort_year) AS founded_year,
+            COALESCE(founded_year, cohort_year, grant_first_award_year) AS founded_year,
             COUNT(*) FILTER (WHERE domain_status IS NOT NULL) AS total_checked,
             COUNT(*) FILTER (WHERE domain_status = 'live') AS live,
             COUNT(*) FILTER (WHERE domain_status = 'dead') AS dead,
@@ -348,7 +348,7 @@ def hidden_formation_survival(engine, out: Path):
                   / NULLIF(COUNT(*) FILTER (WHERE domain_status IS NOT NULL), 0), 1) AS live_pct
         FROM companies c
         WHERE {NON_CB_PB_FILTER}
-          AND COALESCE(founded_year, cohort_year) BETWEEN 2000 AND 2025
+          AND COALESCE(founded_year, cohort_year, grant_first_award_year) BETWEEN 2000 AND 2025
         GROUP BY 1
         HAVING COUNT(*) FILTER (WHERE domain_status IS NOT NULL) > 0
         ORDER BY 1
