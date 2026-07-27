@@ -1,9 +1,12 @@
+# Platform theme — keeps Streamlit-native widgets (dataframes, selects,
+# toolbar) on the light palette even when the viewer's OS is dark.
+# Tokens mirror frontend/pipeline_dashboard.py.
 [theme]
 base = "light"
-primaryColor = "#00356b"
-backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f2f4f8"
-textColor = "#1a1f2e"
+primaryColor = "#2a78d6"              # accent: focus rings, active states
+backgroundColor = "#fafbfc"           # app ground
+secondaryBackgroundColor = "#f2f4f7"  # wells, table heads
+textColor = "#101828"                 # primary ink
 font = "sans serif"
 
 [server]

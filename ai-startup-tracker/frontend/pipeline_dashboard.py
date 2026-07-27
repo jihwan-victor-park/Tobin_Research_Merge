@@ -8,7 +8,6 @@ No sidebar — everything lives in the main content area.
 """
 from __future__ import annotations
 
-import base64
 import os
 import sys
 from datetime import datetime, timedelta, timezone
@@ -27,46 +26,47 @@ from backend.db.connection import get_engine
 from backend.orchestrator.orchestrator import Orchestrator
 from backend.scrapers.registry import SCRAPER_REGISTRY
 from backend.utils.ai_filter import ai_filter_sql
-from backend.utils.country import count_distinct_countries, normalize_country, GLOBE_COUNTRIES
+from backend.utils.country import normalize_country, GLOBE_COUNTRIES
 from backend.utils.denylist import BIG_TECH_DENYLIST
 
 load_dotenv()
 
-# ── Design tokens ────────────────────────────────────────────────────
-YALE_BLUE = "#00356b"   # brand ink: headings, table accents
-YALE_MID = "#1a4f8a"
-YALE_LIGHT = "#2a6cb5"
-ACCENT = "#29568c"      # primary data series (validated: chroma, CVD, >=3:1)
-BG = "#ffffff"
-BG_OFF = "#f7f8fb"
-BG_CARD = "#f9fafb"
-BORDER = "#e3e7ee"
-BORDER_LIGHT = "#eef1f6"
-TXT = "#1a1f2e"
-TXT2 = "#4a5568"
-TXT3 = "#8492a6"
-GREEN = "#0d9668"       # status: working / healthy
+# ── Design tokens — modern data platform ─────────────────────────────
+# Public-facing research platform: near-white ground, white cards with
+# hairline borders and 8–10px radii, one grotesk (Inter) for everything,
+# tabular numerals for figures, a single blue accent. Navy survives only
+# as the brand ink (logo lockup, primary buttons, active nav).
+YALE_BLUE = "#14325e"   # brand ink: lockup, primary buttons, active nav
+YALE_MID = "#1d4379"
+YALE_LIGHT = "#2a5c9e"
+ACCENT = "#2a78d6"      # primary data series + interactive accent (validated)
+BG = "#fafbfc"          # app ground
+BG_OFF = "#f2f4f7"      # wells, filter strips, table heads
+BG_CARD = "#ffffff"     # cards, inputs, chart surfaces
+BORDER = "#e4e8ee"      # card + input hairline
+BORDER_LIGHT = "#eef1f5"  # row separators, chart grids
+TXT = "#101828"         # primary ink
+TXT2 = "#475467"        # secondary ink
+TXT3 = "#98a2b3"        # muted ink / captions
+GREEN = "#0e9f6e"       # status: working / healthy
 AMBER = "#d97706"       # status: pending / degraded
 RED = "#dc2626"         # status: broken / failed
 
-# Chrome (PitchBook-style shell)
-SIDEBAR_BG = "#152943"          # dark navy left rail
-SIDEBAR_TXT = "#b7c4d6"
-CREAM = "#f5f2e9"               # top bar
-CREAM_BORDER = "#e4ddc9"
+MONO = "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace"
 
-# Chart palette (validated with the dataviz palette checker on white):
-#   BLUE_RAMP  — single-hue steel-blue ordinal ramp, light→dark, ordered series
-#   CAT        — categorical slots (navy / teal / gold / light blue), fixed order;
-#                gold is sub-3:1 on white → use only with legend + labels/table
-#   SEQ_SCALE  — continuous sequential scale (heatmaps, color-by-value bars)
+# Chart palette (dataviz reference slots, validated on light surface:
+# lightness band, chroma, CVD ΔE 73.6 worst-adjacent; aqua + yellow are
+# sub-3:1 on white → always pair with direct labels or a table view):
+#   CAT        — blue / aqua / yellow / violet, fixed order, never cycled
+#   BLUE_RAMP  — single-hue ordinal ramp (light→dark), ordered series
+#   SEQ_SCALE  — continuous sequential scale (choropleth, heatmaps)
 #   GRAY_CTX   — context / "everything else" marks (never carries identity)
-BLUE_RAMP = ["#8fb3dd", "#5f8cbf", "#33608f", "#1f3a5f"]
-CAT = ["#29568c", "#178a66", "#cf9008", "#5c95d6"]
+BLUE_RAMP = ["#86b6ef", "#5598e7", "#2a78d6", "#1c5cab"]
+CAT = ["#2a78d6", "#1baf7a", "#eda100", "#4a3aa7"]
 TEAL = CAT[1]
 GOLD = CAT[2]
-SEQ_SCALE = [[0, "#e3ebf5"], [0.5, "#5f8cbf"], [1, "#1f3a5f"]]
-GRAY_CTX = "#d7dde6"
+SEQ_SCALE = [[0, "#e7f0fc"], [0.5, "#5598e7"], [1, "#184f95"]]
+GRAY_CTX = "#d9dee5"
 
 # ── US city coordinates (for geography map) ──────────────────────────
 US_CITIES = {
@@ -151,14 +151,14 @@ US_CITIES = {
 st.set_page_config(
     page_title="AI Startup Tracker",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # ── CSS ──────────────────────────────────────────────────────────────
 
 st.markdown(f"""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
     html, body, .stApp {{
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -182,197 +182,158 @@ st.markdown(f"""
 
     .main, [data-testid="stAppViewContainer"],
     [data-testid="stMain"] {{ background: {BG} !important; }}
+    /* Centered app column */
     .block-container {{
         padding-top: 0 !important;
-        padding-bottom: 3rem;
-        max-width: 100% !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
+        padding-bottom: 4rem;
+        max-width: 1280px !important;
+        margin: 0 auto;
+        padding-left: 32px !important;
+        padding-right: 32px !important;
     }}
-    /* kill the default flex gap between top-level blocks so the cream
-       bar sits flush against the viewport top (page content re-adds its
-       own padding via .st-key-page) */
     .block-container > div[data-testid="stVerticalBlock"] {{
         gap: 0 !important;
     }}
 
-    /* ── Dark navy sidebar (primary navigation) ── */
-    section[data-testid="stSidebar"] {{
-        background: {SIDEBAR_BG} !important;
-        border-right: none;
-        min-width: 240px !important;
-        max-width: 240px !important;
-    }}
-    section[data-testid="stSidebar"] [data-testid="stSidebarHeader"] {{
-        padding: 0; height: 0;
-    }}
-    section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
+    /* Sidebar retired — the top bar is the nav */
+    section[data-testid="stSidebar"],
     [data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
-    section[data-testid="stSidebar"] .block-container {{
-        padding: 0 !important;
+
+    /* ── Header row: brand left, nav right, one hairline under both ── */
+    .st-key-header {{
+        padding: 16px 0 0 0;
     }}
-    .sb-brand {{
-        padding: 22px 20px 18px 20px;
-        border-bottom: 1px solid rgba(255,255,255,0.08);
-        margin-bottom: 14px;
+    .st-key-header [data-testid="stHorizontalBlock"] {{
+        align-items: center;
     }}
-    .sb-title {{
-        color: #ffffff;
-        font-size: 0.98rem;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        line-height: 1.3;
-    }}
-    .sb-sub {{
-        color: rgba(255,255,255,0.45);
-        font-size: 0.64rem;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        margin-top: 5px;
-    }}
-    .sb-eyebrow {{
-        color: rgba(255,255,255,0.35);
-        font-size: 0.6rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-        padding: 4px 20px 6px 20px;
-    }}
-    /* nav radio → nav list */
-    section[data-testid="stSidebar"] [role="radiogroup"] {{
-        gap: 1px;
-        padding: 0 10px;
-    }}
-    section[data-testid="stSidebar"] [role="radiogroup"] label > div:first-child {{
-        display: none;
-    }}
-    section[data-testid="stSidebar"] [role="radiogroup"] label {{
-        padding: 8px 12px;
-        border-radius: 6px;
-        width: 100%;
-        margin: 0;
-        border-left: 2px solid transparent;
-        transition: background 0.12s;
-    }}
-    section[data-testid="stSidebar"] [role="radiogroup"] label:hover {{
-        background: rgba(255,255,255,0.05);
-    }}
-    section[data-testid="stSidebar"] [role="radiogroup"] label p {{
-        color: {SIDEBAR_TXT};
-        font-size: 0.85rem;
-        font-weight: 400;
-    }}
-    section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {{
-        background: #e9eef5;
-        border-left: 2px solid {GOLD};
-    }}
-    section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) p {{
-        color: {YALE_BLUE};
-        font-weight: 600;
-    }}
-    .sb-foot {{
-        padding: 16px 20px;
-        margin-top: 18px;
-        border-top: 1px solid rgba(255,255,255,0.08);
-    }}
-    .sb-foot-val {{
-        color: #ffffff;
-        font-size: 0.92rem;
-        font-weight: 600;
-        font-variant-numeric: tabular-nums;
-    }}
-    .sb-foot-label {{
-        color: rgba(255,255,255,0.4);
-        font-size: 0.6rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        margin-bottom: 10px;
-    }}
-    .sb-foot-row {{
+    .brand {{
         display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        margin-bottom: 6px;
+        align-items: center;
+        gap: 11px;
+        white-space: nowrap;
     }}
-    .sb-foot-key {{
-        color: rgba(255,255,255,0.5);
-        font-size: 0.72rem;
+    .brand-mark {{
+        width: 32px; height: 32px;
+        border-radius: 9px;
+        background: linear-gradient(135deg, {YALE_BLUE} 0%, {YALE_MID} 100%);
+        color: #ffffff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        flex-shrink: 0;
+        box-shadow: 0 1px 2px rgba(16,24,40,0.12);
+    }}
+    .brand-text {{ line-height: 1.15; }}
+    .brand-name {{
+        display: block;
+        font-size: 0.98rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: {TXT};
+    }}
+    .brand-sub {{
+        display: block;
+        font-size: 0.66rem;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        color: {TXT3};
+        margin-top: 1px;
+    }}
+    .header-rule {{
+        border-bottom: 1px solid {BORDER};
+        margin: 12px 0 0 0;
     }}
 
-    /* ── Cream top bar ── */
-    .topnav {{
-        background: {CREAM};
-        border-bottom: 1px solid {CREAM_BORDER};
-        padding: 0 32px;
+    /* ── Primary nav: quiet text links, active gets a soft pill ── */
+    .st-key-lnav [role="radiogroup"] {{
         display: flex;
-        align-items: center;
-        gap: 0;
-        height: 52px;
-        position: sticky;
-        top: 0;
-        z-index: 999;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 2px;
+        row-gap: 4px;
     }}
-    .topnav-brand {{
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        flex-shrink: 0;
+    .st-key-lnav [role="radiogroup"] label {{
+        margin: 0 !important;
+        padding: 7px 13px;
+        border-radius: 8px;
+        background: transparent !important;
+        transition: background 0.12s;
+        position: relative;
     }}
-    .topnav-logo {{
-        height: 30px;
-        background: #ffffff;
-        padding: 3px 7px;
-        border-radius: 4px;
-        border: 1px solid {CREAM_BORDER};
-        box-sizing: content-box;
+    /* hairline divider before the last item (Internal) */
+    .st-key-lnav [role="radiogroup"] label:last-child {{
+        margin-left: 16px !important;
     }}
-    .topnav-sep {{
-        width: 1px;
-        height: 20px;
-        background: {CREAM_BORDER};
+    .st-key-lnav [role="radiogroup"] label:last-child::before {{
+        content: "";
+        position: absolute;
+        left: -9px;
+        top: 22%;
+        height: 56%;
+        border-left: 1px solid {BORDER};
     }}
-    .topnav-title {{
-        font-size: 0.88rem;
-        font-weight: 600;
-        color: {YALE_BLUE};
-        letter-spacing: -0.01em;
-        white-space: nowrap;
+    .st-key-lnav [role="radiogroup"] label > div:first-child {{
+        display: none;
     }}
-    .topnav-right {{
-        margin-left: auto;
-        display: flex;
-        align-items: baseline;
-        gap: 22px;
-        white-space: nowrap;
-    }}
-    .topnav-stat {{
-        color: {TXT2};
-        font-size: 0.76rem;
-        font-variant-numeric: tabular-nums;
-    }}
-    .topnav-stat b {{
-        color: {YALE_BLUE};
-        font-weight: 600;
-    }}
-    .topnav-meta {{
-        color: {TXT3};
-        font-size: 0.64rem;
+    .st-key-lnav [role="radiogroup"] label p {{
+        font-size: 0.84rem;
         font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.09em;
+        color: {TXT2};
+        white-space: nowrap;
+        line-height: 1.2;
+    }}
+    .st-key-lnav [role="radiogroup"] label:hover {{ background: {BG_OFF} !important; }}
+    .st-key-lnav [role="radiogroup"] label:hover p {{ color: {TXT}; }}
+    .st-key-lnav [role="radiogroup"] label:has(input:checked) {{
+        background: {BG_OFF} !important;
+    }}
+    .st-key-lnav [role="radiogroup"] label:has(input:checked) p {{
+        color: {YALE_BLUE};
+        font-weight: 650;
+    }}
+
+    /* Secondary nav (internal pages) — quieter pills */
+    .st-key-subnav [role="radiogroup"] {{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 12px 0 0 0;
+    }}
+    .st-key-subnav [role="radiogroup"] label {{
+        margin: 0 !important;
+        padding: 4px 11px;
+        border-radius: 999px;
+        background: transparent !important;
+        border: 1px solid transparent;
+    }}
+    .st-key-subnav [role="radiogroup"] label > div:first-child {{ display: none; }}
+    .st-key-subnav [role="radiogroup"] label p {{
+        font-size: 0.76rem;
+        font-weight: 500;
+        color: {TXT2};
+        white-space: nowrap;
+    }}
+    .st-key-subnav [role="radiogroup"] label:has(input:checked) {{
+        background: {BG_OFF} !important;
+        border-color: {BORDER};
+    }}
+    .st-key-subnav [role="radiogroup"] label:has(input:checked) p {{
+        color: {TXT};
+        font-weight: 600;
     }}
 
     /* Page content wrapper */
     .st-key-page {{
-        padding: 24px 32px 0 32px;
+        padding: 26px 0 0 0;
     }}
 
-    /* ── Inner tabs (within a page, e.g. working/pending tables) ── */
+    /* ── Inner tabs — segmented underline ── */
     .stTabs {{ margin-top: 0; }}
     .stTabs [data-baseweb="tab-list"] {{
-        gap: 22px;
+        gap: 18px;
         background: transparent;
         border-bottom: 1px solid {BORDER};
         padding: 0;
@@ -380,9 +341,9 @@ st.markdown(f"""
     .stTabs [data-baseweb="tab"] {{
         border-radius: 0;
         padding: 9px 2px;
-        font-size: 0.83rem;
+        font-size: 0.82rem;
         font-weight: 500;
-        color: {TXT3};
+        color: {TXT2};
         background: transparent;
         border-bottom: 2px solid transparent;
         margin-bottom: -1px;
@@ -394,29 +355,30 @@ st.markdown(f"""
     .stTabs [data-baseweb="tab-highlight"],
     .stTabs [data-baseweb="tab-border"] {{ display: none; }}
     .stTabs [aria-selected="true"] {{
-        color: {YALE_BLUE} !important;
+        color: {TXT} !important;
         background: transparent !important;
-        border-bottom: 2px solid {YALE_BLUE} !important;
+        border-bottom: 2px solid {ACCENT} !important;
         font-weight: 600;
     }}
     .stTabs [data-baseweb="tab-panel"] {{
         padding: 1rem 0 0 0;
     }}
 
-    /* ── Section headers ── */
-    h1 {{ color: {YALE_BLUE}; font-weight: 700; font-size: 1.35rem !important;
+    /* ── Headings ── */
+    h1 {{ color: {TXT}; font-weight: 700; font-size: 1.4rem !important;
          letter-spacing: -0.02em; margin-bottom: 0.2rem !important; }}
-    h2 {{ color: {TXT}; font-weight: 600; font-size: 1.05rem !important; }}
-    h3 {{ color: {TXT2}; font-weight: 600; font-size: 0.76rem !important;
-         text-transform: uppercase; letter-spacing: 0.07em; }}
-    p {{ color: {TXT2}; font-size: 0.85rem; }}
+    h2 {{ color: {TXT}; font-weight: 600; font-size: 1.08rem !important;
+         letter-spacing: -0.01em; }}
+    h3 {{ color: {TXT2}; font-weight: 600; font-size: 0.78rem !important;
+         text-transform: uppercase; letter-spacing: 0.06em; }}
+    p {{ color: {TXT2}; font-size: 0.87rem; }}
     .stCaption, [data-testid="stCaptionContainer"] {{ color: {TXT3}; font-size: 0.76rem; }}
 
     .section-header {{
         color: {TXT};
-        font-size: 1rem;
-        font-weight: 600;
-        letter-spacing: -0.01em;
+        font-size: 1.06rem;
+        font-weight: 650;
+        letter-spacing: -0.015em;
         margin: 0 0 3px 0;
     }}
     .section-sub {{
@@ -425,27 +387,111 @@ st.markdown(f"""
         line-height: 1.5;
         margin: 0 0 16px 0;
     }}
+    .eyebrow {{
+        font-size: 0.66rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: {ACCENT};
+        margin: 0 0 6px 0;
+    }}
 
-    /* ── Metric cards (soft cream, echoes the top bar) ── */
+    /* ── Hero: headline left, lede right, full width ── */
+    .hero-eyebrow {{
+        display: flex;
+        align-items: center;
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: {TXT3};
+        margin: 0 0 14px 0;
+        font-variant-numeric: tabular-nums;
+    }}
+    .hero-title {{
+        font-size: clamp(1.6rem, 3vw, 2.15rem);
+        font-weight: 750;
+        letter-spacing: -0.03em;
+        line-height: 1.12;
+        color: {TXT};
+        text-wrap: balance;
+        margin: 0;
+    }}
+    .hero-lede {{
+        font-size: 0.95rem;
+        line-height: 1.65;
+        color: {TXT2};
+        margin: 0;
+    }}
+    .hero-lede b {{ color: {TXT}; font-weight: 600; }}
+
+    /* ── Stat band: one connected strip, divided columns ── */
+    .statband {{
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        background: {BG_CARD};
+        border: 1px solid {BORDER};
+        border-radius: 12px;
+        box-shadow: 0 1px 2px rgba(16,24,40,0.04);
+        overflow: hidden;
+    }}
+    .statband .stat {{
+        padding: 18px 22px 16px 22px;
+    }}
+    .statband .stat + .stat {{
+        border-left: 1px solid {BORDER_LIGHT};
+    }}
+    .statband .stat-label {{
+        display: block;
+        font-size: 0.64rem;
+        font-weight: 650;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: {TXT3};
+        margin-bottom: 7px;
+    }}
+    .statband .stat-value {{
+        display: block;
+        font-size: 1.72rem;
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        line-height: 1.1;
+        color: {TXT};
+        font-variant-numeric: tabular-nums;
+    }}
+    .statband .stat-sub {{
+        display: block;
+        font-size: 0.72rem;
+        color: {TXT3};
+        margin-top: 5px;
+        font-variant-numeric: tabular-nums;
+    }}
+    .statband .stat-sub b {{ color: {ACCENT}; font-weight: 650; }}
+    @media (max-width: 900px) {{
+        .statband {{ grid-template-columns: repeat(2, 1fr); }}
+        .statband .stat:nth-child(3) {{ border-left: none; }}
+        .statband .stat:nth-child(n+3) {{ border-top: 1px solid {BORDER_LIGHT}; }}
+    }}
+
+    /* ── KPI cards ── */
     [data-testid="stMetric"] {{
-        background: #faf8f1;
-        padding: 14px 18px 13px 18px;
-        border-radius: 6px;
-        border: 1px solid #eae3d0;
-        box-shadow: 0 1px 2px rgba(16,24,40,0.03);
+        background: {BG_CARD};
+        padding: 16px 18px 14px 18px;
+        border-radius: 10px;
+        border: 1px solid {BORDER};
+        box-shadow: 0 1px 2px rgba(16,24,40,0.04);
     }}
     [data-testid="stMetricValue"] {{
-        font-size: 1.4rem;
-        font-weight: 600;
-        color: {YALE_BLUE};
-        font-family: 'Inter', sans-serif;
+        font-size: 1.55rem;
+        font-weight: 700;
+        color: {TXT};
         font-variant-numeric: tabular-nums;
-        letter-spacing: -0.01em;
-        line-height: 1.25;
+        letter-spacing: -0.02em;
+        line-height: 1.15;
     }}
     [data-testid="stMetricLabel"] {{
         text-transform: uppercase;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.07em;
     }}
     [data-testid="stMetricLabel"] p {{
         font-size: 0.64rem !important;
@@ -459,15 +505,16 @@ st.markdown(f"""
 
     /* ── Cards ── */
     .card {{
-        background: {BG};
+        background: {BG_CARD};
         border: 1px solid {BORDER};
-        border-radius: 6px;
+        border-radius: 10px;
         padding: 20px 24px;
+        box-shadow: 0 1px 2px rgba(16,24,40,0.04);
     }}
     .card-muted {{
         background: {BG_OFF};
         border: 1px solid {BORDER_LIGHT};
-        border-radius: 6px;
+        border-radius: 10px;
         padding: 20px 24px;
     }}
 
@@ -475,14 +522,14 @@ st.markdown(f"""
     .filter-bar {{
         background: {BG_OFF};
         border: 1px solid {BORDER_LIGHT};
-        border-radius: 6px;
+        border-radius: 10px;
         padding: 14px 18px;
         margin-bottom: 16px;
     }}
     .filter-bar-label {{
         color: {TXT3};
-        font-size: 0.64rem;
-        font-weight: 600;
+        font-size: 0.66rem;
+        font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.08em;
         margin-bottom: 6px;
@@ -491,22 +538,22 @@ st.markdown(f"""
     /* ── Inputs ── */
     .stTextInput input, .stNumberInput input,
     .stSelectbox > div > div, .stMultiSelect > div > div {{
-        background: {BG} !important;
+        background: {BG_CARD} !important;
         border: 1px solid {BORDER} !important;
         color: {TXT} !important;
         font-size: 0.84rem !important;
-        border-radius: 6px !important;
+        border-radius: 8px !important;
     }}
     .stTextInput input::placeholder {{ color: {TXT3} !important; }}
     .stTextInput input:focus {{
         border-color: {ACCENT} !important;
-        box-shadow: 0 0 0 2px rgba(0,53,107,0.08) !important;
+        box-shadow: 0 0 0 3px rgba(42,120,214,0.12) !important;
     }}
     .stCheckbox label {{ color: {TXT2} !important; font-size: 0.82rem !important; }}
     .stMultiSelect span[data-baseweb="tag"] {{
-        background: #eaf0f8 !important;
+        background: #e7f0fc !important;
         color: {YALE_BLUE} !important;
-        border-radius: 4px !important;
+        border-radius: 6px !important;
         font-size: 0.76rem !important;
     }}
     .stMultiSelect span[data-baseweb="tag"] span {{ color: {YALE_BLUE} !important; }}
@@ -518,42 +565,42 @@ st.markdown(f"""
 
     /* ── Data table ── */
     [data-testid="stDataFrame"] {{
-        border-radius: 6px;
+        border-radius: 10px;
         overflow: hidden;
         border: 1px solid {BORDER};
+        box-shadow: 0 1px 2px rgba(16,24,40,0.04);
     }}
 
     /* ── Buttons ── */
     .stButton > button {{
-        border-radius: 6px;
+        border-radius: 8px;
         font-size: 0.82rem;
         font-weight: 500;
         border: 1px solid {BORDER};
-        background: {BG};
+        background: {BG_CARD};
         color: {TXT};
-        transition: all 0.15s;
+        transition: border-color 0.15s, color 0.15s, box-shadow 0.15s;
     }}
     .stButton > button:hover {{
         border-color: {ACCENT};
         color: {YALE_BLUE};
-        box-shadow: 0 1px 4px rgba(0,53,107,0.08);
+        box-shadow: 0 1px 4px rgba(42,120,214,0.15);
     }}
     .stButton > button[kind="primary"] {{
         background: {YALE_BLUE} !important;
         border-color: {YALE_BLUE} !important;
-        color: #fff !important;
+        color: #ffffff !important;
     }}
     .stButton > button[kind="primary"]:hover {{
         background: {YALE_MID} !important;
-        box-shadow: 0 2px 8px rgba(0,53,107,0.18);
     }}
 
     .stDownloadButton > button {{
-        background: {BG} !important;
+        background: {BG_CARD} !important;
         border: 1px solid {BORDER} !important;
         color: {TXT2} !important;
         font-size: 0.8rem !important;
-        border-radius: 6px !important;
+        border-radius: 8px !important;
     }}
     .stDownloadButton > button:hover {{
         border-color: {ACCENT} !important;
@@ -562,9 +609,9 @@ st.markdown(f"""
 
     /* ── Scraper cards grid ── */
     .scraper-card {{
-        background: {BG};
+        background: {BG_CARD};
         border: 1px solid {BORDER};
-        border-radius: 6px;
+        border-radius: 10px;
         padding: 14px 16px;
         height: 100%;
     }}
@@ -586,66 +633,26 @@ st.markdown(f"""
     .dot-broken {{ color: {RED}; }}
     .dot-excluded {{ color: #7c3aed; }}
 
-    /* Expander — cream header strip */
+    /* Expander */
     [data-testid="stExpander"] {{
-        border: 1px solid #eae3d0 !important;
-        border-radius: 6px;
-        background: {BG};
+        border: 1px solid {BORDER} !important;
+        border-radius: 10px;
+        background: {BG_CARD};
         overflow: hidden;
     }}
     [data-testid="stExpander"] summary {{
-        font-size: 0.84rem;
+        font-size: 0.82rem;
         padding: 10px 14px !important;
         color: {TXT};
-        background: #f8f5eb;
+        background: {BG_CARD};
     }}
     [data-testid="stExpander"] summary:hover {{
-        background: #f3efe0;
+        background: {BG_OFF};
     }}
 
     hr {{ border: none; border-top: 1px solid {BORDER_LIGHT}; margin: 24px 0 20px 0; }}
 </style>
 """, unsafe_allow_html=True)
-
-
-# ── Header ───────────────────────────────────────────────────────────
-
-# Encode logo as base64 for inline HTML
-_logo_path = Path(__file__).resolve().parent.parent / "yalesom.png"
-_logo_b64 = ""
-if _logo_path.exists():
-    _logo_b64 = base64.b64encode(_logo_path.read_bytes()).decode()
-
-# Quick stats for hero
-_engine = get_engine()
-with _engine.connect() as _conn:
-    _total = _conn.execute(text("SELECT COUNT(*) FROM companies")).scalar() or 0
-    _sources = _conn.execute(text("SELECT COUNT(*) FROM site_health")).scalar() or 0
-    _raw_countries = _conn.execute(text(
-        "SELECT DISTINCT country FROM companies"
-        " WHERE country IS NOT NULL AND country != '' AND country NOT ILIKE '%remote%'"
-    )).scalars().all()
-    _countries = count_distinct_countries(_raw_countries)
-
-_logo_img = (
-    f'<img src="data:image/png;base64,{_logo_b64}" class="topnav-logo" alt="Yale SOM"/>'
-    if _logo_b64 else '<span class="topnav-title">Yale SOM</span>'
-)
-
-# Cream top bar: logo + title left, live stats right
-st.markdown(
-    f'<div class="topnav">'
-    f'<div class="topnav-brand">'
-    f'{_logo_img}'
-    f'<div class="topnav-sep"></div>'
-    f'<span class="topnav-title">AI Startup Tracker</span>'
-    f'</div>'
-    f'<div class="topnav-right">'
-    f'<span class="topnav-meta">Tobin Center for Economic Policy &middot; Yale University</span>'
-    f'</div>'
-    f'</div>',
-    unsafe_allow_html=True,
-)
 
 
 # ── Data loaders ─────────────────────────────────────────────────────
@@ -1142,7 +1149,7 @@ def _layout(**kw):
     base = dict(
         paper_bgcolor=BG, plot_bgcolor=BG,
         font=dict(family="Inter", color=TXT3, size=11.5),
-        title=dict(text="", font=dict(color=TXT, size=13, family="Inter"),
+        title=dict(text="", font=dict(color=TXT, size=13.5, family="Inter"),
                    x=0, xanchor="left"),
         colorway=[ACCENT] + CAT[1:],
         xaxis=dict(showgrid=False, zeroline=False,
@@ -1151,7 +1158,7 @@ def _layout(**kw):
         yaxis=dict(gridcolor=BORDER_LIGHT, zeroline=False,
                    linecolor="rgba(0,0,0,0)", tickfont=dict(size=11)),
         legend=dict(font=dict(size=11, color=TXT2), bgcolor="rgba(0,0,0,0)"),
-        hoverlabel=dict(bgcolor="#ffffff", bordercolor=BORDER,
+        hoverlabel=dict(bgcolor=BG_CARD, bordercolor=BORDER,
                         font=dict(family="Inter", size=12, color=TXT)),
         bargap=0.35,
         margin=dict(l=0, r=0, t=36, b=0),
@@ -1173,6 +1180,442 @@ def _geocode_us(df: pd.DataFrame) -> pd.DataFrame:
     us["lat"] = us["city_key"].map(lambda c: US_CITIES.get(c, (None,))[0])
     us["lon"] = us["city_key"].map(lambda c: US_CITIES.get(c, (None, None))[1])
     return us[us["lat"].notna()].copy()
+
+
+# ── Public-page loaders ──────────────────────────────────────────────
+
+_HIDDEN_STATUS = "emerging_github"   # verification bucket: not in CB/PB
+
+
+@st.cache_data(ttl=300)
+def _load_bucket_stats() -> pd.DataFrame:
+    """Company totals + AI counts per verification bucket (hidden / cb / pb)."""
+    engine = get_engine()
+    query = f"""
+        SELECT verification_status AS bucket,
+               COUNT(*) AS total,
+               COUNT(*) FILTER (WHERE {ai_filter_sql()}) AS ai
+        FROM companies
+        WHERE verification_status IS NOT NULL
+        GROUP BY verification_status
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(query)).mappings().all()
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        df["ai_pct"] = (df["ai"] / df["total"] * 100).round(1)
+    return df
+
+
+@st.cache_data(ttl=300)
+def _load_country_counts() -> pd.DataFrame:
+    """Per-country company totals for the world map (aggregates only)."""
+    engine = get_engine()
+    query = f"""
+        SELECT country,
+               COUNT(*) AS total,
+               COUNT(*) FILTER (WHERE {ai_filter_sql()}) AS ai
+        FROM companies
+        WHERE country IS NOT NULL AND country != ''
+        GROUP BY country
+        HAVING COUNT(*) >= 5
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(query)).mappings().all()
+    return pd.DataFrame(rows)
+
+
+@st.cache_data(ttl=300)
+def _load_hidden_companies(search: str, country: str, ai_only: bool,
+                           limit: int = 5000) -> pd.DataFrame:
+    """Hidden companies only (not in Crunchbase/PitchBook) — the public list.
+
+    CB/PB-derived rows stay out of the public explorer for license reasons;
+    they appear on the site only as aggregate statistics.
+    """
+    engine = get_engine()
+    conditions = ["verification_status = :status"]
+    params: dict = {"status": _HIDDEN_STATUS, "limit": limit}
+    if search:
+        conditions.append("(name ILIKE :q OR description ILIKE :q)")
+        params["q"] = f"%{search}%"
+    if country and country != "All countries":
+        conditions.append("country = :country")
+        params["country"] = country
+    if ai_only:
+        conditions.append(ai_filter_sql())
+    where = " AND ".join(conditions)
+    query = f"""
+        SELECT name, domain, country, city, founded_year,
+               LEFT(description, 180) AS description,
+               ai_score, source_domain, incubator_source,
+               first_seen_at::date AS first_seen
+        FROM companies
+        WHERE {where}
+        ORDER BY first_seen_at DESC NULLS LAST
+        LIMIT :limit
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(query), params).mappings().all()
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        df["ai_score"] = df["ai_score"].astype(float).round(2)
+    return df
+
+
+@st.cache_data(ttl=300)
+def _load_hidden_country_options() -> list[str]:
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(text(
+            "SELECT country FROM companies "
+            "WHERE verification_status = :status AND country IS NOT NULL AND country != '' "
+            "GROUP BY country ORDER BY COUNT(*) DESC LIMIT 60"
+        ), {"status": _HIDDEN_STATUS}).all()
+    return [r[0] for r in rows]
+
+
+_OUTPUT_DIR = Path(__file__).resolve().parent.parent / "output"
+
+
+@st.cache_data(ttl=3600)
+def _read_output_csv(name: str) -> pd.DataFrame:
+    """Read a paper-ready analysis CSV from output/ (committed by research runs)."""
+    path = _OUTPUT_DIR / name
+    if not path.exists():
+        return pd.DataFrame()
+    return pd.read_csv(path)
+
+
+def _source_label(row) -> str:
+    """Human label for how a hidden company was discovered."""
+    src = (row.get("source_domain") or "")
+    if src in ("nih.gov", "nsf.gov"):
+        return "US grant (SBIR/STTR)"
+    if row.get("incubator_source"):
+        return "Portfolio scrape"
+    if src:
+        return f"Web · {src}"
+    return "GitHub"
+
+
+# ── Page: Home (public overview) ─────────────────────────────────────
+
+def page_home():
+    stats = _load_overview_stats()
+    buckets = _load_bucket_stats()
+    curve = _load_ai_adoption_curve()
+
+    hidden_total, hidden_ai_pct, cb_ai_pct = 0, None, None
+    if not buckets.empty:
+        b = buckets.set_index("bucket")
+        if _HIDDEN_STATUS in b.index:
+            hidden_total = int(b.loc[_HIDDEN_STATUS, "total"])
+            hidden_ai_pct = float(b.loc[_HIDDEN_STATUS, "ai_pct"])
+        if "verified_cb" in b.index:
+            cb_ai_pct = float(b.loc["verified_cb", "ai_pct"])
+
+    # ── Hero: headline left, lede right, stat band across ────────────
+    st.markdown(
+        f'<div class="hero-eyebrow">'
+        f'Live dataset &middot; {stats["total"]:,} companies &middot; updated '
+        f'{datetime.now().strftime("%b %d, %Y")}</div>',
+        unsafe_allow_html=True,
+    )
+    h1col, h2col = st.columns([1.15, 1], gap="large", vertical_alignment="bottom")
+    h1col.markdown(
+        '<div class="hero-title">Where new AI companies actually come from</div>',
+        unsafe_allow_html=True,
+    )
+    h2col.markdown(
+        '<p class="hero-lede">We track company formation across GitHub, accelerator '
+        'and VC portfolios, government grant awards, and startup media — including '
+        '<b>tens of thousands of young firms that commercial databases have not '
+        'registered yet</b>.</p>',
+        unsafe_allow_html=True,
+    )
+
+    ai_stat = (
+        f'<span class="stat-value">{hidden_ai_pct:.1f}%</span>'
+        f'<span class="stat-sub">vs <b>{cb_ai_pct:.1f}%</b> in Crunchbase</span>'
+        if hidden_ai_pct is not None and cb_ai_pct is not None
+        else f'<span class="stat-value">{stats["ai"]:,}</span>'
+             f'<span class="stat-sub">across all sources</span>'
+    )
+    st.markdown(
+        f'<div style="height:22px"></div>'
+        f'<div class="statband">'
+        f'<div class="stat"><span class="stat-label">Companies tracked</span>'
+        f'<span class="stat-value">{stats["total"]:,}</span>'
+        f'<span class="stat-sub">all discovery channels</span></div>'
+        f'<div class="stat"><span class="stat-label">Hidden companies</span>'
+        f'<span class="stat-value">{hidden_total:,}</span>'
+        f'<span class="stat-sub">in neither Crunchbase nor PitchBook</span></div>'
+        f'<div class="stat"><span class="stat-label">AI share of hidden firms</span>'
+        f'{ai_stat}</div>'
+        f'<div class="stat"><span class="stat-label">Countries</span>'
+        f'<span class="stat-value">{stats["countries"]:,}</span>'
+        f'<span class="stat-sub">headquarters coverage</span></div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    # ── Key findings ─────────────────────────────────────────────────
+    st.markdown('<div style="height:26px"></div>', unsafe_allow_html=True)
+    f1, f2 = st.columns([1.25, 1])
+
+    with f1:
+        st.markdown(
+            '<div class="section-header">AI share of new companies is climbing</div>'
+            '<div class="section-sub">Share of companies founded each year that are AI-focused</div>',
+            unsafe_allow_html=True,
+        )
+        if not curve.empty:
+            c = curve[curve["founded_year"] <= 2025]
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=c["founded_year"], y=c["ai_pct"], mode="lines",
+                line=dict(color=ACCENT, width=2.5),
+                fill="tozeroy", fillcolor="rgba(42,120,214,0.08)",
+                hovertemplate="%{x}: %{y:.1f}%<extra></extra>", name="AI share",
+            ))
+            last = c.iloc[-1]
+            fig.add_trace(go.Scatter(
+                x=[last["founded_year"]], y=[last["ai_pct"]], mode="markers+text",
+                marker=dict(color=ACCENT, size=9),
+                text=[f"{last['ai_pct']:.0f}%"], textposition="top left",
+                textfont=dict(color=TXT, size=12), showlegend=False,
+                hoverinfo="skip",
+            ))
+            fig.update_layout(**_layout(
+                height=290, showlegend=False,
+                yaxis=dict(ticksuffix="%", gridcolor=BORDER_LIGHT, zeroline=False,
+                           linecolor="rgba(0,0,0,0)", rangemode="tozero"),
+                margin=dict(l=0, r=8, t=8, b=0),
+            ))
+            st.plotly_chart(fig, use_container_width=True, config=_PLOT_CFG)
+
+    with f2:
+        st.markdown(
+            '<div class="section-header">Hidden companies skew AI</div>'
+            '<div class="section-sub">AI share by data source — firms invisible to '
+            'commercial databases are the most AI-dense</div>',
+            unsafe_allow_html=True,
+        )
+        if not buckets.empty:
+            order = [(_HIDDEN_STATUS, "Hidden (this tracker)"),
+                     ("verified_cb", "Crunchbase"),
+                     ("verified_pb", "PitchBook")]
+            rows = [(label, float(buckets.set_index("bucket").loc[key, "ai_pct"]))
+                    for key, label in order
+                    if key in buckets["bucket"].values]
+            labels = [r[0] for r in rows][::-1]
+            vals = [r[1] for r in rows][::-1]
+            colors = [ACCENT if l.startswith("Hidden") else GRAY_CTX for l in labels]
+            fig = go.Figure(go.Bar(
+                x=vals, y=labels, orientation="h",
+                marker=dict(color=colors),
+                text=[f"{v:.1f}%" for v in vals], textposition="outside",
+                textfont=dict(color=TXT, size=12),
+                hovertemplate="%{y}: %{x:.1f}%<extra></extra>",
+            ))
+            fig.update_layout(**_layout(
+                height=290, showlegend=False, bargap=0.45,
+                xaxis=dict(ticksuffix="%", showgrid=False, zeroline=False,
+                           linecolor=BORDER, range=[0, max(vals) * 1.3]),
+                yaxis=dict(gridcolor="rgba(0,0,0,0)", tickfont=dict(size=12, color=TXT2)),
+                margin=dict(l=0, r=8, t=8, b=0),
+            ))
+            st.plotly_chart(fig, use_container_width=True, config=_PLOT_CFG)
+
+    # ── World map ────────────────────────────────────────────────────
+    st.markdown(
+        '<div style="height:10px"></div>'
+        '<div class="section-header">Global footprint</div>'
+        '<div class="section-sub">Tracked companies by headquarters country (log scale)</div>',
+        unsafe_allow_html=True,
+    )
+    geo = _load_country_counts()
+    gcol, tcol = st.columns([2.6, 1])
+    if not geo.empty:
+        import numpy as np
+        gm = geo.copy()
+        gm["log_total"] = np.log10(gm["total"].clip(lower=1))
+        fig = go.Figure(go.Choropleth(
+            locations=gm["country"], locationmode="country names",
+            z=gm["log_total"],
+            customdata=gm[["total", "ai"]],
+            colorscale=[[s, c] for s, c in SEQ_SCALE],
+            marker_line_color="#ffffff", marker_line_width=0.4,
+            colorbar=dict(
+                title=dict(text="Companies", font=dict(size=11, color=TXT3)),
+                tickvals=[0, 1, 2, 3, 4, 5],
+                ticktext=["1", "10", "100", "1k", "10k", "100k"],
+                thickness=10, len=0.7, outlinewidth=0,
+                tickfont=dict(size=10.5, color=TXT3),
+            ),
+            hovertemplate="<b>%{location}</b><br>%{customdata[0]:,} companies · "
+                          "%{customdata[1]:,} AI<extra></extra>",
+        ))
+        fig.update_geos(
+            showframe=False, showcoastlines=False,
+            landcolor=BG_OFF, bgcolor="rgba(0,0,0,0)",
+            projection_type="natural earth",
+        )
+        fig.update_layout(
+            height=420, margin=dict(l=0, r=0, t=6, b=0),
+            paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="Inter", color=TXT3),
+            hoverlabel=dict(bgcolor=BG_CARD, bordercolor=BORDER,
+                            font=dict(family="Inter", size=12, color=TXT)),
+        )
+        with gcol:
+            st.plotly_chart(fig, use_container_width=True, config=_PLOT_CFG)
+        with tcol:
+            top = geo.nlargest(10, "total")[["country", "total"]].rename(
+                columns={"country": "Country", "total": "Companies"})
+            st.markdown(
+                f'<div style="color:{TXT3};font-size:0.8rem;margin:6px 0 6px 0;">'
+                'Top 10 countries</div>', unsafe_allow_html=True)
+            st.dataframe(top, hide_index=True, width="stretch", height=384)
+
+    # ── Latest hidden discoveries ────────────────────────────────────
+    st.markdown(
+        '<div style="height:14px"></div>'
+        '<div class="section-header">Latest hidden discoveries</div>'
+        '<div class="section-sub">Recently found AI companies that are not in '
+        'Crunchbase or PitchBook — browse and export the full list on the '
+        '<b>Companies</b> page</div>',
+        unsafe_allow_html=True,
+    )
+    recent = _load_hidden_companies(search="", country="All countries",
+                                    ai_only=True, limit=12)
+    if recent.empty:
+        st.caption("No hidden companies loaded yet.")
+    else:
+        view = recent.copy()
+        view["Discovered via"] = view.apply(_source_label, axis=1)
+        view = view[["name", "country", "founded_year", "Discovered via", "first_seen"]]
+        view.columns = ["Company", "Country", "Founded", "Discovered via", "First seen"]
+        st.dataframe(view, hide_index=True, width="stretch",
+                     column_config={
+                         "Founded": st.column_config.NumberColumn(format="%d"),
+                     })
+
+
+# ── Page: Companies (hidden-only public explorer) ────────────────────
+
+def page_companies():
+    st.markdown(
+        '<div class="section-header">Hidden companies</div>'
+        '<div class="section-sub" style="max-width:74ch;">Companies discovered by this '
+        'tracker that do not appear in Crunchbase or PitchBook — surfaced from GitHub '
+        'activity, accelerator/VC portfolio pages, US SBIR/STTR grant awards, and '
+        'startup media. Companies from commercial databases are shown on this site '
+        'only as aggregate statistics.</div>',
+        unsafe_allow_html=True,
+    )
+
+    c1, c2, c3 = st.columns([2.2, 1.2, 1])
+    search = c1.text_input("Search", placeholder="Search by name or description…",
+                           label_visibility="collapsed")
+    country = c2.selectbox("Country", ["All countries"] + _load_hidden_country_options(),
+                           label_visibility="collapsed")
+    ai_only = c3.checkbox("AI companies only", value=True)
+
+    df = _load_hidden_companies(search=search.strip(), country=country,
+                                ai_only=ai_only, limit=5000)
+    if df.empty:
+        st.caption("No companies match these filters.")
+        return
+
+    view = df.copy()
+    view["Discovered via"] = view.apply(_source_label, axis=1)
+    view["domain"] = view["domain"].map(
+        lambda d: f"https://{d}" if isinstance(d, str) and d and not d.startswith("http") else d)
+    view = view[["name", "domain", "country", "city", "founded_year",
+                 "Discovered via", "ai_score", "first_seen", "description"]]
+    view.columns = ["Company", "Website", "Country", "City", "Founded",
+                    "Discovered via", "AI score", "First seen", "Description"]
+
+    st.markdown(
+        f'<div style="color:{TXT3};font-size:0.78rem;margin:2px 0 8px 0;">'
+        f'{len(df):,} companies shown (newest first, capped at 5,000)</div>',
+        unsafe_allow_html=True,
+    )
+    st.dataframe(
+        view, hide_index=True, width="stretch", height=560,
+        column_config={
+            "Website": st.column_config.LinkColumn(display_text=r"https?://(.*)"),
+            "Founded": st.column_config.NumberColumn(format="%d"),
+            "AI score": st.column_config.ProgressColumn(
+                min_value=0.0, max_value=1.0, format="%.2f"),
+            "Description": st.column_config.TextColumn(width="large"),
+        },
+    )
+    st.download_button(
+        "Export CSV", df.to_csv(index=False).encode(),
+        file_name="hidden_companies.csv", mime="text/csv",
+    )
+
+
+# ── Page: About & methodology ────────────────────────────────────────
+
+def page_about():
+    stats = _load_overview_stats()
+    buckets = _load_bucket_stats()
+    hidden_total = 0
+    if not buckets.empty and _HIDDEN_STATUS in buckets["bucket"].values:
+        hidden_total = int(buckets.set_index("bucket").loc[_HIDDEN_STATUS, "total"])
+
+    st.markdown(
+        '<div class="section-header">About this tracker</div>'
+        f'<div class="section-sub" style="max-width:76ch;">A research project of the '
+        f'Tobin Center for Economic Policy at Yale University. We measure where and '
+        f'when new AI companies form — including the young firms that commercial '
+        f'databases miss. The tracker currently covers <b>{stats["total"]:,}</b> '
+        f'companies across <b>{stats["countries"]}</b> countries, of which '
+        f'<b>{hidden_total:,}</b> appear in neither Crunchbase nor PitchBook.</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        '<div style="height:8px"></div>'
+        '<div class="section-header">How companies enter the tracker</div>',
+        unsafe_allow_html=True,
+    )
+    sources = pd.DataFrame([
+        ["GitHub discovery", "Weekly scan of new AI repositories and organizations; "
+         "signals like stars, contributor velocity, and org metadata identify "
+         "companies before any register lists them."],
+        ["Portfolio scraping", "400+ accelerator, incubator, university, and VC "
+         "portfolio pages, scraped by an agentic engine that adapts per site."],
+        ["Government grants", "NIH and NSF SBIR/STTR award APIs — US firms that won "
+         "federal R&D grants, often years before commercial visibility."],
+        ["Startup media", "18 regional startup news feeds worldwide, mined for "
+         "funding announcements and company launches."],
+        ["Commercial registers", "Crunchbase and PitchBook imports verify overlap "
+         "and provide the institutional baseline (shown as aggregates only)."],
+    ], columns=["Source", "What it contributes"])
+    st.dataframe(sources, hide_index=True, width="stretch",
+                 column_config={
+                     "What it contributes": st.column_config.TextColumn(width="large")})
+
+    st.markdown(
+        '<div style="height:8px"></div>'
+        '<div class="section-header">Reading the numbers</div>'
+        '<div class="section-sub" style="max-width:76ch;">'
+        '<b>Hidden companies</b> are firms in this tracker absent from both Crunchbase '
+        'and PitchBook at match time. <b>AI classification</b> combines keyword rules, '
+        'register tags, and an LLM verifier. Two caveats: recent-year counts are '
+        'incomplete (young firms take time to surface — we estimate the lag on the '
+        'Findings page), and the grant-sourced subset is 100% US by construction, '
+        'which pulls the hidden bucket\'s geography toward the United States. '
+        'Company-level data from commercial databases is not republished here; those '
+        'sources appear only in aggregate comparisons.</div>',
+        unsafe_allow_html=True,
+    )
+    st.caption("Contact: Tobin Center for Economic Policy, Yale University.")
 
 
 # ── Page: Overview ───────────────────────────────────────────────────
@@ -2675,8 +3118,10 @@ def page_research():
     countries_n = stats["countries"]
 
     st.markdown(
-        f'<div class="section-header">Research Dashboard</div>'
-        f'<div class="section-sub">Global AI startup formation — {total_cos:,} companies across {countries_n} countries, 2000–2026</div>',
+        f'<div class="eyebrow">Findings</div>'
+        f'<h1>Global AI startup formation</h1>'
+        f'<div class="section-sub">{total_cos:,} companies across {countries_n} '
+        f'countries, 2000–2026 — including the hidden layer commercial databases miss</div>',
         unsafe_allow_html=True,
     )
 
@@ -2922,108 +3367,148 @@ def page_research():
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
-    # ── Section 5: Company Explorer ──────────────────────────────────
+    # ── Section 5: The hidden startup layer ──────────────────────────
     st.markdown(
-        '<div class="section-header">Company Explorer</div>'
-        '<div class="section-sub">Filter across all companies by country, year, stage, and funding — results capped at 1,000 rows; apply filters to narrow</div>',
+        '<div class="eyebrow">The hidden startup layer</div>'
+        '<div class="section-header">Companies commercial databases miss</div>'
+        '<div class="section-sub" style="max-width:76ch;">Firms in this tracker that '
+        'appear in neither Crunchbase nor PitchBook — discovered through GitHub, '
+        'portfolio pages, US SBIR/STTR grants, and startup media. This is the '
+        'tracker\'s unique contribution to measuring AI entrepreneurship.</div>',
         unsafe_allow_html=True,
     )
 
-    cfe_countries_opts, cfe_stages_opts, cfe_verticals_opts = _load_company_filter_options()
+    adoption = _read_output_csv("13_hidden_vs_institutional_ai_adoption.csv")
+    if not adoption.empty:
+        lbl = {"hidden": "Hidden (this tracker)", "cb": "Crunchbase", "pb": "PitchBook"}
+        cols = st.columns(len(adoption))
+        for col, (_, r) in zip(cols, adoption.iterrows()):
+            col.metric(f"{lbl.get(r['bucket'], r['bucket'])} — {int(r['total']):,} cos",
+                       f"{r['ai_pct']:.1f}% AI")
 
-    cfe_c1, cfe_c2, cfe_c3, cfe_c4, cfe_c5 = st.columns([1.2, 2.5, 2, 2, 1.8])
-    with cfe_c1:
-        cfe_ai_only = st.toggle("AI only", value=False, key="cfe_ai_only")
-    with cfe_c2:
-        cfe_countries_sel = st.multiselect("Country", options=cfe_countries_opts, default=[], key="cfe_countries", placeholder="All countries")
-    with cfe_c3:
-        cfe_year_range = st.slider("Founded year", 2000, 2026, (2010, 2026), key="cfe_year")
-    with cfe_c4:
-        cfe_stages_sel = st.multiselect("Stage", options=cfe_stages_opts, default=[], key="cfe_stages", placeholder="All stages")
-    with cfe_c5:
-        cfe_min_raised = st.number_input("Min raised ($M)", min_value=0.0, value=0.0, step=1.0, key="cfe_min_raised")
-
-    cfe_verticals_sel = st.multiselect("Vertical", options=cfe_verticals_opts, default=[], key="cfe_verticals", placeholder="All verticals")
-
-    with st.spinner("Loading…"):
-        cfe_df = _load_filtered_companies(
-            countries_t=tuple(cfe_countries_sel),
-            year_min=cfe_year_range[0],
-            year_max=cfe_year_range[1],
-            stages_t=tuple(cfe_stages_sel),
-            min_raised_m=cfe_min_raised,
-            ai_only=cfe_ai_only,
-            verticals_t=tuple(cfe_verticals_sel),
+    # Formation of hidden companies by discovery channel
+    h_form = _read_output_csv("09a_hidden_formation_timeline.csv")
+    h_surv = _read_output_csv("09b_hidden_survival_proxy_by_cohort.csv")
+    hc1, hc2 = st.columns(2)
+    with hc1:
+        st.markdown(
+            '<div class="section-header" style="margin-top:20px;">Hidden-company formation</div>'
+            '<div class="section-sub">Founding year of hidden companies, by discovery channel</div>',
+            unsafe_allow_html=True,
         )
-
-    cfe_note = " (top 1,000 by funding — apply filters to narrow)" if len(cfe_df) >= 1000 else ""
-    st.caption(f"{len(cfe_df):,} companies{cfe_note}")
-
-    if not cfe_df.empty:
-        st.dataframe(
-            cfe_df.rename(columns={
-                "name": "Name", "domain": "Domain", "country": "Country",
-                "city": "City", "founded_year": "Founded", "stage": "Stage",
-                "total_raised_m": "Raised ($M)", "ai_score": "AI Score",
-                "cb_ai_tagged": "CB AI", "ai_mentioned": "AI Mentioned",
-                "verticals": "Verticals", "verification_status": "Source",
-            }),
-            hide_index=True,
-            use_container_width=True,
-            height=460,
+        if not h_form.empty:
+            hf = h_form[h_form["founded_year"].between(2010, 2025)]
+            fig = go.Figure()
+            for src, color in [("github", ACCENT), ("scraper", TEAL)]:
+                s = hf[hf["source"] == src]
+                if not s.empty:
+                    fig.add_trace(go.Bar(
+                        x=s["founded_year"], y=s["total"], name=src.capitalize(),
+                        marker=dict(color=color),
+                        hovertemplate="%{x} · " + src + ": %{y:,}<extra></extra>",
+                    ))
+            fig.update_layout(**_layout(
+                height=300, barmode="stack",
+                legend=dict(orientation="h", y=1.12, font=dict(size=11, color=TXT2),
+                            bgcolor="rgba(0,0,0,0)"),
+                margin=dict(l=0, r=4, t=8, b=0),
+            ))
+            st.plotly_chart(fig, use_container_width=True, config=_PLOT_CFG)
+        else:
+            st.caption("Analysis file not available in this deployment.")
+    with hc2:
+        st.markdown(
+            '<div class="section-header" style="margin-top:20px;">Do they survive?</div>'
+            '<div class="section-sub">Share of each founding cohort with a live website today</div>',
+            unsafe_allow_html=True,
         )
-        csv_cfe = cfe_df.to_csv(index=False)
-        st.download_button(
-            f"Download filtered results ({len(cfe_df):,} rows, CSV)",
-            data=csv_cfe,
-            file_name="companies_filtered.csv",
-            mime="text/csv",
+        if not h_surv.empty:
+            hs = h_surv[h_surv["founded_year"].between(2010, 2024)]
+            fig = go.Figure(go.Scatter(
+                x=hs["founded_year"], y=hs["live_pct"], mode="lines+markers",
+                line=dict(color=ACCENT, width=2.5), marker=dict(size=7),
+                customdata=hs["total_checked"],
+                hovertemplate="%{x}: %{y:.1f}% live · n=%{customdata:,}<extra></extra>",
+            ))
+            fig.update_layout(**_layout(
+                height=300, showlegend=False,
+                yaxis=dict(ticksuffix="%", gridcolor=BORDER_LIGHT, zeroline=False,
+                           linecolor="rgba(0,0,0,0)", range=[0, 105]),
+                margin=dict(l=0, r=4, t=8, b=0),
+            ))
+            st.plotly_chart(fig, use_container_width=True, config=_PLOT_CFG)
+            st.caption("Survival proxy: company website resolves as of the last check.")
+        else:
+            st.caption("Analysis file not available in this deployment.")
+
+    # Hidden vs institutional: what they build
+    h_vert = _read_output_csv("12_hidden_vs_institutional_verticals.csv")
+    if not h_vert.empty:
+        st.markdown(
+            '<div class="section-header" style="margin-top:20px;">What hidden companies build</div>'
+            '<div class="section-sub">Sector mix vs Crunchbase-registered firms (share of each group)</div>',
+            unsafe_allow_html=True,
         )
+        top_verts = (h_vert[h_vert["bucket"] == "hidden"]
+                     .nlargest(8, "share_of_bucket_pct")["vertical"].tolist())
+        hv = h_vert[h_vert["vertical"].isin(top_verts) & h_vert["bucket"].isin(["hidden", "cb"])]
+        fig = go.Figure()
+        for bucket, color, name in [("hidden", ACCENT, "Hidden (this tracker)"),
+                                    ("cb", GRAY_CTX, "Crunchbase")]:
+            s = (hv[hv["bucket"] == bucket].set_index("vertical")
+                 .reindex(top_verts)["share_of_bucket_pct"])
+            fig.add_trace(go.Bar(
+                y=top_verts[::-1], x=s.reindex(top_verts[::-1]), orientation="h",
+                name=name, marker=dict(color=color),
+                text=[f"{v:.0f}%" if pd.notna(v) else "" for v in s.reindex(top_verts[::-1])],
+                textposition="outside", textfont=dict(size=10.5, color=TXT2),
+                hovertemplate="%{y} · " + name + ": %{x:.1f}%<extra></extra>",
+            ))
+        fig.update_layout(**_layout(
+            height=380, barmode="group", bargap=0.25,
+            xaxis=dict(ticksuffix="%", showgrid=False, zeroline=False, linecolor=BORDER),
+            yaxis=dict(gridcolor="rgba(0,0,0,0)", tickfont=dict(size=11.5, color=TXT2)),
+            legend=dict(orientation="h", y=1.08, font=dict(size=11, color=TXT2),
+                        bgcolor="rgba(0,0,0,0)"),
+            margin=dict(l=0, r=24, t=8, b=0),
+        ))
+        st.plotly_chart(fig, use_container_width=True, config=_PLOT_CFG)
+
+    st.caption(
+        "Note: the grant-sourced subset of hidden companies (NIH/NSF SBIR/STTR) is "
+        "US-only by construction and pulls the hidden bucket's geography toward the "
+        "United States — read it as a distinct sub-population."
+    )
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
-    # ── Section 6: Data Export ───────────────────────────────────────
+    # ── Section 6: Download aggregates ───────────────────────────────
     st.markdown(
-        '<div class="section-header">Export Research Data</div>',
+        '<div class="section-header">Download the data</div>'
+        '<div class="section-sub">Aggregate statistics only — company-level rows from '
+        'commercial databases are not redistributed</div>',
         unsafe_allow_html=True,
     )
 
-    col_a, col_b = st.columns(2)
-
-    with col_a:
+    dl1, dl2, dl3 = st.columns(3)
+    with dl1:
         if not curve.empty:
-            csv_timeline = curve.to_csv(index=False)
             st.download_button(
-                "Download: Formation by year (CSV)",
-                data=csv_timeline,
-                file_name="ai_formation_by_year.csv",
-                mime="text/csv",
+                "Formation by year (CSV)", curve.to_csv(index=False),
+                file_name="ai_formation_by_year.csv", mime="text/csv",
             )
-
-    with col_b:
+    with dl2:
         if not country_stats.empty:
-            csv_country = country_stats.to_csv(index=False)
             st.download_button(
-                "Download: Country AI stats (CSV)",
-                data=csv_country,
-                file_name="ai_concentration_by_country.csv",
-                mime="text/csv",
+                "Country AI stats (CSV)", country_stats.to_csv(index=False),
+                file_name="ai_concentration_by_country.csv", mime="text/csv",
             )
-
-    st.markdown("<br/>", unsafe_allow_html=True)
-
-    if st.button(f"Load full AI companies dataset (~{total_ai:,} rows)", type="secondary"):
-        with st.spinner("Querying…"):
-            export_df = _load_research_export()
-        st.success(f"{len(export_df):,} AI companies loaded")
-        csv_full = export_df.to_csv(index=False)
-        st.download_button(
-            "Download: All AI companies (CSV)",
-            data=csv_full,
-            file_name="ai_companies_full.csv",
-            mime="text/csv",
-        )
-        st.dataframe(export_df.head(200), hide_index=True, use_container_width=True)
+    with dl3:
+        if not adoption.empty:
+            st.download_button(
+                "Hidden vs institutional (CSV)", adoption.to_csv(index=False),
+                file_name="hidden_vs_institutional_ai.csv", mime="text/csv",
+            )
 
 
 # ── Info Sheet ───────────────────────────────────────────────────────
@@ -3513,49 +3998,46 @@ def _company_frames():
     return scraper_df, github_df_all
 
 
-_NAV_PAGES = [
-    "Overview", "Info Sheet", "AI Analysis", "GitHub Discovery",
-    "Trends", "Research", "Pipeline Health", "Inventory", "Scraper",
-]
+# Public pages lead; operations pages live behind the "Internal" tab.
+_PUBLIC_PAGES = ["Overview", "Findings", "Companies", "GitHub Discovery", "About"]
+_INTERNAL_PAGES = ["AI Analysis", "Trends", "Pipeline Health", "Inventory", "Scraper"]
 
 
 def main():
-    # ── Sidebar: brand, navigation, live stats ──────────────────────
-    with st.sidebar:
-        st.markdown(
-            '<div class="sb-brand">'
-            '<div class="sb-title">AI Startup Tracker</div>'
-            '<div class="sb-sub">Tobin Center &middot; Yale SOM</div>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown('<div class="sb-eyebrow">Navigation</div>', unsafe_allow_html=True)
-        page = st.radio("Navigation", _NAV_PAGES, label_visibility="collapsed")
-        st.markdown(
-            f'<div class="sb-foot">'
-            f'<div class="sb-foot-label">Live database</div>'
-            f'<div class="sb-foot-row"><span class="sb-foot-key">Companies</span>'
-            f'<span class="sb-foot-val">{_total:,}</span></div>'
-            f'<div class="sb-foot-row"><span class="sb-foot-key">Sources</span>'
-            f'<span class="sb-foot-val">{_sources:,}</span></div>'
-            f'<div class="sb-foot-row"><span class="sb-foot-key">Countries</span>'
-            f'<span class="sb-foot-val">{_countries:,}</span></div>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
+    # ── Header: brand + primary nav on one row, hairline under both ──
+    with st.container(key="header"):
+        bcol, ncol = st.columns([1, 2.4], vertical_alignment="center")
+        with bcol:
+            st.markdown(
+                '<div class="brand">'
+                '<span class="brand-mark">AI</span>'
+                '<span class="brand-text">'
+                '<span class="brand-name">AI Startup Tracker</span>'
+                '<span class="brand-sub">Tobin Center for Economic Policy &middot; Yale</span>'
+                '</span>'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+        with ncol:
+            with st.container(key="lnav"):
+                section = st.radio("Navigation", _PUBLIC_PAGES + ["Internal"],
+                                   horizontal=True, label_visibility="collapsed")
+        st.markdown('<div class="header-rule"></div>', unsafe_allow_html=True)
+
+    page = section
+    if section == "Internal":
+        with st.container(key="subnav"):
+            page = st.radio("Internal pages", _INTERNAL_PAGES,
+                            horizontal=True, label_visibility="collapsed")
 
     # ── Main content: render only the selected page ──────────────────
     with st.container(key="page"):
         if page == "Overview":
-            scraper_df, _gh = _company_frames()
-            page_overview(scraper_df, load_site_health())
-        elif page == "Info Sheet":
-            page_info_sheet()
-        elif page == "AI Analysis":
-            scraper_df, _gh = _company_frames()
-            page_ai_analysis(scraper_df, _load_overview_stats(),
-                             source_stats=_load_source_ai_stats(),
-                             country_stats=_load_country_ai_stats(min_companies=1))
+            page_home()
+        elif page == "Findings":
+            page_research()
+        elif page == "Companies":
+            page_companies()
         elif page == "GitHub Discovery":
             _sc, github_df_all = _company_frames()
             # LLM filter: only keep repos classified as 'startup' by the LLM
@@ -3564,11 +4046,16 @@ def main():
             else:
                 github_df = github_df_all.iloc[0:0].copy()
             page_github(github_df, github_df_all)
+        elif page == "About":
+            page_about()
+        elif page == "AI Analysis":
+            scraper_df, _gh = _company_frames()
+            page_ai_analysis(scraper_df, _load_overview_stats(),
+                             source_stats=_load_source_ai_stats(),
+                             country_stats=_load_country_ai_stats(min_companies=1))
         elif page == "Trends":
             scraper_df, _gh = _company_frames()
             page_trends(scraper_df)
-        elif page == "Research":
-            page_research()
         elif page == "Pipeline Health":
             page_health(load_site_health(), load_recent_runs())
         elif page == "Inventory":

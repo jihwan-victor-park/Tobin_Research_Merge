@@ -87,3 +87,12 @@ data/scout_coverage.json
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+# ── Revelio (LinkedIn) data — huge raw parquet + founder-level PII ──
+# Raw shards: never commit (100s of GB, deleted after streaming filter).
+data/revelio_raw/
+# Person-level derived tables carry founder names/schools (PII) — keep local
+# / in DB only; commit ONLY the aggregate CSVs under output/.
+data/revelio_derived/
+founder_poc/founder_profiles.parquet
+founder_poc/*_poc.parquet
