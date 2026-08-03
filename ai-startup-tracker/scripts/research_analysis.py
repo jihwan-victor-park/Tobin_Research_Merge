@@ -450,6 +450,100 @@ def hidden_vs_institutional_ai_adoption(engine, out: Path):
     return df
 
 
+# ── Sections 19-21: What the AI companies are DOING (company_enrichment) ────
+# These consume the company_enrichment table produced by scripts/enrich_fields.py
+# (Victor's classify stage: ai_application / ai_subfield / business_model /
+# sector, from each company's description). They skip gracefully if that table
+# is missing or unpopulated, so the script still runs before enrichment lands.
+
+_ENR_BUCKET = (  # bucket incl. strict-hidden vs institutional, for enrichment cuts
+    "CASE WHEN c.verification_status = 'verified_cb' THEN 'cb' "
+    "WHEN c.verification_status = 'verified_pb' THEN 'pb' "
+    "WHEN c.naics_code IS NULL THEN 'hidden' ELSE 'hidden_on_li' END"
+)
+
+
+def _enrichment_rows(engine) -> int:
+    try:
+        return q(engine, "SELECT COUNT(*) n FROM company_enrichment "
+                         "WHERE ai_application IS NOT NULL").iloc[0]["n"]
+    except Exception:
+        return 0
+
+
+def _share_pivot(df, index, col="bucket", val="n"):
+    """% within each bucket (column sums to 100)."""
+    df = df.copy()
+    df["share_pct"] = (df.groupby(col)[val].transform(lambda s: 100.0 * s / s.sum())).round(1)
+    return df.pivot(index=index, columns=col, values="share_pct").fillna(0)
+
+
+def what_ai_companies_are_doing(engine, out: Path):
+    print("\n=== 19. What the (enriched) AI companies are DOING ===")
+    if _enrichment_rows(engine) == 0:
+        print("  company_enrichment not populated yet — skipping (run enrich_fields.py classify).")
+        return None
+    for dim, name in [("ai_application", "19a_ai_application"),
+                      ("ai_subfield", "19b_ai_subfield"),
+                      ("business_model", "19c_business_model")]:
+        df = q(engine, f"""
+            SELECT {_ENR_BUCKET} AS bucket, e.{dim} AS value, COUNT(*) AS n
+            FROM company_enrichment e JOIN companies c ON c.id = e.company_id
+            WHERE e.{dim} IS NOT NULL AND {C_AI_FILTER}
+            GROUP BY 1, 2 ORDER BY 1, 3 DESC
+        """)
+        if df.empty:
+            continue
+        print(f"\n  {dim} (% within bucket):")
+        print(_share_pivot(df, index="value").to_string())
+        save(df, name, out)
+    return True
+
+
+def hidden_vs_commercial_application(engine, out: Path):
+    print("\n=== 20. AI-application mix: hidden vs commercial (enriched) ===")
+    if _enrichment_rows(engine) == 0:
+        print("  company_enrichment not populated yet — skipping.")
+        return None
+    # Requires classify to have been run on a commercial (cb/pb) sample too;
+    # naturally compares whatever buckets are enriched.
+    df = q(engine, f"""
+        SELECT {_ENR_BUCKET} AS bucket, e.ai_application AS application, COUNT(*) AS n
+        FROM company_enrichment e JOIN companies c ON c.id = e.company_id
+        WHERE e.ai_application IS NOT NULL AND {C_AI_FILTER}
+        GROUP BY 1, 2 ORDER BY 1, 3 DESC
+    """)
+    buckets = sorted(df["bucket"].unique())
+    print(f"  enriched buckets present: {buckets}")
+    if len({"hidden"} & set(buckets)) == 0:
+        print("  (no hidden rows enriched yet)")
+    print(_share_pivot(df, index="application").to_string())
+    save(df, "20_application_hidden_vs_commercial", out)
+    return df
+
+
+def application_trends_by_cohort(engine, out: Path):
+    print("\n=== 21. AI-application TRENDS by founding-year cohort ===")
+    if _enrichment_rows(engine) == 0:
+        print("  company_enrichment not populated yet — skipping.")
+        return None
+    # Effective founding year (real → accelerator cohort → grant proxy).
+    df = q(engine, f"""
+        SELECT COALESCE(c.founded_year, c.cohort_year, c.grant_first_award_year) AS cohort_year,
+               e.ai_application AS application, COUNT(*) AS n
+        FROM company_enrichment e JOIN companies c ON c.id = e.company_id
+        WHERE e.ai_application IS NOT NULL AND {C_AI_FILTER}
+          AND COALESCE(c.founded_year, c.cohort_year, c.grant_first_award_year) BETWEEN 2015 AND 2025
+        GROUP BY 1, 2 ORDER BY 1, 2
+    """)
+    if df.empty:
+        print("  no enriched rows with a founding year yet — skipping.")
+        return None
+    print(_share_pivot(df, index="application", col="cohort_year").to_string())
+    save(df, "21_application_trends_by_cohort", out)
+    return df
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -494,6 +588,11 @@ def main():
     hidden_vs_institutional_geography(engine, out)
     hidden_vs_institutional_verticals(engine, out)
     hidden_vs_institutional_ai_adoption(engine, out)
+
+    # Enrichment-driven "what are they doing" + trends (skip if not populated)
+    what_ai_companies_are_doing(engine, out)
+    hidden_vs_commercial_application(engine, out)
+    application_trends_by_cohort(engine, out)
 
     if not args.skip_full_export:
         full_ai_export(engine, out)
