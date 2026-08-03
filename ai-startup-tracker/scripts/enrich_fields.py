@@ -100,12 +100,12 @@ def upsert(engine, company_id: int, fields: dict, sources: dict) -> None:
     )
     insert_cols = ", ".join(_COLS)
     insert_vals = ", ".join(
-        (f":{col}::jsonb" if col == "founders" else f":{col}") for col in _COLS
+        (f"CAST(:{col} AS jsonb)" if col == "founders" else f":{col}") for col in _COLS
     )
     with engine.begin() as c:
         c.execute(text(f"""
             INSERT INTO company_enrichment (company_id, {insert_cols}, sources, enriched_at)
-            VALUES (:cid, {insert_vals}, :sources::jsonb, now())
+            VALUES (:cid, {insert_vals}, CAST(:sources AS jsonb), now())
             ON CONFLICT (company_id) DO UPDATE SET
                 {set_clause},
                 sources = company_enrichment.sources || EXCLUDED.sources,
