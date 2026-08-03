@@ -3482,6 +3482,83 @@ def page_research():
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
+    # ── Section: Who founds AI companies (Revelio founder aggregates) ─
+    fg = _read_output_csv("15_founder_gender_prestige.csv")
+    fu = _read_output_csv("18_founder_top_universities.csv")
+    if not fg.empty and {"cohort", "prestige_mean", "pct_female"}.issubset(fg.columns):
+        st.markdown(
+            '<div class="section-header">Who founds AI companies</div>'
+            '<div class="section-sub">AI-company vs other founders — school prestige, '
+            'advanced degrees, gender (LinkedIn/Revelio, aggregates only)</div>',
+            unsafe_allow_html=True,
+        )
+        g = fg.set_index("cohort")
+        m1, m2, m3 = st.columns(3)
+        try:
+            ai_p, non_p = g.loc["AI", "prestige_mean"], g.loc["non-AI", "prestige_mean"]
+            ai_f, non_f = g.loc["AI", "pct_female"], g.loc["non-AI", "pct_female"]
+            m1.metric("AI-founder school prestige", f"{ai_p:.2f}", f"{ai_p-non_p:+.2f} vs other")
+            m2.metric("AI founders female", f"{ai_f:.0f}%", f"{ai_f-non_f:+.0f} pts vs other")
+        except Exception:
+            pass
+        fd = _read_output_csv("16_founder_degree.csv")
+        if not fd.empty and "Doctor" in fd.columns:
+            try:
+                d = fd.set_index("cohort")["Doctor"]
+                m3.metric("AI founders with PhD", f"{d.loc['AI']:.0f}%",
+                          f"{d.loc['AI']-d.loc['non-AI']:+.0f} pts vs other")
+            except Exception:
+                pass
+        if not fu.empty and {"university", "ai_founders"}.issubset(fu.columns):
+            top = fu.nlargest(10, "ai_founders")[::-1]
+            fig = go.Figure(go.Bar(
+                y=top["university"], x=top["ai_founders"], orientation="h",
+                marker=dict(color=ACCENT),
+                text=top["ai_founders"], textposition="outside",
+                textfont=dict(size=10.5, color=TXT2),
+                hovertemplate="%{y}: %{x} AI founders<extra></extra>",
+            ))
+            fig.update_layout(**_layout(
+                height=360, xaxis=dict(showgrid=False, zeroline=False, linecolor=BORDER),
+                yaxis=dict(gridcolor="rgba(0,0,0,0)", tickfont=dict(size=10.5, color=TXT2)),
+                margin=dict(l=0, r=30, t=8, b=0),
+            ))
+            st.markdown('<div class="section-sub" style="margin-top:14px;">Top schools of '
+                        'AI-company founders</div>', unsafe_allow_html=True)
+            st.plotly_chart(fig, use_container_width=True, config=_PLOT_CFG)
+        st.caption("AI founders skew more elite/technical (higher prestige, more PhDs) "
+                   "but show no gender difference. Role = Revelio 'Executive Founder'/CEO.")
+        st.markdown("<hr/>", unsafe_allow_html=True)
+
+    # ── Section: What AI companies are doing (enrichment classify) ────
+    app = _read_output_csv("19a_ai_application.csv")
+    if not app.empty and {"bucket", "value", "n"}.issubset(app.columns):
+        hid = app[app["bucket"] == "hidden"].copy()
+        if not hid.empty and hid["n"].sum() > 0:
+            hid["share"] = (100.0 * hid["n"] / hid["n"].sum()).round(1)
+            hid = hid.sort_values("share")
+            st.markdown(
+                '<div class="section-header">What the hidden AI companies are doing</div>'
+                '<div class="section-sub">AI-application mix (share of enriched hidden AI '
+                'companies) — LLM-classified from descriptions</div>',
+                unsafe_allow_html=True,
+            )
+            fig = go.Figure(go.Bar(
+                y=hid["value"], x=hid["share"], orientation="h",
+                marker=dict(color=ACCENT),
+                text=[f"{v:.0f}%" for v in hid["share"]], textposition="outside",
+                textfont=dict(size=10.5, color=TXT2),
+                hovertemplate="%{y}: %{x:.1f}%<extra></extra>",
+            ))
+            fig.update_layout(**_layout(
+                height=300, xaxis=dict(ticksuffix="%", showgrid=False, zeroline=False, linecolor=BORDER),
+                yaxis=dict(gridcolor="rgba(0,0,0,0)", tickfont=dict(size=11, color=TXT2)),
+                margin=dict(l=0, r=30, t=8, b=0),
+            ))
+            st.plotly_chart(fig, use_container_width=True, config=_PLOT_CFG)
+            st.caption("Enrichment in progress — shares firm up as more companies are classified.")
+            st.markdown("<hr/>", unsafe_allow_html=True)
+
     # ── Section 6: Download aggregates ───────────────────────────────
     st.markdown(
         '<div class="section-header">Download the data</div>'
