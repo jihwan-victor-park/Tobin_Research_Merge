@@ -318,6 +318,14 @@ only; hidden companies aren't in PB, so their 'before' needs Wayback.
 **Next:** scale the classify sample; layer Revelio hiring triangulation; add the
 2023 Crunchbase snapshot as a third point; Wayback for the hidden companies.
 
+**Triangulation (anti-washing, free — `--triangulate`):** of the 7,648 added-AI
+companies, 72% show REAL activity (headcount grew or raised more capital
+2021->2025), 28% show none (flat/shrank, no new raise). The text-only classifier
+flagged just 3.4% washing — but 28% added AI language with no growth behind it.
+Key finding: **text under-detects washing; most AI-repackaging claims are not
+matched by real growth.** (No-activity is a strong signal, not proof — PB data
+can lag and a real pivot may not have grown yet.)
+
 ---
 
 ## 7. EXIT OUTCOMES (Crunchbase 2023) — added 2026-08-09

@@ -38,18 +38,45 @@ _AI = ("(lower(x) LIKE '%artificial intelligence%' OR lower(x) LIKE '%machine le
 
 def _con():
     con = duckdb.connect()
+    con.execute("SET enable_progress_bar=false")
     con.execute(f"""CREATE VIEW y21 AS SELECT CAST(CompanyID AS VARCHAR) id, CompanyName AS cname,
-        coalesce(Description,'') descr, coalesce(Description,'')||' '||coalesce(Keywords,'') x
+        coalesce(Description,'') descr, coalesce(Description,'')||' '||coalesce(Keywords,'') x,
+        TRY_CAST(Employees AS DOUBLE) emp, TRY_CAST(TotalRaised AS DOUBLE) raised
         FROM read_csv('{PB2021}', delim='|', header=true, quote=chr(7), ignore_errors=true, all_varchar=true)""")
     con.execute(f"""CREATE VIEW y25 AS SELECT CAST(CompanyID AS VARCHAR) id,
-        coalesce(Description,'') descr, coalesce(Description,'')||' '||coalesce(Keywords,'') x
+        coalesce(Description,'') descr, coalesce(Description,'')||' '||coalesce(Keywords,'') x,
+        TRY_CAST(Employees AS DOUBLE) emp, TRY_CAST(TotalRaised AS DOUBLE) raised
         FROM read_parquet({PB2025})""")
     return con
+
+
+def triangulate(con):
+    """Anti-washing signal: of the added-AI companies, how many show REAL
+    activity (headcount grew OR raised more capital 2021->2025) vs none.
+    The text-only classifier under-detects washing; this is the orthogonal check."""
+    r = con.execute(f"""
+        WITH added AS (
+            SELECT a.emp e21, b.emp e25, a.raised r21, b.raised r25
+            FROM y21 a JOIN y25 b USING(id)
+            WHERE NOT ({_AI.replace('x','a.x')}) AND {_AI.replace('x','b.x')}
+        )
+        SELECT COUNT(*) n,
+               COUNT(*) FILTER (WHERE e25>e21) grew,
+               COUNT(*) FILTER (WHERE coalesce(r25,0)>coalesce(r21,0)) raised_more,
+               COUNT(*) FILTER (WHERE e25>e21 OR coalesce(r25,0)>coalesce(r21,0)) real_act
+        FROM added""").fetchdf().iloc[0]
+    n = int(r["n"])
+    print(f"\nTriangulation on {n:,} added-AI companies (headcount + funding delta):")
+    print(f"  grew headcount:  {int(r['grew']):,} ({100*r['grew']/n:.0f}%)")
+    print(f"  raised more:     {int(r['raised_more']):,} ({100*r['raised_more']/n:.0f}%)")
+    print(f"  REAL ACTIVITY:   {int(r['real_act']):,} ({100*r['real_act']/n:.0f}%)  backs a genuine pivot")
+    print(f"  NO activity:     {n-int(r['real_act']):,} ({100*(n-r['real_act'])/n:.0f}%)  washing candidates")
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--panel-only", action="store_true")
+    ap.add_argument("--triangulate", action="store_true")
     ap.add_argument("--classify", type=int, default=0, help="classify N 'added-AI' companies")
     a = ap.parse_args()
     con = _con()
@@ -67,6 +94,8 @@ def main() -> None:
     print(f"  AI language: 2021 {100*r['ai21']/tot:.1f}%  ->  2025 {100*r['ai25']/tot:.1f}%")
     print(f"  added AI: {int(r['added']):,} | stayed AI: {int(r['stayed']):,} | dropped AI: {int(r['dropped']):,}")
 
+    if a.triangulate:
+        triangulate(con)
     if a.panel_only or not a.classify:
         return
 
