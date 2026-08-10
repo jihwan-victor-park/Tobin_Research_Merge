@@ -291,13 +291,19 @@ snapshots are git-ignored under `data/pb_longitudinal/`.
 - **7,648 companies ADDED AI language**; 22,340 were AI in both; 2,206 DROPPED it.
 
 **Repackaging breakdown (LLM diff-classifier, 150-company sample of the added-AI pool):**
-| class | share | meaning |
+| class | share (n=2,000) | meaning |
 |---|---|---|
-| repackaged_to_ai | **20%** | genuine business-model pivot to AI |
-| added_ai_feature | 33% | AI added as a feature, core unchanged |
-| born_ai | 13% | was AI in 2021 (keyword pre-filter missed it) |
-| ai_washing | 2% | marketing only — TEXT-ALONE FLOOR (needs hiring triangulation) |
-| no_ai_change | 32% | keyword false-positive, no real change |
+| repackaged_to_ai | **18.1%** | genuine business-model pivot to AI |
+| added_ai_feature | 34.5% | AI added as a feature, core unchanged |
+| born_ai | 10.5% | was AI in 2021 (keyword pre-filter missed it) |
+| ai_washing | 3.4% | marketing only — TEXT-ALONE FLOOR (needs hiring triangulation) |
+| no_ai_change | 33.5% | keyword false-positive, no real change |
+
+Stable across sample sizes (150 -> 2,000). Of the ~7,648 added-AI companies:
+~18% genuine pivots (~1,380), ~35% added-feature (~2,640), ~3% washing.
+Per-company results: output/22_pb_repackaging_sample.csv. Real pivots: Samba
+Tech (video->AI infra), Perfit 3D (3D scanning->AI marketplace), Enki (learning
+app->enterprise AI coaching), Artivatic.ai (data API->AI insurance).
 
 Real pivots surfaced: Taktify (neurotech->AI), emotion3D (3D imaging->AI),
 Transparency Life Sciences (clinical trials->AI-driven), Ayyeka (monitoring->edge AI).

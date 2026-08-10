@@ -74,17 +74,35 @@ def main() -> None:
         WHERE NOT ai21 AND ai25 AND length(d21)>40 AND length(d25)>40
         ORDER BY random() LIMIT ?""", [a.classify]).fetchall()
     print(f"\nClassifying {len(sample)} 'added-AI' companies (real 2021 vs 2025 descriptions)...")
+    import csv
     from collections import Counter
-    c = Counter(); shown = 0
-    for name, d21, d25 in sample:
-        res = classify_change(name, d21, d25)
-        if not res:
-            c["PARSE_FAIL"] += 1; continue
-        c[res["change"]] += 1
-        if shown < 8 and res["change"] in ("repackaged_to_ai", "ai_washing"):
-            print(f"  [{res['change']:16s}] {name[:26]:26s} {res.get('why','')[:50]}")
-            shown += 1
-    print("\nRepackaging breakdown of the 'added-AI' pool:")
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    c = Counter(); done = 0; rows_out = []
+    def work(row):
+        name, d21, d25 = row
+        return name, classify_change(name, d21, d25)
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        futs = [ex.submit(work, row) for row in sample]
+        for f in as_completed(futs):
+            name, res = f.result()
+            cls = "PARSE_FAIL" if not res else res["change"]
+            c[cls] += 1
+            rows_out.append({"company": name, "change": cls,
+                             "why": (res or {}).get("why", "")})
+            done += 1
+            if done % 200 == 0:
+                print(f"  {done}/{len(sample)}", flush=True)
+    # persist per-company results + aggregate (survives any stdout-capture loss)
+    out = ROOT / "output"; out.mkdir(exist_ok=True)
+    with open(out / "22_pb_repackaging_sample.csv", "w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=["company", "change", "why"]); w.writeheader()
+        w.writerows(rows_out)
+    with open(out / "22_pb_repackaging_summary.csv", "w", newline="") as fh:
+        w = csv.writer(fh); w.writerow(["class", "count", "pct"])
+        for cls in CLASSES + ["PARSE_FAIL"]:
+            if c.get(cls):
+                w.writerow([cls, c[cls], round(100*c[cls]/len(sample), 1)])
+    print("\nRepackaging breakdown of the 'added-AI' pool (saved to output/22_*.csv):")
     for cls in CLASSES + ["PARSE_FAIL"]:
         if c.get(cls):
             print(f"  {cls:18s}: {c[cls]:>3}  ({100*c[cls]/len(sample):.0f}%)")
