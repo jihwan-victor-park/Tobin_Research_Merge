@@ -275,3 +275,39 @@ it needs no founding-year/geography enrichment, so it's not subject to this bias
   founder commit). role_k1500 caveat (§3) applies.
 - Reproduce: `python3 scripts/research_analysis.py` (points at DATABASE_URL;
   set it to RAILWAY_DATABASE_URL for the complete superset).
+
+---
+
+## 6. LONGITUDINAL: AI repackaging (PitchBook 2021 -> 2025) — added 2026-08-09
+
+Turned the cross-sectional data longitudinal using the PitchBook **2021** and
+**2025** company snapshots (shared Dropbox), joined on **CompanyID** (exact,
+no fuzzy matching). Scripts: `scripts/pb_longitudinal_repackaging.py` (panel +
+sample classify) and `scripts/ai_repackaging.py` (the diff-classifier). Raw
+snapshots are git-ignored under `data/pb_longitudinal/`.
+
+**Panel: 641,442 companies present in both 2021 and 2025.**
+- AI-language prevalence: **3.8% (2021) -> 4.7% (2025)**
+- **7,648 companies ADDED AI language**; 22,340 were AI in both; 2,206 DROPPED it.
+
+**Repackaging breakdown (LLM diff-classifier, 150-company sample of the added-AI pool):**
+| class | share | meaning |
+|---|---|---|
+| repackaged_to_ai | **20%** | genuine business-model pivot to AI |
+| added_ai_feature | 33% | AI added as a feature, core unchanged |
+| born_ai | 13% | was AI in 2021 (keyword pre-filter missed it) |
+| ai_washing | 2% | marketing only — TEXT-ALONE FLOOR (needs hiring triangulation) |
+| no_ai_change | 32% | keyword false-positive, no real change |
+
+Real pivots surfaced: Taktify (neurotech->AI), emotion3D (3D imaging->AI),
+Transparency Life Sciences (clinical trials->AI-driven), Ayyeka (monitoring->edge AI).
+
+**Caveats:** (1) ai_washing 2% is a floor — text alone can't separate washing
+from real pivots; the Revelio hiring signal (0 vs many ML hires) resolves it and
+should be layered in. (2) The real repackaging rate should be computed on
+LLM-confirmed added-AI (excl. the 32% keyword false-positives + 13% already-AI).
+(3) 150-sample => ~+/-7%; scale up for precision. (4) Covers PitchBook (commercial)
+only; hidden companies aren't in PB, so their 'before' needs Wayback.
+
+**Next:** scale the classify sample; layer Revelio hiring triangulation; add the
+2023 Crunchbase snapshot as a third point; Wayback for the hidden companies.
