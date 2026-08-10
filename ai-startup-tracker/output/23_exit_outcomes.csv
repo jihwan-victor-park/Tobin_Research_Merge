@@ -1,0 +1,6 @@
+bucket,is_ai,n_matched,acquired,ipo,closed,operating,exit_rate_pct
+commercial,False,103556,26299,5651,7439,64167,30.9
+commercial,True,66001,5954,721,5085,54241,10.1
+commercial,,403382,738,4337,3626,394681,1.3
+hidden,True,1272,123,138,63,948,20.5
+hidden,,3710,196,67,513,2934,7.1

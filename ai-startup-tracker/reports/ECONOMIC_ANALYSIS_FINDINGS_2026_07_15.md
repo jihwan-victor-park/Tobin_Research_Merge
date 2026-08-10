@@ -317,3 +317,26 @@ only; hidden companies aren't in PB, so their 'before' needs Wayback.
 
 **Next:** scale the classify sample; layer Revelio hiring triangulation; add the
 2023 Crunchbase snapshot as a third point; Wayback for the hidden companies.
+
+---
+
+## 7. EXIT OUTCOMES (Crunchbase 2023) — added 2026-08-09
+
+Unlocked the survival/exit gap using the CB 2023 dump's `status` field +
+acquisitions/ipos tables, matched to our companies by domain. Script:
+`scripts/match_cb_exits.py`; aggregate in `output/23_exit_outcomes.csv`.
+
+**577,921 of our companies matched CB 2023 by domain.** Overall: 33,310
+acquired, 10,914 IPO, 16,726 closed (7.7% acq+ipo exit rate among matched).
+
+| bucket | matched | acquired | ipo | closed | exit% |
+|---|---|---|---|---|---|
+| Commercial AI | 66,001 | 5,954 | 721 | 5,085 | 10.1% |
+| Commercial non-AI | 103,556 | 26,299 | 5,651 | 7,439 | 30.9% |
+| Hidden AI | 1,272 | 123 | 138 | 63 | 20.5% |
+
+CAVEATS: (1) AI-vs-non-AI exit gap is confounded by AGE — non-AI companies are
+older and have had more years to exit; a cohort-matched comparison is needed.
+(2) CB status is a 2023 snapshot (exits only through 2023). (3) Hidden companies
+barely match CB (they're hidden by definition), so exit data covers commercial.
+The CB dump also has people/degrees (founders) + funding_rounds — more to mine.
