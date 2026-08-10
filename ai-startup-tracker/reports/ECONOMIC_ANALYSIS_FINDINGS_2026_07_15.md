@@ -348,3 +348,22 @@ older and have had more years to exit; a cohort-matched comparison is needed.
 (2) CB status is a 2023 snapshot (exits only through 2023). (3) Hidden companies
 barely match CB (they're hidden by definition), so exit data covers commercial.
 The CB dump also has people/degrees (founders) + funding_rounds — more to mine.
+
+### 6b. Repackaging by sector and founding cohort (added 2026-08-09)
+output/24_repackaging_by_sector.csv, 25_repackaging_by_cohort.csv.
+
+By sector (of PB companies in the 2021->2025 panel):
+| sector | added-AI rate | washing rate (of added) |
+|---|---|---|
+| Information Technology | 2.5% (highest) | 16% |
+| Healthcare | 1.2% | 11% |
+| Financial Services | 0.7% | 15% |
+| B2B products/services | 0.7% | 20% (highest washing) |
+| Consumer (B2C) | 0.3% | 11% |
+
+-> IT repackages around AI the most; B2B-services has the highest AI-washing
+rate (added AI language, no headcount/funding growth behind it).
+
+By founding cohort (added-AI rate, monotonic with recency):
+pre-2010 0.7% | 2010-15 1.6% | 2016-20 3.0% | 2021+ 4.0% (small n).
+-> Younger companies repackage ~4x more than pre-2010 firms.
