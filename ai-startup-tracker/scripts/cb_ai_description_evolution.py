@@ -19,6 +19,7 @@ Outputs:
 """
 from __future__ import annotations
 
+import argparse
 import re
 from pathlib import Path
 
@@ -57,25 +58,35 @@ GENAI_ANY = re.compile("|".join(v for v in GENAI.values()), re.I)
 
 
 def main() -> None:
-    d25 = D / "cb2025_organization_descriptions.parquet"
-    if not d25.exists():
-        print(f"MISSING {d25} — extract organization_descriptions from the 2025 folder first.")
-        return
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--to", default="2026", choices=["2025", "2026"],
+                    help="end year of the comparison (default 2026, falls back to 2025)")
+    a = ap.parse_args()
+    to = a.to
+    dto = D / f"cb{to}_organization_descriptions.parquet"
+    org_to = D / f"cb{to}_organizations.parquet"
+    if not dto.exists() or not org_to.exists():
+        if to == "2026":
+            print(f"cb2026 files missing — falling back to 2025."); to = "2025"
+            dto = D / "cb2025_organization_descriptions.parquet"
+            org_to = D / "cb2025_organizations.parquet"
+        if not dto.exists():
+            print(f"MISSING {dto} — extract organization_descriptions first."); return
 
     con = duckdb.connect(); con.execute("SET enable_progress_bar=false")
-    print("building AI-2025 cohort with 2023 & 2025 descriptions...")
+    print(f"building AI-{to} cohort with 2023 & {to} descriptions...")
     df = con.execute(f"""
         SELECT a.uuid, o23.is_ai23,
-               d23.description AS t23, d25.description AS t25
-        FROM (SELECT uuid, {AICAT} AS is_ai FROM read_parquet('{D}/cb2025_organizations.parquet')) a
+               d23.description AS t23, dN.description AS t25
+        FROM (SELECT uuid, {AICAT} AS is_ai FROM read_parquet('{org_to}')) a
         JOIN (SELECT uuid, {AICAT} AS is_ai23 FROM read_parquet('{D}/cb2023_organizations.parquet')) o23
              ON a.uuid=o23.uuid
         JOIN read_parquet('{D}/cb2023_organization_descriptions.parquet') d23 ON a.uuid=d23.uuid
-        JOIN read_parquet('{d25}') d25 ON a.uuid=d25.uuid
-        WHERE a.is_ai AND d23.description IS NOT NULL AND d25.description IS NOT NULL
-          AND length(d23.description) > 20 AND length(d25.description) > 20
+        JOIN read_parquet('{dto}') dN ON a.uuid=dN.uuid
+        WHERE a.is_ai AND d23.description IS NOT NULL AND dN.description IS NOT NULL
+          AND length(d23.description) > 20 AND length(dN.description) > 20
     """).fetchdf()
-    print(f"  {len(df):,} AI-2025 companies with both 2023 & 2025 descriptions")
+    print(f"  {len(df):,} AI-{to} companies with both 2023 & {to} descriptions")
 
     t23 = df["t23"].fillna("").str.lower()
     t25 = df["t25"].fillna("").str.lower()
@@ -100,13 +111,13 @@ def main() -> None:
             "cohort": label, "companies": n,
             "added_AI_language_pct": round(100*sub.added_ai_lang.mean(), 1),
             "added_genAI_language_pct": round(100*sub.added_genai_lang.mean(), 1),
-            "mentions_genAI_2025_pct": round(100*sub.genai25.mean(), 1),
+            f"mentions_genAI_{to}_pct": round(100*sub.genai25.mean(), 1),
             "rewrote_desc_pct": round(100*sub.rewrote.mean(), 1),
         })
     summ = pd.DataFrame(rows)
-    print("\n=== AI companies: description change 2023 -> 2025 ===")
+    print(f"\n=== AI companies: description change 2023 -> {to} ===")
     print(summ.to_string(index=False))
-    summ.to_csv(OUT / "37_cb_ai_desc_change_summary.csv", index=False)
+    summ.to_csv(OUT / f"37_cb_ai_desc_change_summary_{to}.csv", index=False)
 
     # which gen-AI terms were newly ADDED (absent 2023, present 2025) ------
     rows = []
@@ -114,14 +125,14 @@ def main() -> None:
         rx = re.compile(pat, re.I)
         newly = sum((not rx.search(a)) and bool(rx.search(b)) for a, b in zip(t23, t25))
         in25 = int(t25.apply(lambda s: bool(rx.search(s))).sum())
-        rows.append({"genai_term": term, "companies_mentioning_2025": in25,
+        rows.append({"genai_term": term, f"companies_mentioning_{to}": in25,
                      "newly_added_since_2023": newly})
     terms = pd.DataFrame(rows).sort_values("newly_added_since_2023", ascending=False)
     print("\n=== Gen-AI vocabulary newly added to AI-company descriptions ===")
     print(terms.to_string(index=False))
-    terms.to_csv(OUT / "38_cb_ai_genai_terms_surge.csv", index=False)
+    terms.to_csv(OUT / f"38_cb_ai_genai_terms_surge_{to}.csv", index=False)
 
-    print("\nsaved -> output/37_cb_ai_desc_change_summary.csv, 38_cb_ai_genai_terms_surge.csv")
+    print(f"\nsaved -> output/37_cb_ai_desc_change_summary_{to}.csv, 38_cb_ai_genai_terms_surge_{to}.csv")
 
 
 if __name__ == "__main__":

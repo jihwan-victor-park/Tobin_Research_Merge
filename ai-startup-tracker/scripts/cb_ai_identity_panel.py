@@ -48,36 +48,44 @@ def _view(con, yr):
 
 def main() -> None:
     con = duckdb.connect(); con.execute("SET enable_progress_bar=false")
-    for yr in ("2023", "2024", "2025"):
+    years = [y for y in ("2023", "2024", "2025", "2026")
+             if (D / f"cb{y}_organizations.parquet").exists()]
+    anchor = years[-1]  # latest available year is the AI-cohort anchor
+    for yr in years:
         _view(con, yr)
+    print(f"anchor year: {anchor}  (panel years: {years})")
 
-    # panel keyed on 2025 AI companies, with their 2023/2024 identity
-    con.execute("""CREATE TABLE panel AS
-        SELECT a.uuid, a.fy,
-               a.is_ai AS ai25, b.is_ai AS ai24, c.is_ai AS ai23,
-               (c.uuid IS NOT NULL) AS in23, (b.uuid IS NOT NULL) AS in24,
-               c.cats AS cats23
-        FROM y2025 a
-        LEFT JOIN y2024 b ON a.uuid=b.uuid
-        LEFT JOIN y2023 c ON a.uuid=c.uuid
+    # panel keyed on latest-year AI companies, with their identity in each prior year
+    con.execute(f"""CREATE TABLE panel AS
+        SELECT a.uuid, a.fy, a.is_ai AS ai_now,
+               y2023.is_ai AS ai23, (y2023.uuid IS NOT NULL) AS in23, y2023.cats AS cats23,
+               {"y2024.is_ai AS ai24, (y2024.uuid IS NOT NULL) AS in24," if "2024" in years else "NULL AS ai24, FALSE AS in24,"}
+               {"y2025.is_ai AS ai25, (y2025.uuid IS NOT NULL) AS in25" if "2025" in years and anchor != "2025" else "NULL AS ai25, FALSE AS in25"}
+        FROM y{anchor} a
+        LEFT JOIN y2023 ON a.uuid=y2023.uuid
+        {"LEFT JOIN y2024 ON a.uuid=y2024.uuid" if "2024" in years else ""}
+        {"LEFT JOIN y2025 ON a.uuid=y2025.uuid" if "2025" in years and anchor != "2025" else ""}
         WHERE a.is_ai""")
     n = con.execute("SELECT count(*) FROM panel").fetchone()[0]
-    print(f"AI companies in CB 2025 (category taxonomy): {n:,}\n")
+    print(f"AI companies in CB {anchor} (category taxonomy): {n:,}\n")
 
     # 1. identity timing / decomposition ----------------------------------
-    timing = con.execute("""
+    # first year the company appears in CB, and first year it was AI-tagged
+    timing = con.execute(f"""
         SELECT
           CASE
-            WHEN NOT in23 AND NOT in24 THEN '3 new to CB in 2025'
-            WHEN NOT in23 AND in24     THEN '2 new to CB in 2024'
-            WHEN in23 AND ai23         THEN '0 AI already in 2023 (<=2023)'
-            WHEN in23 AND NOT ai23 AND COALESCE(ai24,false)     THEN '1a repackaged: added AI by 2024'
-            WHEN in23 AND NOT ai23 AND NOT COALESCE(ai24,false) THEN '1b repackaged: added AI in 2025'
+            WHEN in23 AND ai23                                   THEN '0 AI already in 2023 (<=2023)'
+            WHEN in23 AND NOT ai23 AND COALESCE(ai24,false)      THEN '1 repackaged: added AI by 2024'
+            WHEN in23 AND NOT ai23 AND COALESCE(ai25,false)      THEN '2 repackaged: added AI by 2025'
+            WHEN in23 AND NOT ai23                               THEN '3 repackaged: added AI in {anchor}'
+            WHEN NOT in23 AND in24                               THEN '4 new to CB in 2024'
+            WHEN NOT in23 AND NOT in24 AND in25                  THEN '5 new to CB in 2025'
+            ELSE                                                      '6 new to CB in {anchor}'
           END AS ai_identity_origin,
           COUNT(*) companies,
           ROUND(100.0*COUNT(*)/SUM(COUNT(*)) OVER (),1) pct
         FROM panel GROUP BY 1 ORDER BY 1""").fetchdf()
-    print("=== When did 2025's AI companies acquire their AI identity? ===")
+    print(f"=== When did {anchor}'s AI companies acquire their AI identity? ===")
     print(timing.to_string(index=False))
     timing.to_csv(OUT / "34_cb_ai_identity_timing.csv", index=False)
 
@@ -90,9 +98,9 @@ def main() -> None:
           ROUND(100.0*COUNT(*) FILTER (WHERE in23 AND NOT ai23)
                 /NULLIF(COUNT(*) FILTER (WHERE in23),0),1) repackaged_pct
         FROM panel""").fetchdf().iloc[0]
-    print(f"\nOf AI-2025 companies present in CB since 2023 ({int(hl.present_since_2023):,}): "
+    print(f"\nOf AI-{anchor} companies present in CB since 2023 ({int(hl.present_since_2023):,}): "
           f"{int(hl.repackaged_to_ai):,} ({hl.repackaged_pct}%) were NON-AI in 2023 and "
-          f"adopted an AI identity by 2025 (repackaged); the rest were already AI.")
+          f"adopted an AI identity by {anchor} (repackaged); the rest were already AI.")
 
     # 2. what were the repackagers BEFORE? top 2023 categories -------------
     origins = con.execute("""
@@ -119,7 +127,7 @@ def main() -> None:
                      /NULLIF(COUNT(*) FILTER (WHERE in23),0),1) repackaged_pct
         FROM panel WHERE fy BETWEEN 1990 AND 2025 GROUP BY 1
         HAVING COUNT(*) FILTER (WHERE in23) >= 50 ORDER BY 1""").fetchdf()
-    print("\n=== Repackaging rate by founding cohort (AI-2025 cos present since 2023) ===")
+    print(f"\n=== Repackaging rate by founding cohort (AI-{anchor} cos present since 2023) ===")
     print(cohort.to_string(index=False))
     cohort.to_csv(OUT / "36_cb_ai_identity_by_cohort.csv", index=False)
 
