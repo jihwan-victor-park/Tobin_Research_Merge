@@ -1,0 +1,3 @@
+company_type,median_seed_to_A_months,median_A_to_B_months,median_B_to_C_months,median_gap_all_rounds_months,median_rounds_per_company
+AI,24.3,20.0,19.9,12.0,2.0
+Non-AI,22.5,19.1,19.5,12.2,1.0
