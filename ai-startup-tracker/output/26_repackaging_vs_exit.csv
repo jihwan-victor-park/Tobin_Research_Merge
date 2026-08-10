@@ -1,0 +1,5 @@
+grp,n,n_matched,exit_pct,closed_pct
+never_ai,552685,368652,24.3,12.5
+dropped_ai,2264,1935,17.5,2.0
+added_ai,8034,6592,16.1,3.4
+born_ai,22358,17982,15.8,10.0

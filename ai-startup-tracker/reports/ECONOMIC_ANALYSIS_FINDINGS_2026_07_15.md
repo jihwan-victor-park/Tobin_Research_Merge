@@ -367,3 +367,23 @@ rate (added AI language, no headcount/funding growth behind it).
 By founding cohort (added-AI rate, monotonic with recency):
 pre-2010 0.7% | 2010-15 1.6% | 2016-20 3.0% | 2021+ 4.0% (small n).
 -> Younger companies repackage ~4x more than pre-2010 firms.
+
+## 8. Repackaging x exit outcomes (added 2026-08-09)
+Joined the PB 2021->2025 transition groups to CB 2023 exit status by domain.
+output/26_repackaging_vs_exit.csv.
+
+| group | exit% (acq+ipo) | closed% |
+|---|---|---|
+| never_ai | 24.3 | 12.5 |
+| dropped_ai | 17.5 | 2.0 |
+| added_ai (repackaged) | 16.1 | 3.4 |
+| born_ai | 15.8 | 10.0 |
+
+Standout: companies that REPACKAGED to AI have a much lower CLOSURE rate (3.4%)
+than never-AI (12.5%) or born-AI (10%) — consistent with repackaging as a
+survival move.
+
+HEAVY CAVEAT: exit% is age-confounded — never_ai is full of older, mature firms
+with more years to exit; a cohort-matched comparison is required before any
+causal reading. Also CB status is 2023 while AI is measured through 2025
+(temporal ordering muddy). Directional/suggestive only.
