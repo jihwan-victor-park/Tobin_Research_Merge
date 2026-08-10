@@ -407,3 +407,22 @@ had to still be active enough to update its PitchBook profile — so "added_ai" 
 partly conditioned on survival, which mechanically depresses its closure rate.
 This is association, not causation; a proper design needs the exact date AI was
 added and a company still-alive-in-2021 baseline.
+
+## 9. Wayback repackaging for HIDDEN companies — informative negative (2026-08-10)
+scripts/wayback_repackaging.py reconstructs hidden companies' homepage text at
+~2021 and ~2025 from the Internet Archive to detect repackaging (they aren't in
+CB/PB, so no snapshot panel exists for them).
+
+RESULT: ~88% of sampled hidden AI companies have NO archived 2021 homepage —
+they didn't exist / weren't online / weren't crawled in 2021. The hidden AI
+population is predominantly recent, born-AI firms, not repackagers. Only ~12%
+have both a 2021 and 2025 snapshot, too few and too self-selected for a reliable
+hidden-repackaging estimate.
+
+TAKEAWAY: AI repackaging is a COMMERCIAL / established-company phenomenon (well
+captured by the PitchBook 2021->2025 panel, section 6). It is NOT meaningfully
+measurable for the hidden population via Wayback because those companies mostly
+post-date the 2021 baseline. Consistent with the hidden layer skewing to
+2019-2025 formation and higher AI-adoption (sections 2a/2b). The tool remains
+useful for the minority of older hidden firms and is checkpointed/resumable
+(output/28_wayback_repackaging.csv).
