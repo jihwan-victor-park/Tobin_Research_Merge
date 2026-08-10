@@ -387,3 +387,23 @@ HEAVY CAVEAT: exit% is age-confounded — never_ai is full of older, mature firm
 with more years to exit; a cohort-matched comparison is required before any
 causal reading. Also CB status is 2023 while AI is measured through 2025
 (temporal ordering muddy). Directional/suggestive only.
+
+### 8b. Cohort-MATCHED (removes the age confound) — added 2026-08-09
+output/27_repackaging_exit_cohort_matched.csv. Within founding cohort,
+repackaged (added_ai) vs never_ai:
+
+| cohort | closed% repackaged | closed% never-AI | exit% repackaged | exit% never-AI |
+|---|---|---|---|---|
+| pre-2010 | 6.5 | 13.7 | 24.7 | 29.6 |
+| 2010-15 | 3.5 | 17.8 | 15.3 | 14.5 |
+| 2016-21 | 2.2 | 6.6 | 6.2 | 8.7 |
+
+FINDING (robust to age): repackaged firms CLOSE at 3-5x lower rates than never-AI
+firms of the SAME vintage, in every cohort. Exit (acq/ipo) rates are comparable
+within cohort — the earlier "never-AI exits more" was age confounding.
+
+CAVEAT (survivorship in the measurement): to ADD AI language by 2025 a company
+had to still be active enough to update its PitchBook profile — so "added_ai" is
+partly conditioned on survival, which mechanically depresses its closure rate.
+This is association, not causation; a proper design needs the exact date AI was
+added and a company still-alive-in-2021 baseline.
