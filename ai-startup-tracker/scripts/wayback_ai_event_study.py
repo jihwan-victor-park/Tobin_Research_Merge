@@ -97,20 +97,24 @@ def added_ai_domains(limit: int) -> list[tuple[str, str]]:
     return out
 
 
-def cdx_months(domain: str) -> list[str]:
-    """One CDX call -> sorted monthly-collapsed 200-capture timestamps, 2019..2025."""
-    for _ in range(3):
+def cdx_months(domain: str) -> list[str] | None:
+    """One CDX call -> sorted monthly-collapsed 200-capture timestamps, 2019..2025.
+    Returns [] on a genuine empty-but-valid response, None on hard failure
+    (throttling / network) so the caller can mark it RETRYABLE, not no_snapshots."""
+    for attempt in range(4):
         try:
             r = requests.get(CDX, params={
                 "url": domain, "output": "json", "fl": "timestamp",
                 "from": "20190101", "to": "20251231",
                 "filter": "statuscode:200", "collapse": "timestamp:6",
-            }, timeout=30, headers=UA)
-            d = r.json()
-            return sorted(row[0] for row in d[1:]) if len(d) > 1 else []
+            }, timeout=40, headers=UA)
+            if r.status_code == 200 and r.text.strip().startswith("["):
+                d = r.json()
+                return sorted(row[0] for row in d[1:]) if len(d) > 1 else []
+            time.sleep(2 ** attempt + 1)  # throttled / bad response -> back off
         except Exception:
-            time.sleep(3)
-    return []
+            time.sleep(2 ** attempt + 1)
+    return None
 
 
 def has_ai(domain: str, ts: str) -> bool | None:
@@ -139,6 +143,9 @@ def ym(ts: str) -> str:
 
 def process(name: str, domain: str) -> dict:
     snaps = cdx_months(domain)
+    if snaps is None:  # CDX hard-failed (throttling) — retryable, not terminal
+        return {"company": name, "domain": domain, "n_snaps": -1, "n_fetches": 0,
+                "treatment_ym": "", "code": "cdx_failed"}
     base = {"company": name, "domain": domain, "n_snaps": len(snaps), "n_fetches": 0}
     if len(snaps) < 2:
         return {**base, "treatment_ym": "", "code": "no_snapshots"}
@@ -209,16 +216,18 @@ def aggregate() -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=300)
-    ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--workers", type=int, default=2)  # archive.org throttles hard above ~2
     ap.add_argument("--aggregate", action="store_true")
     a = ap.parse_args()
     if a.aggregate:
         aggregate(); return
 
+    # Only TERMINAL codes count as done; transient failures are retried.
+    RETRYABLE = {"cdx_failed", "text_unavailable", "PARSE_FAIL"}
     done = set()
     if OUT.exists():
-        done = {r["domain"] for r in csv.DictReader(open(OUT))}
-    print(f"already processed: {len(done)}")
+        done = {r["domain"] for r in csv.DictReader(open(OUT)) if r["code"] not in RETRYABLE}
+    print(f"already processed (terminal): {len(done)}")
 
     cand = added_ai_domains(a.limit)
     todo = [(n, d) for n, d in cand if d not in done][:a.limit]
