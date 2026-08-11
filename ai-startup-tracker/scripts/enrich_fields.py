@@ -82,6 +82,25 @@ def ensure_table(engine) -> None:
                 enriched_at     TIMESTAMPTZ DEFAULT now()
             )
         """))
+        # Fields the advisor didn't ask for but that fall out of pages we are
+        # already fetching, so they cost almost nothing:
+        #   ai_stack        who they depend on in the AI stack ("wrapper vs builder")
+        #   commercialization  pricing page / enterprise motion => revenue attempt,
+        #                   a partial stand-in for the funding data we can't get
+        #   regulatory      HIPAA/FDA/GDPR exposure — matters for the health/science cut
+        #   linkedin_url    present on ~53% of sites; the precise handle that makes a
+        #                   later founder lookup tractable
+        #   domain_created  WHOIS creation date -> founding-year proxy + discovery lag
+        for col, typ in (("ai_stack", "VARCHAR(32)"),
+                         ("commercialization", "VARCHAR(24)"),
+                         ("regulatory", "VARCHAR(64)"),
+                         ("open_source", "BOOLEAN"),
+                         ("linkedin_url", "VARCHAR(200)"),
+                         ("domain_created_year", "INTEGER"),
+                         ("whois_attempted_at", "TIMESTAMPTZ")):
+            c.execute(text(
+                f"ALTER TABLE company_enrichment ADD COLUMN IF NOT EXISTS {col} {typ}"
+            ))
         # Attempt bookkeeping: an unattended multi-hour run must not retry the
         # same dead site / no-result search on every pass. Each stage stamps its
         # column whether or not it extracted anything, and skips rows already
@@ -105,7 +124,13 @@ def mark_attempt(engine, company_id: int, column: str) -> None:
 _COLS = ["sector", "ai_application", "ai_subfield", "business_model",
          "target_customer", "problem_solved", "location_city", "location_country",
          "team_size_bucket", "product_status", "accelerator", "founding_year",
-         "founders", "recent_funding"]
+         "founders", "recent_funding",
+         "ai_stack", "commercialization", "regulatory", "open_source",
+         "linkedin_url", "domain_created_year"]
+
+AI_STACK = ["uses_closed_api", "uses_open_models", "builds_own_models", "not_stated"]
+COMMERCIALIZATION = ["self_serve_pricing", "enterprise_sales", "waitlist_only",
+                     "free_or_research", "not_stated"]
 
 
 def upsert(engine, company_id: int, fields: dict, sources: dict) -> None:
@@ -135,23 +160,59 @@ def upsert(engine, company_id: int, fields: dict, sources: dict) -> None:
 
 # ── website fetch (static) ───────────────────────────────────────────
 def fetch_site_text(domain: str, max_chars: int = 6000) -> Optional[str]:
+    return (fetch_site(domain, max_chars) or (None, None))[0]
+
+
+def fetch_site(domain: str, max_chars: int = 6000):
+    """Return (visible_text, linkedin_company_url). The LinkedIn handle is read
+    from the raw HTML (present on ~53% of sites) — it costs nothing here and is
+    the precise identifier that makes a later founder lookup tractable."""
+    import re as _re
+
     import httpx
     from bs4 import BeautifulSoup
     if not domain:
-        return None
+        return None, None
     url = domain if domain.startswith("http") else f"https://{domain}"
     try:
         r = httpx.get(url, timeout=15, follow_redirects=True,
                       headers={"User-Agent": "Mozilla/5.0 (research-crawler)"})
         if r.status_code >= 400 or "text/html" not in r.headers.get("content-type", ""):
-            return None
-        soup = BeautifulSoup(r.text, "lxml")
+            return None, None
+        html = r.text
+        m = _re.search(r"https?://[\w.]*linkedin\.com/company/[\w\-%.]+", html, _re.I)
+        li = m.group(0)[:200] if m else None
+        soup = BeautifulSoup(html, "lxml")
         for tag in soup(["script", "style", "nav", "footer", "svg"]):
             tag.decompose()
         text_out = " ".join(soup.get_text(" ").split())
-        return text_out[:max_chars] or None
+        return (text_out[:max_chars] or None), li
+    except Exception:
+        return None, None
+
+
+# ── WHOIS: domain creation year (free founding-year proxy) ───────────
+def whois_year(domain: str) -> Optional[int]:
+    """Year the domain was registered. Startups usually register at founding, so
+    this is a usable proxy where no founding year exists — label it as a proxy,
+    never as the true founding date. Skips the registry's own boilerplate
+    'created: 1985-01-01' line that appears in every .com record."""
+    import re as _re
+    import subprocess
+    try:
+        out = subprocess.run(["whois", domain], capture_output=True,
+                             text=True, timeout=25).stdout
     except Exception:
         return None
+    for pat in (r"Creation Date:\s*(\d{4})",
+                r"Domain Registration Date:\s*\w*\s*(\d{4})",
+                r"created:\s*(\d{4})-\d\d-\d\d",
+                r"Registered on:\s*\d\d-\w+-(\d{4})"):
+        for m in _re.finditer(pat, out, _re.IGNORECASE):
+            y = int(m.group(1))
+            if 1990 <= y <= 2026:
+                return y
+    return None
 
 
 # ── Tier 1: classify from description ────────────────────────────────
@@ -263,7 +324,10 @@ def stage_web(engine, limit: int, workers: int, dry_run: bool) -> None:
                 src["domain"] = {"source": "tavily", "confidence": 0.5}
                 break
         # 2) fetch site text, feed the LLM for description + Tier-2 signals
-        site = fetch_site_text(domain) if domain else None
+        site, linkedin = fetch_site(domain) if domain else (None, None)
+        if linkedin:
+            fields["linkedin_url"] = linkedin
+            src["linkedin_url"] = {"source": "website", "confidence": 0.9}
         blurb = row["description"] or ""
         # llm_ok distinguishes "the model looked and found nothing" from "the
         # model never ran" (credits out / transport error). Only the former is a
@@ -278,6 +342,13 @@ def stage_web(engine, limit: int, workers: int, dry_run: bool) -> None:
                 f"  team_size_bucket: one of {TEAM_BUCKET}\n"
                 f"  product_status: one of {PRODUCT_STATUS}\n"
                 "  accelerator: incubator/accelerator name if mentioned (e.g. Y Combinator)\n"
+                f"  ai_stack: one of {AI_STACK} — do they call third-party model APIs "
+                "(OpenAI/Anthropic), run open models (Llama/Mistral/HF), or train their own?\n"
+                f"  commercialization: one of {COMMERCIALIZATION} — published prices, "
+                "'contact sales' only, waitlist, or free/research\n"
+                "  regulatory: comma-separated compliance regimes named (HIPAA, SOC2, "
+                "GDPR, FDA, CE) or null\n"
+                "  open_source: true/false — do they publish their own code/models?\n"
                 "  confidence: 0.0-1.0"
             )
             raw = _call_llm([{"role": "user", "content": prompt}])
@@ -286,11 +357,22 @@ def stage_web(engine, limit: int, workers: int, dry_run: bool) -> None:
             data = _parse_json(raw or "") or {}
             conf = float(data.get("confidence", 0.5) or 0.5)
             for col in ["location_city", "location_country", "team_size_bucket",
-                        "product_status", "accelerator"]:
+                        "product_status", "accelerator", "regulatory"]:
                 v = data.get(col)
-                if v and str(v).lower() not in ("null", "unknown", ""):
+                if v and str(v).lower() not in ("null", "unknown", "none", ""):
                     fields[col] = str(v)[:128]
                     src[col] = {"source": "website", "confidence": conf}
+            # constrained vocabularies — drop anything off-list so the aggregate stays clean
+            if data.get("ai_stack") in AI_STACK and data["ai_stack"] != "not_stated":
+                fields["ai_stack"] = data["ai_stack"]
+                src["ai_stack"] = {"source": "website", "confidence": conf}
+            if (data.get("commercialization") in COMMERCIALIZATION
+                    and data["commercialization"] != "not_stated"):
+                fields["commercialization"] = data["commercialization"]
+                src["commercialization"] = {"source": "website", "confidence": conf}
+            if isinstance(data.get("open_source"), bool):
+                fields["open_source"] = data["open_source"]
+                src["open_source"] = {"source": "website", "confidence": conf}
             if not blurb and data.get("description"):
                 blurb = str(data["description"])
                 fields["_new_description"] = blurb
@@ -419,9 +501,53 @@ def stage_deep(engine, limit: int, workers: int, min_conf: float, dry_run: bool)
     print(f"✓ deep done ({'dry-run' if dry_run else 'written'})", flush=True)
 
 
+# ── WHOIS stage: founding-year proxy + discovery lag (free) ──────────
+def stage_whois(engine, limit: int, workers: int, dry_run: bool) -> None:
+    """Fill domain_created_year for every hidden-AI company with a domain.
+
+    This is the cheapest fix for the dataset's worst gap: founding year sits at
+    ~13% coverage, which is what makes cohort/trend analysis fragile. WHOIS is
+    free and hits ~70% of domained companies. It is a *proxy* — the domain
+    registration date, not the incorporation date — and must be reported as one.
+    """
+    with engine.connect() as c:
+        rows = c.execute(text(f"""
+            SELECT c.id, c.name, c.domain
+            FROM companies c
+            LEFT JOIN company_enrichment e ON e.company_id = c.id
+            WHERE {HIDDEN} AND {ai_filter_sql('c')}
+              AND c.domain IS NOT NULL
+              AND e.whois_attempted_at IS NULL
+            LIMIT :lim
+        """), {"lim": limit}).mappings().all()
+    print(f"whois: {len(rows)} domained hidden-AI companies", flush=True)
+
+    def work(row):
+        return row["id"], whois_year(row["domain"])
+
+    done = hit = 0
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        for f in as_completed([ex.submit(work, r) for r in rows]):
+            cid, yr = f.result()
+            if yr:
+                hit += 1
+            if not dry_run:
+                if yr:
+                    upsert(engine, cid,
+                           {"domain_created_year": yr},
+                           {"domain_created_year": {"source": "whois",
+                                                    "confidence": 0.6}})
+                mark_attempt(engine, cid, "whois_attempted_at")
+            done += 1
+            if done % 100 == 0:
+                print(f"  {done}/{len(rows)}  (year found: {hit})", flush=True)
+    print(f"✓ whois done — year for {hit}/{len(rows)} "
+          f"({'dry-run' if dry_run else 'written'})", flush=True)
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=["classify", "web", "deep"])
+    ap.add_argument("stage", choices=["classify", "web", "deep", "whois"])
     ap.add_argument("--limit", type=int, default=500)
     ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--min-confidence", type=float, default=0.5)
@@ -436,6 +562,8 @@ def main():
         stage_web(engine, a.limit, a.workers, a.dry_run)
     elif a.stage == "deep":
         stage_deep(engine, a.limit, a.workers, a.min_confidence, a.dry_run)
+    elif a.stage == "whois":
+        stage_whois(engine, a.limit, a.workers, a.dry_run)
 
 
 if __name__ == "__main__":

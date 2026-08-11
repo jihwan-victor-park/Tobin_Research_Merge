@@ -18,6 +18,7 @@ HOURS="${HOURS:-10}"
 WEB_BATCH="${WEB_BATCH:-400}"      # tier 2 is the slow one (fetch + LLM per row)
 DEEP_BATCH="${DEEP_BATCH:-400}"    # tier 3 is Tavily-bound
 CLASSIFY_BATCH="${CLASSIFY_BATCH:-2000}"
+WHOIS_BATCH="${WHOIS_BATCH:-1500}"   # free (no LLM); biggest coverage win per run
 WORKERS="${WORKERS:-8}"
 PY="./.venv/bin/python"
 LOG_DIR="logs"; mkdir -p "$LOG_DIR"
@@ -35,7 +36,7 @@ while [ "$(date +%s)" -lt "$DEADLINE" ]; do
   cycle=$((cycle + 1))
   say "--- cycle ${cycle} ---"
 
-  for stage in "classify:$CLASSIFY_BATCH" "web:$WEB_BATCH" "classify:$CLASSIFY_BATCH" "deep:$DEEP_BATCH"; do
+  for stage in "whois:$WHOIS_BATCH" "classify:$CLASSIFY_BATCH" "web:$WEB_BATCH" "classify:$CLASSIFY_BATCH"; do
     [ "$(date +%s)" -ge "$DEADLINE" ] && break
     name="${stage%%:*}"; batch="${stage##*:}"
     say "  running ${name} (limit ${batch})"
@@ -59,10 +60,11 @@ what = one(f"SELECT COUNT(*) {j} AND e.ai_application IS NOT NULL")
 loc = one(f"SELECT COUNT(*) {j} AND e.location_country IS NOT NULL")
 fnd = one(f"SELECT COUNT(*) {j} AND e.founders IS NOT NULL")
 yr = one(f"SELECT COUNT(*) {j} AND e.founding_year IS NOT NULL")
-fun = one(f"SELECT COUNT(*) {j} AND e.recent_funding IS NOT NULL")
+dcy = one(f"SELECT COUNT(*) {j} AND e.domain_created_year IS NOT NULL")
+li = one(f"SELECT COUNT(*) {j} AND e.linkedin_url IS NOT NULL")
 p = lambda n: f"{n:,} ({n/tot*100:.0f}%)"
 print(f"  COVERAGE of {tot:,} hidden-AI | what-they-do {p(what)} | location {p(loc)} "
-      f"| founders {p(fnd)} | year {p(yr)} | funding {p(fun)}")
+      f"| domain-year {p(dcy)} | linkedin {p(li)} | founders {p(fnd)}")
 PY
 
   # every stage empty means there is nothing left to do this pass
