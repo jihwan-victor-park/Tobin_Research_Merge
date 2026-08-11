@@ -42,7 +42,9 @@ from sqlalchemy import text
 from backend.db.connection import get_engine
 from backend.utils.ai_filter import ai_filter_sql
 # reuse the LLM + Tavily helpers already built for company resolution
-from scripts.enrich_companies_with_ai import _call_llm, _parse_json, tavily_search
+from scripts.enrich_companies_with_ai import (
+    BAD_RESOLVED_HOSTS, _call_llm, _parse_json, tavily_search,
+)
 
 HIDDEN = "verification_status = 'emerging_github'"   # the invisibles
 
@@ -80,6 +82,24 @@ def ensure_table(engine) -> None:
                 enriched_at     TIMESTAMPTZ DEFAULT now()
             )
         """))
+        # Attempt bookkeeping: an unattended multi-hour run must not retry the
+        # same dead site / no-result search on every pass. Each stage stamps its
+        # column whether or not it extracted anything, and skips rows already
+        # stamped.
+        for col in ("web_attempted_at", "deep_attempted_at"):
+            c.execute(text(
+                f"ALTER TABLE company_enrichment ADD COLUMN IF NOT EXISTS {col} TIMESTAMPTZ"
+            ))
+
+
+def mark_attempt(engine, company_id: int, column: str) -> None:
+    """Record that a stage ran for this company, even when it found nothing."""
+    with engine.begin() as c:
+        c.execute(text(f"""
+            INSERT INTO company_enrichment (company_id, {column})
+            VALUES (:cid, now())
+            ON CONFLICT (company_id) DO UPDATE SET {column} = now()
+        """), {"cid": company_id})
 
 
 _COLS = ["sector", "ai_application", "ai_subfield", "business_model",
@@ -202,8 +222,8 @@ def stage_classify(engine, limit: int, workers: int, dry_run: bool) -> None:
                 upsert(engine, cid, res[0], res[1])
             done += 1
             if done % 50 == 0:
-                print(f"  {done}/{len(rows)}")
-    print(f"✓ classify done ({'dry-run' if dry_run else 'written'})")
+                print(f"  {done}/{len(rows)}", flush=True)
+    print(f"✓ classify done ({'dry-run' if dry_run else 'written'})", flush=True)
 
 
 # ── Tier 1-2: web fill (domain / description / location / signals) ───
@@ -214,8 +234,10 @@ def stage_web(engine, limit: int, workers: int, dry_run: bool) -> None:
             FROM companies c
             LEFT JOIN company_enrichment e ON e.company_id = c.id
             WHERE {HIDDEN} AND {ai_filter_sql('c')}
+              AND e.web_attempted_at IS NULL
               AND (c.domain IS NULL OR c.description IS NULL OR c.country IS NULL
                    OR e.product_status IS NULL)
+            ORDER BY (c.domain IS NULL)     -- companies we already have a site for first
             LIMIT :lim
         """), {"lim": limit}).mappings().all()
     print(f"web: {len(rows)} hidden AI companies to web-enrich")
@@ -225,16 +247,21 @@ def stage_web(engine, limit: int, workers: int, dry_run: bool) -> None:
         domain = row["domain"]
         src = {}
         fields = {}
-        # 1) find domain if missing
+        # 1) find domain if missing — skip directories/social/news, which are
+        #    never the company's own site (BAD_RESOLVED_HOSTS is the same
+        #    denylist the company-resolution script uses).
         if not domain:
             hits = tavily_search(f"{name} AI startup official website", max_results=3)
             for h in hits:
                 u = (h.get("url") or "").split("/")[2:3]
-                if u:
-                    domain = u[0].replace("www.", "")
-                    fields["domain_found"] = domain  # informational; companies.domain updated below
-                    src["domain"] = {"source": "tavily", "confidence": 0.5}
-                    break
+                if not u:
+                    continue
+                host = u[0].replace("www.", "").lower()
+                if any(host == bad or host.endswith("." + bad) for bad in BAD_RESOLVED_HOSTS):
+                    continue
+                domain = host
+                src["domain"] = {"source": "tavily", "confidence": 0.5}
+                break
         # 2) fetch site text, feed the LLM for description + Tier-2 signals
         site = fetch_site_text(domain) if domain else None
         blurb = row["description"] or ""
@@ -261,6 +288,18 @@ def stage_web(engine, limit: int, workers: int, dry_run: bool) -> None:
                 blurb = str(data["description"])
                 fields["_new_description"] = blurb
                 src["description"] = {"source": "website", "confidence": conf}
+        # 3) if we just learned what they do, classify it now — otherwise this
+        #    company would sit unclassified until the next tier-1 pass.
+        if blurb and not row["description"]:
+            tags = classify_from_text(name, blurb)
+            if tags:
+                tconf = float(tags.get("confidence", 0.5) or 0.5)
+                for col in ("sector", "ai_application", "ai_subfield", "business_model",
+                            "target_customer", "problem_solved"):
+                    v = tags.get(col)
+                    if v:
+                        fields[col] = str(v)[:300]
+                        src[col] = {"source": "llm_from_website", "confidence": tconf}
         return row["id"], domain, blurb, fields, src
 
     done = 0
@@ -280,10 +319,13 @@ def stage_web(engine, limit: int, workers: int, dry_run: bool) -> None:
                 clean = {k: v for k, v in fields.items() if k in _COLS}
                 if clean or src:
                     upsert(engine, cid, clean, src)
+                # stamp the attempt either way — a dead site or a no-result
+                # search must not be retried on the next pass
+                mark_attempt(engine, cid, "web_attempted_at")
             done += 1
             if done % 25 == 0:
-                print(f"  {done}/{len(rows)}")
-    print(f"✓ web done ({'dry-run' if dry_run else 'written'})")
+                print(f"  {done}/{len(rows)}", flush=True)
+    print(f"✓ web done ({'dry-run' if dry_run else 'written'})", flush=True)
 
 
 # ── Tier 3: founders / founding year / recent funding (hard) ─────────
@@ -294,16 +336,23 @@ def stage_deep(engine, limit: int, workers: int, min_conf: float, dry_run: bool)
             FROM companies c
             LEFT JOIN company_enrichment e ON e.company_id = c.id
             WHERE {HIDDEN} AND {ai_filter_sql('c')}
+              AND e.deep_attempted_at IS NULL
               AND (e.founders IS NULL OR e.founding_year IS NULL OR e.recent_funding IS NULL)
+            ORDER BY (c.domain IS NULL)   -- a known domain disambiguates same-name startups
             LIMIT :lim
         """), {"lim": limit}).mappings().all()
     print(f"deep: {len(rows)} hidden AI companies for founder/funding/year search")
 
     def work(row):
         name = row["name"]
+        # Include the domain in the query when we have one — startup names
+        # collide constantly, and the site is the cheapest disambiguator.
+        query = f"{name} startup founder funding founded"
+        if row["domain"]:
+            query = f'{name} {row["domain"]} founder funding founded'
         ctx = "\n".join(
             f"- {h.get('title','')}: {h.get('content','')[:200]}"
-            for h in tavily_search(f"{name} startup founder funding founded", max_results=5)
+            for h in tavily_search(query, max_results=5)
         )
         if not ctx.strip():
             return row["id"], None
@@ -338,12 +387,14 @@ def stage_deep(engine, limit: int, workers: int, min_conf: float, dry_run: bool)
         futs = [ex.submit(work, r) for r in rows]
         for f in as_completed(futs):
             cid, res = f.result()
-            if res and not dry_run:
-                upsert(engine, cid, res[0], res[1])
+            if not dry_run:
+                if res:
+                    upsert(engine, cid, res[0], res[1])
+                mark_attempt(engine, cid, "deep_attempted_at")
             done += 1
             if done % 25 == 0:
-                print(f"  {done}/{len(rows)}")
-    print(f"✓ deep done ({'dry-run' if dry_run else 'written'})")
+                print(f"  {done}/{len(rows)}", flush=True)
+    print(f"✓ deep done ({'dry-run' if dry_run else 'written'})", flush=True)
 
 
 def main():
