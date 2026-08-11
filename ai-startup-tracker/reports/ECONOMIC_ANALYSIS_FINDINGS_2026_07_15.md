@@ -524,6 +524,31 @@ Aviv, Berkeley, Harvard, CMU, Technion (Israel prominent). LESS likely serial
 13.4% — NB contradicts the Revelio "no gender gap" aggregate; different source/
 definition, reconcile before citing). Aggregates only, no names.
 
+### 10j. CORRECTIONS (2026-08-11) — two undercounts caught, both material
+Skeptical re-checks surfaced two errors in the numbers above; use these instead.
+
+1. **"agents" was undercounted ~14-23x.** 10d's "598 companies added 'agents'" was
+   triple-restricted: only the 35K-company panel (firms with BOTH a 2023 and 2026
+   description), only NEWLY-ADDED, and a narrow regex. Correct figure across ALL
+   137,857 AI-2026 companies with a description: **13,906 (10.1%) mention "agent"**,
+   **8,257 (6.0%) use AI-agent / agentic language** — more than mention generative
+   (3.9%), llm (2.5%), or gpt (1.3%). Agents is genuinely the top gen-AI term, but
+   at ~6-10% prevalence, not 0.4%.
+
+2. **"6% repackaged" is a FLOOR; real repackaging is ~50%.** 10c's decomposition
+   inherited CB's earliest snapshot (2023) as its baseline — but 2023 is already
+   POST-ChatGPT, so the 2021->2023 repackaging wave is invisible and those firms
+   just appear "already AI in 2023." Evidence: (a) of the "already AI in 2023" pool,
+   only 0.3% used generative/ChatGPT language in their 2023 description — they were
+   traditional AI/ML, NOT ChatGPT-era; (b) bridging today's CB AI companies to the
+   PitchBook 2021 pre-ChatGPT baseline, **50% were NON-AI in 2021 = repackaged into
+   AI since 2021** (only 50% long-standing); (c) even within "already AI in 2023",
+   47% of the PB2021-baseline-able ones were non-AI in 2021. Plus the 73% "new to
+   CB since 2023" are unmeasurable from CB alone. So the honest headline is
+   ~half of AI companies repackaged, not 6%. Reconciles with 10g's flat text
+   prevalence via: category TAGS move faster than description TEXT (tag ~50% >>
+   text-genuine 35% of flips).
+
 ### 10i. Data provenance (section 10)
 CB 2023/2024/2025 = flat bulk parquet dumps; CB 2026 = API-style nested export
 (normalized to flat schema on load; description text carried inline). All under
