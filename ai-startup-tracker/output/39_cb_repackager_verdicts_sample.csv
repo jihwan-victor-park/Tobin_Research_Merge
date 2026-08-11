@@ -1,0 +1,501 @@
+company,change,confidence,why
+So-Net Media,no_ai_change,0.95,Descriptions are nearly identical; neither mentions AI/ML explicitly.
+UFOstart,repackaged_to_ai,0.85,Pivoted from blockchain marketing services to AI-powered content creation platform
+Insightness,no_ai_change,0.95,Descriptions identical; brain-inspired tech present in both years
+Apollo Agriculture,born_ai,0.95,AI/ML core to product in both descriptions; current adds 'agtech' label
+Area,repackaged_to_ai,0.85,Pivoted from generic 'technology company' to AI/ML-focused startup with specific offerings
+SimplyPut,born_ai,0.95,Natural language questions (2021) evolved to AI conversations (now); core AI capability consistent
+Less Everything,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Phase Change Software,born_ai,0.95,Descriptions identical; AI/ML core to product in both periods
+nu.Education,repackaged_to_ai,0.75,Shifted from learning platform to AI-driven workflow automation for education
+Acumino,repackaged_to_ai,0.85,Shifted from skill transfer programming to AI-trained robot models; core offering fundamentally changed
+Nibble,repackaged_to_ai,0.85,Complete pivot from marketing/influencer apps to ML feature platform
+Elium,added_ai_feature,0.75,AI mentioned in 2024 pitch; core KM offering unchanged since 2021
+Future Ecommerce Ltd.,added_ai_feature,0.85,"Core platform unchanged; AI features (pricing, offers) layered on top."
+BiometryCloud,born_ai,0.95,Facial recognition inherently AI/ML-based in both descriptions; no change detected
+Dial Once,repackaged_to_ai,0.85,Core pivot from call digitization to AI-driven omnichannel chatbot orchestration
+Marshmallow Studios,no_ai_change,0.95,Neither description mentions AI/ML. Rebranding emphasizes design and technology philosophy.
+Pannacotta,no_ai_change,0.95,Neither description mentions AI/ML. Core offering unchanged: goal-calendar alignment.
+1up,repackaged_to_ai,0.85,Shifted from competitive intelligence to RFP/questionnaire automation; AI remains core but use case narrowed.
+Eveince,born_ai,0.95,"AI/ML central to both descriptions; evolution in sophistication and validation, not introduction."
+Uplinq,no_ai_change,0.95,Descriptions identical; no AI/ML terminology in either version
+Oak Ridge National Laboratory,no_ai_change,0.95,Neither description mentions AI/ML. Descriptions are nearly identical.
+Pine,no_ai_change,0.95,"Neither description mentions AI/ML. Expansion is product scope, not AI."
+Operant,no_ai_change,0.95,Descriptions identical; no AI/ML mentioned in either version
+Tomorrow.io,added_ai_feature,0.85,Core weather forecasting unchanged; AI added for data translation and insights
+Régens Zrt.,no_ai_change,0.95,Identical descriptions; AI/ML mentioned as research areas in both
+Gapminder VC,added_ai_feature,0.85,"VC fund scope narrowed; AI listed among sectors, not core offering"
+Hellas Direct,born_ai,0.95,Identical descriptions; AI core to both versions
+Altscore,no_ai_change,0.85,Both describe lending infrastructure APIs; no AI/ML mentioned either time.
+Memmzy,repackaged_to_ai,0.85,Pivoted from period product subscription to AI-driven reproductive health platform
+Product People,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+iCover,no_ai_change,0.95,Descriptions are identical; algorithmic underwriting present in both
+G2See,born_ai,0.95,Facial recognition inherently AI/ML-based in both descriptions; no change detected.
+Dizigot,no_ai_change,0.95,Both descriptions identical; no AI/ML mentioned in either version
+Kompanions,no_ai_change,0.95,Neither description mentions AI/ML. Focus remains AR/VR content creation.
+Method 21,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+FreshCredit Inc.,no_ai_change,0.95,Neither description mentions AI/ML. Focus shifted from idealistic to practical.
+Cultovo,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+KnoDAX,added_ai_feature,0.85,Core remains educational platform; AI/ML added to curriculum alongside other topics
+Cognitee,no_ai_change,0.95,Descriptions identical; no AI/ML terminology in either version
+Kalshi,no_ai_change,0.95,Neither description mentions AI/ML. Only minor wording refinements.
+Scarlet,repackaged_to_ai,0.85,Pivoted from generic secure deployment platform to specialized medical device AI certification
+WireMock,no_ai_change,0.95,Neither description mentions AI/ML. Focus remains API mocking.
+ReTargeter,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Tether,added_ai_feature,0.85,Core EV-to-grid offering unchanged; AI coordination added to describe execution method
+Explo,repackaged_to_ai,0.85,Pivoted from GenZ travel content platform to AI-driven publishing software suite
+Swiftly,repackaged_to_ai,0.85,Core pivot from deal distribution tool to AI-driven unified platform with agents
+SYNQ3 Restaurant Solutions,repackaged_to_ai,0.85,Core pivot from order processing to conversational AI-driven ordering automation
+Extra Technology,no_ai_change,0.95,Descriptions identical; no AI/ML mentioned in either version
+Haylon Technologies,no_ai_change,0.95,Identical descriptions; no AI/ML mentioned in either version
+Linearity,no_ai_change,0.95,Neither description mentions AI/ML. Product expanded but remains design-focused.
+EVVELAND,repackaged_to_ai,0.75,Pivoted from physical NFT venues to digital metaverse with AI tools core
+Blobr,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+Single Technologies,no_ai_change,0.95,Identical descriptions; no AI/ML mentioned in either version
+Ark IT Solutions,no_ai_change,0.99,Descriptions are identical; no AI mentioned in either version.
+Amity,repackaged_to_ai,0.75,Pivoted from social platform company to AI-focused holding company with portfolio
+MongoDB,added_ai_feature,0.85,Vector search for AI added; core database business unchanged since 2021
+Graphic SEO,no_ai_change,0.99,Descriptions are identical; no AI mentioned in either version.
+IrisCX,no_ai_change,0.95,Identical descriptions; no AI/ML mentioned in either version
+iPivot,no_ai_change,0.95,Neither description mentions AI/ML. Cloud platforms added but core offering unchanged.
+"Lucid Drone Technologies, Inc.",added_ai_feature,0.85,Both describe same spraying/cleaning drones; no AI/ML mentioned either time
+Formulate,repackaged_to_ai,0.85,Pivoted from consumer products to AI-driven chemistry platform and manufacturing orchestration
+Spectra Imaging,no_ai_change,0.99,Descriptions identical; no AI mentioned in either version.
+Sagri,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+Aleria,no_ai_change,0.95,Descriptions identical; no AI/ML mentioned in either version
+EarthDaily Analytics,added_ai_feature,0.75,Core satellite imagery/analytics unchanged; predictive modelling added as capability
+MeiG Smart,no_ai_change,0.95,Descriptions are identical; no AI/ML mentioned in either version
+Actiview,born_ai,0.95,ML explicitly core to product in both descriptions; no change detected
+Stardog,no_ai_change,0.95,Descriptions are identical; no AI/ML mentioned in either version
+ADPM Drones,no_ai_change,0.95,Descriptions are identical; no AI/ML mentioned in either version
+Finity,born_ai,0.95,"AI was core in 2021; descriptions identical, no change detected"
+RetailZoom,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version.
+NDR Medical,no_ai_change,0.95,Descriptions identical; no AI/ML mentioned in either version
+NIRLAB,added_ai_feature,0.85,NIR spectroscopy core unchanged; ML/AI added to enhance analysis capabilities
+Excellent Web World,repackaged_to_ai,0.85,Pivoted from web/Drupal dev to AI-first enterprise software solutions
+Hometapper,no_ai_change,0.95,Descriptions are identical; AI/ML core to both versions
+inSegment,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Olewave,born_ai,0.95,ASR/TTS core in 2021; now emphasizes datasets and AI model training
+Badhouse Ventures,no_ai_change,0.95,"AI mentioned in both descriptions as investment area, not core offering"
+N-Smart,repackaged_to_ai,0.85,Pivoted from generic IoT platform to AI-driven utility grid optimization solution
+Laserfiche,no_ai_change,0.95,Descriptions are identical; AI/ML mentioned in both equally
+Kion,repackaged_to_ai,0.85,Core pivot from cloud governance to AI-driven FinOps platform with proactive optimization
+ReDev,repackaged_to_ai,0.85,Pivoted from social hiring platform to AI-driven recruitment with assessment tools
+Postscript,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version.
+Spare,added_ai_feature,0.75,Core offering (transit platform) unchanged; AI/algorithms now emphasized in marketing
+Eliyan,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+8i,born_ai,0.95,AI/ML core to product in both descriptions; no meaningful change detected
+Advanced Training Athletic Club,born_ai,0.95,"AI was core in 2021; descriptions are identical, no change detected."
+NexLabs,repackaged_to_ai,0.85,Pivoted from digital content/VoIP to defense autonomous systems with AI-enabled platforms
+I.Divine,no_ai_change,0.95,Identical descriptions; no AI/ML mentioned in either version
+Paro,born_ai,0.95,"AI was core in 2021, remains core now. Description simplified but AI still featured."
+Linguistic Search Solutions,no_ai_change,0.95,Descriptions identical; no AI/ML terminology in either version
+InLine-Med,born_ai,0.95,AI was core to product in 2021; descriptions are nearly identical
+BuildBetter,born_ai,0.85,Signal Engine (2021) → AI-driven analysis (now). Core AI capability consistent.
+TEKRiSQ,no_ai_change,0.95,Neither description mentions AI/ML. Focus remains process streamlining.
+Gravyty,no_ai_change,0.95,Identical descriptions; no AI/ML mentioned in either version
+Ottometric,no_ai_change,0.95,Descriptions are identical; no change detected between 2021 and now
+Culturelike,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version.
+Unreal Capital,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+Tsunagaru Edutech,no_ai_change,0.95,Neither description mentions AI/ML. Complete pivot from e-learning to incubator.
+Daily Food,born_ai,0.95,AI described as core in both 2021 and current; descriptions identical
+Denote,no_ai_change,0.95,Identical descriptions; no AI/ML mentioned in either version
+Edify,added_ai_feature,0.85,"AI/ML added as feature to existing contact center platform, not core pivot"
+DH Technologies,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+VisiFish,born_ai,0.85,Machine Vision (AI) was core in 2021; Vision AI remains central now
+ProRankTracker,added_ai_feature,0.85,Core rank tracking unchanged; AI-driven visibility added as capability
+The HUB Sri Lanka,born_ai,0.95,AI was core in 2021; current description elaborates existing AI capabilities
+"InterAd, Inc.",no_ai_change,0.95,Descriptions are nearly identical; no AI mentioned in either version.
+Neomeric,repackaged_to_ai,0.85,"Shifted from generic digital solutions to AI-specific products (agents, platforms)"
+Willowmore,no_ai_change,0.95,Descriptions identical; no AI/ML mentioned in either version
+DemaTrading.ai,repackaged_to_ai,0.75,Pivot from retail crypto to institutional fund ops; AI not core either way
+Mission Cloud Services,added_ai_feature,0.85,Core AWS managed services/consulting unchanged; AI added as new offering
+OptiMonk,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version.
+Lancey,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+inploi,repackaged_to_ai,0.85,Shifted from employer branding/content platform to AI-driven automation-focused recruitment software
+Rise Up,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Increff,no_ai_change,0.85,Neither description explicitly mentions AI/ML. Both focus on inventory optimization.
+Dung Nguyen,repackaged_to_ai,0.85,Core pivot from manual M&A matching to AI-driven Fit Score evaluation engine
+Durable,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Picturepark,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Volans Infomatics Pvt. Ltd.,added_ai_feature,0.95,"AI/ML mentioned in both; core BPM services unchanged, AI as supplementary offering"
+First Page Sage,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+SIRP,repackaged_to_ai,0.85,Core pivot from orchestration/automation platform to autonomous AI-driven decision system
+Dara.network,repackaged_to_ai,0.85,Pivoted from video collaboration platform to GenAI workflow orchestration platform entirely.
+Linkers IoT,added_ai_feature,0.85,Core offering (retail insights/revenue) unchanged; AI added to enhance analytics capabilities
+Prime One Global,added_ai_feature,0.75,Core offering (performance marketing) unchanged; AI analytics added as capability
+Zumma,repackaged_to_ai,0.95,Complete pivot from B2C investment platform to B2B AI-driven financial automation
+Ikroh SEO UK,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Mindzie,repackaged_to_ai,0.85,Core pivot from bottleneck detection to AI-driven process mining and automation
+We Play Sport,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+POLLEN Metrology,no_ai_change,0.95,Descriptions are identical; AI/ML present in both via data fusion algorithms
+KITE EDGE LTD,born_ai,0.95,NLP/semantic analysis in 2021; FRAG/knowledge graphs/AI insights now
+bPUBLIC,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+UrbanKisaan,repackaged_to_ai,0.85,Pivoted from vertical farming to AI-driven seed breeding and farm intelligence platform
+Jobber,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+EINBLIQ.IO,repackaged_to_ai,0.85,Core pivot from rules-based analytics to ML-powered agentic automation
+visualfabriq,born_ai,0.95,AI mentioned as core capability in both descriptions; no change detected
+3 Data,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+CatalystXL,repackaged_to_ai,0.85,Core pivot from sales enablement tool to AI-driven DXP solving digital sprawl
+iZotope,no_ai_change,0.95,Descriptions are identical; no AI/ML mentioned in either version
+RxLogix Corporation,no_ai_change,0.95,Descriptions are identical; no AI/ML mentioned in either version
+Info Cubic Japan,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Medintec,no_ai_change,0.95,Descriptions identical; no AI/ML mentioned in either version
+31Hex,no_ai_change,0.95,Descriptions are identical; no AI/ML mentioned in either version.
+MeVero Inc.,no_ai_change,0.95,Identical descriptions; AI Life Coach mentioned in both versions consistently.
+Energybox,no_ai_change,0.95,Identical descriptions; neither mentions AI/ML explicitly
+Logical Commander,repackaged_to_ai,0.85,Core pivot from emotion-detection to AI-powered insider-risk platform with privacy focus
+Tactiq,no_ai_change,0.95,Identical descriptions; transcription implies AI but not explicitly stated
+Vibe,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+Ingeniarius,no_ai_change,0.95,Descriptions are identical; no AI/ML mentioned in either version
+Source.ag,born_ai,0.95,AI was core in 2021; remains core. Evolution from concept to specific products.
+deepchange Holding,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+Novateus,added_ai_feature,0.85,Core custom software development unchanged; AI integrations added as new service offering
+Capital Numbers,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Solution Analysts,no_ai_change,0.95,Descriptions are identical; no AI/ML mentioned in either version
+Jurny,added_ai_feature,0.75,Core offering (property management SaaS) unchanged; AI added to marketing pitch
+Hut 8 Mining,no_ai_change,0.99,No AI/ML mentioned in either description. Only name change: Mining to Corp.
+Mastodon,repackaged_to_ai,0.85,Pivoted from B2C car maintenance to B2B AI-driven auto parts supply chain
+IHMC,no_ai_change,0.95,Descriptions are identical; AI/ML were core in both periods.
+Attensa,no_ai_change,0.95,Descriptions are identical; neither mentions AI/ML explicitly.
+Imadio,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version.
+BodyWHAT,born_ai,0.95,AI core to product in both descriptions; descriptions are identical
+HUDU,added_ai_feature,0.85,"Core marketplace unchanged; AI (Duey) added for UX/support, not fundamental pivot"
+BillEase,no_ai_change,0.95,Neither description mentions AI/ML. Core offering unchanged: payment installments.
+Sentra,repackaged_to_ai,0.85,Core pivot from data security to AI-readiness governance with AI-aware capabilities
+Xendo,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Speedata,added_ai_feature,0.85,Core APU processor unchanged; AI data prep added as specific use case
+EverSafe,added_ai_feature,0.85,Core monitoring unchanged; behavioral analytics added as new capability.
+Deep Intelligent Control,added_ai_feature,0.85,Core energy optimization business unchanged; AI now explicitly central to product positioning
+SEO Crew,no_ai_change,0.99,Descriptions are identical; no AI mentioned in either version.
+Decacorn Capital,no_ai_change,0.95,AI & Deep Learning listed as key technology in both descriptions identically
+Sitation,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+Voxela,added_ai_feature,0.85,"Core product (fall detection, alerts) unchanged; AI framing added to description"
+OPPS,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Juganu,born_ai,0.95,AI edge computing was core to both descriptions; no meaningful change detected.
+MNence,no_ai_change,0.95,Neither description mentions AI/ML. Descriptions are nearly identical.
+Datainox,no_ai_change,0.95,Identical descriptions; no AI/ML mentioned in either version
+Nanite,no_ai_change,0.95,Identical descriptions; no AI/ML mentioned in either version
+Symphony,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+Skyramp,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Velou,repackaged_to_ai,0.85,Core pivot from discovery/conversion to AI-powered data enrichment and catalog optimization
+Peak,no_ai_change,0.95,Descriptions identical; no AI/ML mentioned in either version
+CreditRich,repackaged_to_ai,0.85,Core pivot from spare-change rounding to AI-driven credit optimization engine
+Cytonus Therapeutics,no_ai_change,0.85,AI explicitly mentioned in 2021; completely absent from current description
+Atome,no_ai_change,0.95,Neither description mentions AI/ML. Core BNPL offering unchanged.
+STORE,repackaged_to_ai,0.85,Pivoted from data monetization to AI/cloud computing ownership and governance
+Bzigo,no_ai_change,0.95,Descriptions identical; no AI/ML mentioned in either version
+Enchanted Wave,no_ai_change,0.95,Descriptions identical; no AI/ML mentioned in either version
+Nornir,repackaged_to_ai,0.75,Core pivot from generic smart city platform to AI-driven network automation and collective intelligence
+Palqee Technologies,no_ai_change,0.95,Neither description mentions AI/ML. Only company name changed: Palqee → Ampersand GRC.
+Edvantis,no_ai_change,0.95,Neither description mentions AI/ML. Rebranding from 'outsourcing vendor' to 'software company' but same services.
+Enfin Technologies Pvt. Ltd,added_ai_feature,0.85,Core streaming/communication business unchanged; AI added as new service offering
+Text Approach,repackaged_to_ai,0.85,Pivoted from social media analytics to NLP/semantic search infrastructure for AI training
+Qdrant,born_ai,0.95,AI/ML embeddings central in 2021; remains core to current positioning
+FinGoal,no_ai_change,0.95,Descriptions identical; AI/ML core to both versions
+Quindar,added_ai_feature,0.85,Core platform unchanged; AI/automation added as enhancement capability
+Zhisiyun,no_ai_change,0.95,Descriptions are identical; AI mentioned in both as core technology
+Iluria,born_ai,0.95,AI/ML core to product in both descriptions; no meaningful change detected
+BHub.com,added_ai_feature,0.75,Core offering unchanged; AI agents/automations added as enhancement layer
+Volcano,repackaged_to_ai,0.85,Pivoted from video platform to AI/spatial computing company with new flagship product
+ABBC Foundation,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version
+CorpBL,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+MamaCloud,added_ai_feature,0.85,Core apps/games business unchanged; AI solutions added as new offering
+Antezeta,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+Maker AI,no_ai_change,0.85,Neither description mentions AI/ML. Both describe content services.
+Ridgeline,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+WNDYR,repackaged_to_ai,0.75,Shifted from operations optimization to AI-driven transformation; core offering appears fundamentally repositioned.
+Levers,repackaged_to_ai,0.75,Core pivot from accounting staff services to AR automation software; no explicit AI mention either way
+Zigfu,no_ai_change,0.95,Descriptions identical; no AI/ML mentioned in either version
+Troy Web Consulting,added_ai_feature,0.85,"Core business unchanged (custom software). AI mentioned as R&D exploration, not core offering."
+EZ-R.O.I,no_ai_change,0.95,"Descriptions identical; RPA is automation, not inherently AI/ML"
+TrustLogix,repackaged_to_ai,0.85,Core pivot from governance-focused to AI-powered risk detection and enforcement
+InspecTools,no_ai_change,0.95,Identical descriptions; no AI/ML mentioned in either version
+Payble,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Azalio,repackaged_to_ai,0.85,Pivoted from employee ops tool to AI-driven QSR analytics platform
+SeoPult,no_ai_change,0.95,Descriptions are identical; no AI/ML mentioned in either version
+GT Apeiron Therapeutics,born_ai,0.95,Identical descriptions; AI was core in 2021 and remains core now.
+YaizY,added_ai_feature,0.75,"Core offering (credit courses, real projects, credentials) unchanged; AI added to marketing pitch"
+OpeninApp,no_ai_change,0.95,Neither description mentions AI/ML. Core product unchanged: deep link generator.
+TrackChain,repackaged_to_ai,0.85,Shifted from digitization platform to autonomous AI-driven decision-making system
+TeraMedica,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+StreamNative,no_ai_change,0.95,Neither description mentions AI/ML. Descriptions are nearly identical.
+Atlas Robotics,born_ai,0.95,"AI/autonomy software core to both descriptions; messaging evolved, not offering"
+SnapJot,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version.
+Upswing Cognitive Hospitality Solutions,born_ai,0.95,Both descriptions identical; 'cognitive data-driven' indicates AI/ML core in 2021
+Heron Data,added_ai_feature,0.85,Core product (transaction categorization) unchanged; ML/automation added as capability layer
+Blue Label Labs,repackaged_to_ai,0.85,Pivoted from general product agency to AI-focused digital transformation agency
+i2CAT Fundacio,added_ai_feature,0.85,"AI listed among tech fields; core mission (R&D, tech transfer) unchanged"
+CoPilot,added_ai_feature,0.85,Core offering (expert guidance for car buying) unchanged; AI now explicit in execution
+Blackford Analysis,no_ai_change,0.95,Neither description mentions AI/ML. Both describe algorithmic image registration.
+SPACEGOATS,added_ai_feature,0.85,Core fulfillment/supply chain business unchanged; GalaxyAI added as new product layer
+TeamBridge,added_ai_feature,0.75,Core offering (workforce management platform) unchanged; AI added as differentiator.
+Pydantic Services,added_ai_feature,0.85,"Logfire is observability platform, not AI-core. Data validation unchanged."
+Basket,repackaged_to_ai,0.85,Core pivot from aggregator to AI-driven shopping OS with intent capture.
+Eyedea Recognition,born_ai,0.95,Computer vision/object detection inherently AI-driven in both descriptions
+FuziFilm,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version
+Codewave,no_ai_change,0.95,Neither description mentions AI/ML. Shift is cultural/brand positioning only.
+21:32 Ltd,born_ai,0.95,AI mentioned in both descriptions as core engagement mechanism
+Apogee Search,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Viitorcloud Technologies,added_ai_feature,0.85,AI/ML added to expanded service portfolio; core software development business unchanged
+Cisco,no_ai_change,0.95,Neither description mentions AI/ML. Core networking focus unchanged.
+getstors,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+BigPanda,born_ai,0.95,AI/ML core to product in both descriptions; minimal substantive change
+dTelecom,repackaged_to_ai,0.85,"Core pivot from generic CPaaS to AI agents infrastructure with Voice AI, STT/TTS, autonomous payments."
+HealthInRealTime,no_ai_change,0.95,Neither description mentions AI/ML. Descriptions are nearly identical.
+MontyCloud,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+qrunchin,no_ai_change,0.85,Neither description mentions AI/ML. Both describe spreadsheet analysis automation.
+Readyly,repackaged_to_ai,0.92,Pivoted from outsourced support service to AI-agent automation platform
+FindBoB,no_ai_change,0.95,Descriptions identical; AI/ML mentioned in both 2021 and now
+Webpop Design,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version.
+Compucall,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+Via hive,added_ai_feature,0.75,Core marketplace matching exists in both; AI-driven matching added as enhancement.
+SupplyVan,no_ai_change,0.95,Neither description mentions AI/ML. Core B2B/B2C marketplace unchanged.
+AsiaQuest,no_ai_change,0.95,Descriptions identical; no AI/ML mentioned in either version
+Fleming,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+KEYi Tech,born_ai,0.95,AI was core in 2021; remains core. Description evolved to add technical depth.
+WeWave,no_ai_change,0.95,Identical descriptions; no AI/ML mentioned in either version
+Digital Will Inc.,no_ai_change,0.95,"Neither description mentions AI/ML. Evolution is strategic positioning, not AI."
+Solartraders,added_ai_feature,0.85,"Core marketplace unchanged; AI/ML now explicit (price-comparison engine, data leverage)"
+Line,repackaged_to_ai,0.75,Core pivot from credit product to AI-driven cost/timing bridge solution
+Replit,added_ai_feature,0.85,Core IDE/collaboration unchanged; AI coding assistance added as feature
+Vive Studios,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version.
+Verint Systems,repackaged_to_ai,0.85,Shifted from broad intelligence/optimization to AI-centric customer experience automation platform
+ARMA Global Corporation,no_ai_change,0.95,Neither description mentions AI/ML. Text is nearly identical.
+Insight7,repackaged_to_ai,0.85,Pivoted from generic insight/decision-making platform to AI-powered conversational intelligence
+Crowdbotics,no_ai_change,0.95,Neither description mentions AI/ML. Only brand name changed to CoreStory.
+Replika Software,added_ai_feature,0.85,Core business (social selling platform) unchanged; AI-powered recommendation engine added as feature
+Attentive,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+EdMyst,repackaged_to_ai,0.85,Shifted from coaching-centric to hiring/deployment-centric; AI remains core but repositioned.
+couponsdiary.com,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version
+Social Links,born_ai,0.85,"AI explicitly core in 2021; now emphasizes ML-driven processing, automation"
+Reserv,added_ai_feature,0.85,Core TPA service unchanged; AI/ML added as analytical capability layer
+Dronedek,added_ai_feature,0.75,Core product (smart mailbox) unchanged; AI/ML added to platform capabilities
+Orcas,no_ai_change,0.95,Neither description mentions AI/ML. Core offering unchanged: tutoring platform.
+Synsoft Global,added_ai_feature,0.85,Core business (web/mobile dev) unchanged; AI/ChatBots/GenAI added to service menu
+X-Times,no_ai_change,0.95,"Identical descriptions; AI mentioned only as application domain, not core product"
+Enqura Information Technologies,added_ai_feature,0.75,"Core offering (digital solutions, payments, ID verification) unchanged; AI added as feature/capability"
+ZapIT,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Noon,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+SPARQ,repackaged_to_ai,0.85,Core pivot from labor-fee elimination to AI-driven personalized mechanic communication
+SonicJobs,repackaged_to_ai,0.85,Core pivot from RPA automation to AI Web Agents; business model fundamentally changed
+Big.Jobs,repackaged_to_ai,0.85,Shifted from talent matching platform to AI-driven recruitment copilot automating manual tasks.
+Gamboo,added_ai_feature,0.85,Core platform unchanged; AI added to positioning without product pivot evidence
+E Virtual Services,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version
+Califrais,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+ATech Developers LLC,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version.
+LIS Data Solutions,no_ai_change,0.95,Descriptions identical; no AI/ML mentioned in either version
+Lingk,added_ai_feature,0.75,Core data integration platform unchanged; AI agents added as new capability layer
+Seenapse,born_ai,0.95,AI was core in 2021 ('augments creativity'); now explicitly positioned as 'AI copilot'
+SpeedBot,no_ai_change,0.95,Descriptions identical; AI/ML core to both versions
+DigiFarmz Smart Agriculture,born_ai,0.95,Identical descriptions; AI/algorithms core to both versions
+Rectangled.io,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version
+iPNOTE,repackaged_to_ai,0.85,Core pivot from vendor marketplace to AI-driven IP workflow automation agent
+Salesloft,repackaged_to_ai,0.85,Core pivot from workspace/execution tool to AI-driven revenue orchestration platform
+Vendia,added_ai_feature,0.85,"Core data platform unchanged; AI framed as outcome enabler, not fundamental pivot"
+Kenja Corporation,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+NatureThings,repackaged_to_ai,0.85,Pivoted from B2C plant marketplace to B2B urban nature/landscaping management platform
+Founders,no_ai_change,0.95,Neither description mentions AI/ML. Focus shifted from community+capital+studio to emerging tech venture studio.
+Connected Robotics,no_ai_change,0.95,Descriptions identical; no AI/ML mentioned in either version
+Cyberdyne Computing Inc.,born_ai,0.95,"AI/ML core to both descriptions; removed competitive framing, kept technical substance."
+Myrl Tech,no_ai_change,0.95,Descriptions are identical; AI/ML present in both equally
+Polar Rose,born_ai,0.95,Descriptions identical; AI/ML core to product in both periods
+Yuktix Technologies,no_ai_change,0.95,Descriptions are identical; no AI/ML mentioned in either version
+Trilateral Research,no_ai_change,0.95,Descriptions are identical; no AI/ML mentioned in either version
+Arta Finance,repackaged_to_ai,0.85,Core pivot from access/fees focus to AI-driven wealth platform with institutional expansion
+WUP,no_ai_change,0.95,Descriptions are identical; AI/ML core to both versions
+Rencore,added_ai_feature,0.75,Core GRC platform unchanged; AI governance added as new capability
+Beam,added_ai_feature,0.85,Core invoicing/payments unchanged; AI Assistant for estimates added as feature
+Wonder Sciences,ai_washing,0.75,"Core offering (telemedicine, ketamine, psychedelics research) unchanged; AI added to marketing pitch only"
+Nect,no_ai_change,0.95,Identical descriptions; no AI/ML terminology in either version
+HackerNoon,no_ai_change,0.95,"Neither description mentions AI/ML. Evolution is business model, not technology."
+NADI System,no_ai_change,0.95,Identical descriptions; no AI/ML mentioned in either version
+Affogata,no_ai_change,0.95,Descriptions identical; no AI/ML mentioned in either version
+SOLO Workout (Heavy Kinematic Machines),no_ai_change,0.95,Neither description mentions AI/ML. Core offering unchanged.
+Visualax,no_ai_change,0.85,"Both focus on AR/3D visualization tech, neither mentions AI/ML"
+Smart Canvas,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Adigi,born_ai,0.95,AI/ML central in both descriptions; evolved from consumer to B2B focus
+Develative,no_ai_change,0.95,Neither description mentions AI/ML. Only minor wording refinement.
+Huawei Technologies,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+OUTTAR,born_ai,0.95,Deep learning and computer vision mentioned in both descriptions identically.
+Peripheral Systems,repackaged_to_ai,0.85,Pivoted from generic dev shop to AI-driven spatial awareness/behavioral analytics platform
+Imaging Clinical Trial Services,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+InSilicoTrials,added_ai_feature,0.85,AI/analytics added to existing simulation platform; core offering unchanged
+Davidovs Venture Collective (DVC),no_ai_change,0.99,Neither description mentions AI/ML. Growth in community size and unicorn founders noted.
+Atomicwork,repackaged_to_ai,0.85,Core pivot from employee help platform to AI workforce automation system
+Reset Solutions LLC,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+Strove,no_ai_change,0.85,Neither description mentions AI/ML. Core offering unchanged: wellness platform with gamification.
+Wyebot,added_ai_feature,0.85,Core WiFi analysis unchanged; AI added for automation and root cause identification
+Didit Search Marketing,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Pixnetiq,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+B2Bee,repackaged_to_ai,0.85,Pivoted from generic B2B automation to AI-driven autonomous ordering for HoReCa
+RoboCT,born_ai,0.95,AI/ML mentioned as core technology in both descriptions; no change detected.
+SEtech,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version.
+Virtway Events,no_ai_change,0.95,Descriptions identical; no AI/ML mentioned in either version
+Hyperlink,added_ai_feature,0.85,Core offering unchanged: rent compute power. AI now listed as use case.
+Databook,repackaged_to_ai,0.85,Core pivot from intent dashboard to agentic workflows; AI now central to positioning
+Bitsummit,no_ai_change,0.95,Neither description mentions AI/ML. Rebranding emphasizes consulting approach.
+Data Insightz,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Pallet,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Yeeplatform,repackaged_to_ai,0.85,Core pivot from blockchain-secured subscription to AI-driven multilingual streaming platform
+Grayscale,no_ai_change,0.85,Neither description mentions AI/ML. Both focus on hiring workflow automation.
+Parkdepot,added_ai_feature,0.85,License plate recognition (AI) added to core parking lot digitization offering
+Sky9 Capital,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+SiPearl,added_ai_feature,0.85,"HPC processors naturally serve AI; AI added to pitch, not core pivot"
+CASAFARI,no_ai_change,0.85,Neither description explicitly mentions AI/ML. Both describe database and data processing.
+Findernest,repackaged_to_ai,0.75,Shifted from HR-focused hiring platform to broad enterprise IT/consulting with AI as core pillar
+Let'sMOD,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version.
+PLAIO,repackaged_to_ai,0.85,Core offering pivoted from basic planning tools to AI-driven optimization platform
+Definitive Intelligence,repackaged_to_ai,0.85,Pivoted from Web3 user analytics platform to generative AI data science products
+Gomboc.AI,repackaged_to_ai,0.85,Core pivot from policy deviation detection to deterministic AI-driven remediation execution
+DomainSkate,added_ai_feature,0.85,Core monitoring/mitigation offering unchanged; AI integrated December 2022 as enhancement
+MAGIC,added_ai_feature,0.85,AI/ML core in both. Shift from technical specs to athlete coaching positioning.
+Authena,added_ai_feature,0.75,Core offering (IoT+blockchain traceability) unchanged; AI added to pitch
+BlockTech Brew,no_ai_change,0.95,Neither description mentions AI/ML. Blockchain focus unchanged.
+Plytix,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version.
+Polaroo,repackaged_to_ai,0.85,Pivoted from bill management to AI-driven asset operations platform entirely
+Picfair,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version.
+PenguinSmart,born_ai,0.95,"Both descriptions emphasize 'data sciences' as core to intelligent, individualized therapy."
+TreasureDAO,no_ai_change,0.95,Neither description mentions AI/ML. Gaming infrastructure focus unchanged.
+e2f,repackaged_to_ai,0.95,Pivoted from localization/translation services to enterprise AI governance solutions
+Sneak Peek Studios,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version.
+Headwall Photonics,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+NotedSource,added_ai_feature,0.75,Core business (expert network) unchanged; AI tools added to access layer
+Datch,born_ai,0.95,"AI/ML central to both descriptions; messaging refined, not pivoted"
+Fleksa,added_ai_feature,0.85,Core SaaS offering unchanged; AI added to website builder and SEO claims.
+Siemens AG,added_ai_feature,0.85,"Shift to 'digital' integration, not explicit AI/ML mention in either description"
+Connected-Stories,born_ai,0.95,AI was core in 2021 ('patented model powered by AI'); remains central now ('agentic system of specialized AI agents')
+LatinX in AI (LXAI),born_ai,0.95,AI was core mission in 2021; descriptions are essentially identical
+Infosearch BPO Services,no_ai_change,0.95,Descriptions identical; no AI/ML terminology in either version
+Exverse,added_ai_feature,0.75,Core gaming/social experience unchanged; AI added to marketing pitch
+Epistra,born_ai,0.95,AI/ML core to product in both descriptions; no meaningful change detected
+IRM St-Joseph MRI,no_ai_change,0.99,Identical descriptions; no AI mentioned in either version.
+Wrinkl,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Yuba City Advanced Imaging Center,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version.
+7Puentes,no_ai_change,0.95,Descriptions identical; no AI/ML terminology in either version
+Smartech Interactive,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version.
+Airwrk,added_ai_feature,0.85,Core marketplace unchanged; AI assessments added as hiring feature
+Piranha NYC,no_ai_change,0.95,Neither description mentions AI/ML. Both describe creative production services.
+Paranimo,no_ai_change,0.95,Identical descriptions; matching intelligence mentioned in both
+ArtMaster,added_ai_feature,0.85,"AI assistant 'Artie' added; core offering (video lessons, teachers) unchanged"
+InfoTrends,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version
+Dadosfera (Previously DataSprints),no_ai_change,0.95,Identical descriptions; no AI/ML mentioned in either version
+SmartSender.io,no_ai_change,0.85,Neither description mentions AI/ML. Product rebranded; core offering unchanged.
+AIONSPECTRUM,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version
+Thejobnotice,no_ai_change,0.95,Both descriptions identical; no AI mentioned in either version
+KorrAI,repackaged_to_ai,0.85,Core pivot from mineral exploration to construction risk; AI remains central but application domain shifted entirely.
+Futwork,repackaged_to_ai,0.85,Complete business pivot from student gig platform to AI-driven contact centre solutions
+Local Fame,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version.
+Ace It,repackaged_to_ai,0.85,Pivoted from student learning app to AI-powered educator content creation tool
+Next Decentrum Technologies Inc,no_ai_change,0.95,Momentable.ai present in both; descriptions identical otherwise
+Hexastate,born_ai,0.95,Identical descriptions; AI was core in 2021 and remains core now.
+DataFeedWatch,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+EMAS Pro,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Ihateflyingbugs,repackaged_to_ai,0.85,Complete pivot from social network/PR to AI-driven education platform
+ePlane,repackaged_to_ai,0.92,Pivoted from eCommerce marketplace to AI-driven operational automation platform
+Maple Farm Media,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+PomVom,no_ai_change,0.95,Descriptions are identical; facial recognition mentioned in both.
+H2L,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+1LAW,born_ai,0.95,AI mentioned as core efficiency/cost lever in both descriptions
+WebMarkets,no_ai_change,0.95,Neither description mentions AI/ML. Core offering unchanged.
+EnduroSat,no_ai_change,0.95,Neither description mentions AI/ML. Focus remains satellite manufacturing.
+Vektor Medical,born_ai,0.85,Proprietary computational modeling in 2021 is AI/ML; explicitly named AI-based now.
+VUURR,no_ai_change,0.95,Neither description mentions AI/ML. Focus shifted from SEO to web apps.
+Advanced Remote Sensing,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version.
+Drive Hockey Analytics,born_ai,0.95,AI-driven platform core to both descriptions; messaging shifted from tech specs to customer outcomes.
+Rio Grande Dermatology,no_ai_change,0.99,Identical descriptions; no AI mentioned in either version.
+Rockset,no_ai_change,0.85,Both describe data infrastructure/search engine. No AI/ML mentioned either time.
+Wallchain,repackaged_to_ai,0.85,Complete business pivot from crypto exchange tools to AI-driven creator marketing platform
+Techwards,no_ai_change,0.95,Neither description mentions AI/ML. Shift from people development to tech services.
+Flixxo,no_ai_change,0.95,Neither description mentions AI/ML. Focus shifted from decentralization to content curation.
+Delphisonic,repackaged_to_ai,0.85,Core pivot from generic measurement tools to AI-powered predictive maintenance systems
+Pivot,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version
+Cyabra,repackaged_to_ai,0.75,Shifted from threat detection to AI-driven manipulation analysis; core offering fundamentally evolved.
+Planted Green,repackaged_to_ai,0.75,Pivoted from carbon offsetting to enterprise ESG SaaS with tech-driven analysis
+CipherLab,no_ai_change,0.95,Descriptions identical; no AI/ML mentioned in either version
+Tevel,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version
+Ocoxe,ai_washing,0.85,AI mentioned in current pitch but core services unchanged from 2021
+Techmetics Robotics,no_ai_change,0.85,Neither description mentions AI/ML. Focus shifted from broad to healthcare-specific.
+Plentific,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version
+State Affairs,repackaged_to_ai,0.85,Core pivot from journalism-only to AI-driven policy intelligence platform with structured data ingestion.
+Owinda,no_ai_change,0.95,Descriptions identical; no AI/ML terminology in either version
+Parseur.com,ai_washing,0.75,Core offering identical; 'AI' added to marketing pitch only
+Reboot Rx,born_ai,0.95,AI mentioned as core component in both 2021 and current descriptions identically
+eMed,no_ai_change,0.85,"Neither description mentions AI/ML. Expansion in services, not AI-driven."
+Slant,no_ai_change,0.95,Neither description mentions AI/ML. Evolution is packaging and market positioning only.
+Reputation Recovery Management,no_ai_change,0.95,Neither description mentions AI/ML. Descriptions are nearly identical.
+Signpost,repackaged_to_ai,0.85,Pivoted from generic marketing automation to AI-first communications platform for contractors
+1Fort,repackaged_to_ai,0.85,Core offering pivoted from cyber insurance automation to AI-driven broker workflow platform
+Versify Labs,repackaged_to_ai,0.85,Core pivot from loyalty platform to web3+AI-driven analytics with new product (Maverik AI)
+Ascend.io,no_ai_change,0.95,Identical descriptions; no AI/ML mentioned in either version
+SocialChamps Media Pvt.Ltd,added_ai_feature,0.85,Core digital marketing services unchanged; VISIBLE™ (Generative Engine Optimization) added as new AI product
+SecureG,repackaged_to_ai,0.85,Pivoted from 5G security to AI security; core offering fundamentally changed
+Promaxo,born_ai,0.95,AI/ML core to both descriptions; no meaningful change detected
+Instrumental,born_ai,0.95,Descriptions identical; autonomous operation implies AI/ML from 2021
+UPSaúde,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version
+Airchat,repackaged_to_ai,0.85,Core pivot from basic chatbot builder to AI-first multimodal platform with advanced capabilities
+Camellia Women's Imaging,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version.
+TestBox,repackaged_to_ai,0.85,Core pivot from comparison tool to AI-powered demo environment generation
+Lexiconvo,born_ai,0.95,Identical descriptions; AI was core in 2021 and remains core now.
+in8 Mobile,born_ai,0.95,Recognition technologies (visual/audio) are AI/ML core in both descriptions
+FK3,no_ai_change,0.99,Descriptions are identical; no AI mentioned in either version.
+Drife Solusi Integrasi,no_ai_change,0.95,"Descriptions identical. RPA is automation, not AI/ML-driven."
+Genuity Science,added_ai_feature,0.85,AI mentioned in 2021; now emphasizes analytics platform with AI as integrated component
+Luminary Cloud,repackaged_to_ai,0.85,Pivoted from vague 'computing innovations' to AI-powered physics simulation product
+KINDPERKS,repackaged_to_ai,0.95,Complete pivot from restaurant discovery to AI-powered survey platform
+Vanilla,no_ai_change,0.95,Neither description mentions AI/ML. Focus shifted from simplicity to advisor positioning.
+MxTechies,born_ai,0.95,AI/ML listed first in both descriptions; no meaningful change detected
+Ateam Ventures,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version.
+Treedy's,added_ai_feature,0.85,3D scanning core in both; AI/ML analytics added to existing tech
+Agilisium Consulting,repackaged_to_ai,0.92,Pivoted from generic cloud/data integration to specialized autonomous AI for life sciences
+Ilink Digital,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Wazzat,no_ai_change,0.95,Descriptions are identical; no change detected between 2021 and now.
+PeoplePad,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+Kubus,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+Rambl,no_ai_change,0.95,Descriptions identical; no AI/ML mentioned in either version
+Eventige,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version
+Photokit,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Medialyzer,born_ai,0.95,AI/ML core to product in both descriptions; no change detected
+Fether,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version
+True Interaction,no_ai_change,0.95,Descriptions identical; no AI mentioned in either version
+GoHub,no_ai_change,0.95,"Neither description mentions AI/ML. GoHub is a VC fund, not a product company."
+LiVeritas Biosciences,added_ai_feature,0.75,Core analytical testing service unchanged; AI/SaaS added as capability layer
+Entrix,added_ai_feature,0.85,"Neither description explicitly mentions AI/ML. Current adds operational detail, not AI."
+Infoseed,repackaged_to_ai,0.85,Pivoted from address-finding tool to conversational AI platform on WhatsApp
+BakeSpace,added_ai_feature,0.92,BakeBot AI assistant added; core community/cookbook platform unchanged
+TNG Shopper,repackaged_to_ai,0.85,Core pivot from web-to-store traffic to AI-driven content generation and search optimization
+BlueEcom,ai_washing,0.85,"2021: services-based (e-commerce, marketing, media). Now: AI-centric pitch, vague offerings."
+Symbiosis,born_ai,0.95,AI/ML core to product in both descriptions; no meaningful change detected
+ItsaCheckmate,no_ai_change,0.95,Neither description mentions AI/ML. Core offering unchanged.
+Kovio,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+Bravrr Incorporated,no_ai_change,0.95,Descriptions are identical; no AI/ML mentioned in either version
+Cybatar,repackaged_to_ai,0.75,Pivoted from investor/fuel tech to data platform; no AI mentioned either time
+NICE Systems,born_ai,0.95,Advanced analytics and ML core to both descriptions; no meaningful change detected
+Eduraja,no_ai_change,0.95,Neither description mentions AI/ML. Pivot from mobile comms to consulting/outsourcing.
+CoreStack Inc,no_ai_change,0.95,Identical descriptions; no AI/ML mentioned in either version
+Simpplr,born_ai,0.95,AI was core positioning in 2021; remains central to current description
+Legit,repackaged_to_ai,0.85,Shifted from skincare products to AI-driven medical diagnostic software platform
+Binocs,repackaged_to_ai,0.95,Complete pivot from crypto tax tool to agentic AI deal research platform
+Shore Group,born_ai,0.95,ML explicitly core to offering in both 2021 and current descriptions
+Advisable,repackaged_to_ai,0.85,Pivoted from general digital agency to AI-driven venture studio with specific tools.
+Hono,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+Southtowns Radiology,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Deply,no_ai_change,0.95,Neither description mentions AI/ML. Blockchain ≠ AI.
+LEO Technologies,born_ai,0.95,AI core to Verus product in both descriptions; no change detected
+INTERSTELLAR LAB,repackaged_to_ai,0.85,Pivoted from space-focused habitat systems to Earth-based AI-driven bio-farming platform
+Assembled,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version
+Sanas,born_ai,0.95,AI/ML core in both descriptions; evolved from translation to speech-understanding platform
+PreSkale,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version.
+Watertower Ventures,repackaged_to_ai,0.85,Fund pivoted from broad mission-driven investing to AI-specific thesis
+Augusta HiTech,no_ai_change,0.95,Descriptions are identical; AI mentioned in both as core technology
+ReelSights,born_ai,0.95,AI was core in 2021; evolved positioning but remains AI-powered
+Pennant Technologies,no_ai_change,0.95,Descriptions are identical; no AI mentioned in either version
+Aki Technologies,no_ai_change,0.95,Descriptions are identical; AI/ML core to both versions
+New 3D Technologies,no_ai_change,0.95,Identical descriptions; no AI mentioned in either version
+CLUBZERØ,added_ai_feature,0.75,Core returnable packaging system unchanged; AI added for interoperability management.
+SonarSource,added_ai_feature,0.75,Core code quality/security analysis unchanged; AI added for automated review capability
+Carnelian Technologies,no_ai_change,0.95,Neither description mentions AI/ML. Core offering remains QA/testing services.
+Verdant DevCore,added_ai_feature,0.85,Core PDaaS offering unchanged; AI/ML added as new service line
+Ownit,repackaged_to_ai,0.85,Pivoted from checkout links to AI-generated shoppable content for search
+Bending Spoons,added_ai_feature,0.85,2021 focused on products/mission. Now explicitly mentions ML/analytics capabilities added.
+CloudSpotter Technologies,no_ai_change,0.85,Both describe photo sharing/delivery platform. No AI/ML mentioned either year.
