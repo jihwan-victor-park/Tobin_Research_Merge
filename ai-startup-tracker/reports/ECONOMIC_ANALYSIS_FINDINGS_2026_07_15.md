@@ -426,3 +426,76 @@ post-date the 2021 baseline. Consistent with the hidden layer skewing to
 2019-2025 formation and higher AI-adoption (sections 2a/2b). The tool remains
 useful for the minority of older hidden firms and is checkpointed/resumable
 (output/28_wayback_repackaging.csv).
+
+## 10. AI-IDENTITY CHANGE STUDY — Crunchbase 2023→2026 panel (added 2026-08-10)
+The core question refocused to: for AI companies specifically, WHEN did they
+acquire their AI identity and HOW did their self-description change? Built on the
+full Crunchbase 2023 / 2024 / 2025 / 2026 dumps (funding/investor/people tables
+loaded from the shared Dropbox; git-ignored under data/pb_longitudinal/). AI is
+defined by CB's OWN category taxonomy (category_list / category_groups_list) so
+the definition is uniform across dumps and covers companies added after our
+Railway import. Panel joined on the stable org uuid (98% of 2023 orgs persist).
+
+### 10a. Funding trajectories — AI startups graduate more (scripts/funding_trajectories_cb.py; CSVs 30-32)
+Real CB round history (538K rounds / 273K funded orgs). Of seed entrants, AI
+companies reach Series A 23.2% vs 18.8% (non-AI), Series B 10.5% vs 8.9%, C 5.3%
+vs 4.8%; median 2 vs 1 rounds; AI higher in every founding cohort. (This is the
+one AI-vs-non-AI cut; the rest of section 10 is AI-only per the refocus.)
+NB: Railway funding_signals could NOT support this — it stores ~1 summary deal
+per company (95.6% single-round) and investor names are absent (a count only);
+the CB funding_rounds/investments tables were required. See memory
+project_vc_behavior_data_limits.
+
+### 10b. Investor side (scripts/investor_network_cb.py; CSVs 30-33, CB2023)
+874K investment links tagged by portfolio-company AI status. Top AI backers:
+Techstars, Y Combinator, NSF, a16z, Sequoia. 276 AI-specialist investors (>50%
+of portfolio AI). AI rounds are more syndicated (2.52 vs 2.14 investors/round,
+more leads). AI share of new investments rose 9%→20% (2010-2020). Caveat: the
+CB2023 dump ends 2023-03 (pre-generative-AI surge).
+
+### 10c. When did AI companies adopt the AI identity? (scripts/cb_ai_identity_panel.py; CSVs 34-36)
+Of 175,746 AI companies in CB 2026: 21% already AI by 2023, ~6% repackaged
+(non-AI in 2023 → AI later), 15% new to CB in 2024/2025, 58% new to CB in 2026.
+Among companies PRESENT since 2023, 22% repackaged into an AI identity.
+Repackagers came from Software / IT / SaaS / Image Recognition / Semantic Search
+/ SEO / Advertising. Repackaging is U-shaped by age: 2020+ (36%) and pre-2010
+(32%) pivot most.
+CAVEAT (important): the 2026 export is a larger, API-style dump (5.4M orgs, richer
+AI subcategories incl. "Generative AI"/"Foundational AI") vs 3.8M in 2025, so the
+"58% new to CB in 2026" is inflated by coverage + taxonomy expansion, NOT pure
+formation. The repackaging rate (measured on the stable present-since-2023 base)
+is the robust number.
+
+### 10d. How AI companies rewrote their descriptions (scripts/cb_ai_description_evolution.py; CSVs 37-38)
+For AI companies with both 2023 and 2026 CB descriptions (n=35,226): repackagers
+rewrote their description 53% of the time and added AI language 30% (vs 14% / 2%
+for already-AI firms) — repackaging is real repositioning, not just a tag flip.
+Newly-added generative-AI vocabulary 2023→2026, led by AGENTS (598 companies, up
+from 114 at 2025), generative ai (363), llm (193), copilot (93), gpt/chatgpt
+(90), RAG (52). The jump in "agents" is the clearest fingerprint of the 2025→2026
+agentic-AI turn in how companies describe themselves.
+
+### 10e. Genuine pivot vs AI-washing (scripts/classify_repackagers_cb.py; CSVs 39-40)
+LLM diff-classifier (Haiku, n=500, 100% parse) on category-repackagers' real
+2023→2026 descriptions: 20% repackaged_to_ai, 15% added_ai_feature (=35%
+GENUINE), 1% ai_washing, 13% born_ai, 52% no_ai_change.
+KEY METHODOLOGICAL FINDING: category-tag "repackaging" OVERSTATES genuine AI
+adoption ~3x. Half the companies CB tagged AI show NO AI in their description
+text at all (tag noise / stale text), and only ~a third show a genuine pivot or
+feature. Explicit text-level AI-washing is rare (1%). Always validate a category
+tag against the description text.
+
+### 10f. Wayback exact-month dating — independent corroboration (scripts/wayback_ai_event_study.py; CSV 29)
+Binary-searches the Internet Archive snapshot timeline to date the exact month
+PB "added-AI" companies first showed AI on their homepage. Partial crawl (~101
+dated of 576, archive.org throttling → many retryable cdx_failed): dated homepage
+AI-adoption events split ~50/50 before/after ChatGPT (Nov 2022) with the single
+largest cluster in 2023 — independently corroborating the CB identity-dating that
+AI-identity adoption peaks post-ChatGPT. 19% already showed AI on the homepage in
+2019 (website led the PB description). Resumable/checkpointed.
+
+### 10g. Data provenance (section 10)
+CB 2023/2024/2025 = flat bulk parquet dumps; CB 2026 = API-style nested export
+(normalized to flat schema on load; description text carried inline). All under
+data/pb_longitudinal/ (git-ignored); only aggregates + a 500-row verdict sample
+committed. cb_status (CB-2023 exit outcome) written to Railway per company.
