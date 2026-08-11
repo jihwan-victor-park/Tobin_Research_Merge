@@ -1278,6 +1278,68 @@ def _load_hidden_country_options() -> list[str]:
 _OUTPUT_DIR = Path(__file__).resolve().parent.parent / "output"
 
 
+@st.cache_data(ttl=300)
+def _load_enrichment(column: str) -> pd.DataFrame:
+    """Counts per value of one company_enrichment column, hidden-AI companies only.
+
+    Written by scripts/enrich_fields.py: an LLM reads each company's description
+    (and its website when we have one) and tags it against a fixed vocabulary,
+    so these aggregate cleanly.
+    """
+    engine = get_engine()
+    query = f"""
+        SELECT e.{column} AS value, COUNT(*) AS n
+        FROM company_enrichment e
+        JOIN companies c ON c.id = e.company_id
+        WHERE c.verification_status = '{_HIDDEN_STATUS}'
+          AND {ai_filter_sql('c')}
+          AND e.{column} IS NOT NULL
+        GROUP BY 1 ORDER BY 2 DESC
+    """
+    with engine.connect() as conn:
+        return pd.DataFrame(conn.execute(text(query)).mappings().all())
+
+
+@st.cache_data(ttl=300)
+def _load_enrichment_coverage() -> dict:
+    """How many hidden-AI companies have each enriched field — the honest
+    denominator for every chart built on this table."""
+    engine = get_engine()
+    where = (f"c.verification_status = '{_HIDDEN_STATUS}' AND {ai_filter_sql('c')}")
+    cols = {
+        "classified": "e.ai_application IS NOT NULL",
+        "founding_year": "e.domain_created_year IS NOT NULL OR e.founding_year IS NOT NULL",
+        "product": "e.product_status IS NOT NULL",
+        "commercialization": "e.commercialization IS NOT NULL",
+        "founders": "e.founders IS NOT NULL",
+    }
+    sel = ", ".join(f"COUNT(*) FILTER (WHERE {cond}) AS {k}" for k, cond in cols.items())
+    with engine.connect() as conn:
+        row = conn.execute(text(
+            f"SELECT COUNT(*) AS total, {sel} FROM companies c "
+            f"LEFT JOIN company_enrichment e ON e.company_id = c.id WHERE {where}"
+        )).mappings().one()
+    return dict(row)
+
+
+@st.cache_data(ttl=300)
+def _load_domain_year_curve() -> pd.DataFrame:
+    """Formation curve from the WHOIS domain-registration year — a proxy that
+    lifts founding-year coverage from ~13% to ~45% on this population."""
+    engine = get_engine()
+    query = f"""
+        SELECT e.domain_created_year AS year, COUNT(*) AS n
+        FROM company_enrichment e
+        JOIN companies c ON c.id = e.company_id
+        WHERE c.verification_status = '{_HIDDEN_STATUS}'
+          AND {ai_filter_sql('c')}
+          AND e.domain_created_year BETWEEN 2012 AND 2026
+        GROUP BY 1 ORDER BY 1
+    """
+    with engine.connect() as conn:
+        return pd.DataFrame(conn.execute(text(query)).mappings().all())
+
+
 @st.cache_data(ttl=3600)
 def _read_output_csv(name: str) -> pd.DataFrame:
     """Read a paper-ready analysis CSV from output/ (committed by research runs)."""
@@ -1501,6 +1563,125 @@ def page_home():
                      column_config={
                          "Founded": st.column_config.NumberColumn(format="%d"),
                      })
+
+
+def _render_enrichment_section() -> None:
+    """What the hidden AI companies actually do — read live from the
+    company_enrichment table rather than a committed CSV, so the page tracks the
+    enrichment run as it progresses."""
+    cov = _load_enrichment_coverage()
+    total = cov.get("total") or 0
+    if not total or not cov.get("classified"):
+        return
+
+    st.markdown(
+        '<div style="height:18px"></div>'
+        '<div class="section-header">What the hidden companies actually do</div>'
+        '<div class="section-sub" style="max-width:78ch;">Each company is read by an '
+        'LLM and tagged against a fixed vocabulary — application area, underlying AI '
+        'technology, and how it goes to market. Every value carries its source and a '
+        'confidence score. Percentages below are of the companies we could classify, '
+        'not of all hidden companies; the coverage row states that denominator.</div>',
+        unsafe_allow_html=True,
+    )
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Classified", f"{cov['classified']:,}",
+              f"{cov['classified']/total*100:.0f}% of {total:,}", delta_color="off")
+    c2.metric("Founding year", f"{cov['founding_year']:,}",
+              f"{cov['founding_year']/total*100:.0f}% (WHOIS proxy)", delta_color="off")
+    c3.metric("Product signal", f"{cov['product']:,}",
+              f"{cov['product']/total*100:.0f}%", delta_color="off")
+    c4.metric("Founders", f"{cov['founders']:,}",
+              f"{cov['founders']/total*100:.0f}% — hard to source", delta_color="off")
+
+    LABELS = {
+        "ai_for_science": "AI for Science", "healthcare": "Healthcare", "b2b": "B2B",
+        "b2c": "B2C", "consumer": "Consumer", "other": "Other",
+        "llm_nlp": "LLM / NLP", "computer_vision": "Computer Vision",
+        "agents": "AI Agents", "robotics": "Robotics", "speech_audio": "Speech / Audio",
+        "generative_media": "Generative Media", "ml_infrastructure": "ML Infrastructure",
+        "data_analytics": "Data & Analytics",
+        "self_serve_pricing": "Published pricing", "enterprise_sales": "Enterprise sales",
+        "waitlist_only": "Waitlist only", "free_or_research": "Free / research",
+        "uses_closed_api": "Calls a closed API", "uses_open_models": "Runs open models",
+        "builds_own_models": "Trains its own models",
+    }
+
+    def bar(df, color, height=300):
+        d = df.head(8).iloc[::-1]
+        labels = [LABELS.get(v, str(v).replace("_", " ").title()) for v in d["value"]]
+        fig = go.Figure(go.Bar(
+            x=d["n"], y=labels, orientation="h", marker=dict(color=color),
+            text=[f"{v:,}" for v in d["n"]], textposition="outside",
+            textfont=dict(color=TXT, size=11),
+            hovertemplate="%{y}: %{x:,}<extra></extra>",
+        ))
+        fig.update_layout(**_layout(
+            height=height, showlegend=False, bargap=0.42,
+            xaxis=dict(showgrid=False, zeroline=False, linecolor=BORDER,
+                       range=[0, d["n"].max() * 1.22]),
+            yaxis=dict(gridcolor="rgba(0,0,0,0)", tickfont=dict(size=11.5, color=TXT2)),
+            margin=dict(l=0, r=30, t=8, b=0),
+        ))
+        return fig
+
+    a1, a2 = st.columns(2)
+    app = _load_enrichment("ai_application")
+    if not app.empty:
+        with a1:
+            st.markdown('<div class="section-header" style="font-size:0.92rem;">'
+                        'Application area</div>', unsafe_allow_html=True)
+            st.plotly_chart(bar(app, ACCENT), use_container_width=True, config=_PLOT_CFG)
+    sub = _load_enrichment("ai_subfield")
+    if not sub.empty:
+        with a2:
+            st.markdown('<div class="section-header" style="font-size:0.92rem;">'
+                        'Underlying AI technology</div>', unsafe_allow_html=True)
+            st.plotly_chart(bar(sub, TEAL), use_container_width=True, config=_PLOT_CFG)
+
+    # Formation curve from the WHOIS proxy — the reason we collected it.
+    curve = _load_domain_year_curve()
+    if not curve.empty:
+        st.markdown(
+            '<div class="section-header" style="margin-top:14px;">When the hidden '
+            'companies appeared</div>'
+            '<div class="section-sub">Domain-registration year — a proxy for founding '
+            'date, used because a true founding year exists for only ~13% of this '
+            'population. Read the level as approximate and the <b>shape</b> as the finding.</div>',
+            unsafe_allow_html=True,
+        )
+        fig = go.Figure(go.Bar(
+            x=curve["year"], y=curve["n"], marker=dict(color=ACCENT),
+            hovertemplate="%{x}: %{y:,} companies<extra></extra>",
+        ))
+        fig.update_layout(**_layout(
+            height=280, showlegend=False,
+            xaxis=dict(dtick=1, showgrid=False, zeroline=False, linecolor=BORDER),
+            yaxis=dict(gridcolor=BORDER_LIGHT, zeroline=False,
+                       linecolor="rgba(0,0,0,0)", title="Companies"),
+            margin=dict(l=0, r=8, t=8, b=0),
+        ))
+        st.plotly_chart(fig, use_container_width=True, config=_PLOT_CFG)
+
+    # Two signals that stand in for the funding data this population doesn't expose.
+    b1, b2 = st.columns(2)
+    comm = _load_enrichment("commercialization")
+    if not comm.empty:
+        with b1:
+            st.markdown('<div class="section-header" style="font-size:0.92rem;">'
+                        'How they go to market</div>'
+                        '<div class="section-sub">A published price is the clearest '
+                        'public sign of a revenue attempt.</div>', unsafe_allow_html=True)
+            st.plotly_chart(bar(comm, CAT[3], 240), use_container_width=True, config=_PLOT_CFG)
+    stack = _load_enrichment("ai_stack")
+    if not stack.empty:
+        with b2:
+            st.markdown('<div class="section-header" style="font-size:0.92rem;">'
+                        'Where they sit in the AI stack</div>'
+                        '<div class="section-sub">Do they call someone else\'s model, '
+                        'run open weights, or train their own?</div>', unsafe_allow_html=True)
+            st.plotly_chart(bar(stack, GOLD, 240), use_container_width=True, config=_PLOT_CFG)
 
 
 # ── Page: Companies (hidden-only public explorer) ────────────────────
@@ -3385,6 +3566,8 @@ def page_research():
         for col, (_, r) in zip(cols, adoption.iterrows()):
             col.metric(f"{lbl.get(r['bucket'], r['bucket'])} — {int(r['total']):,} cos",
                        f"{r['ai_pct']:.1f}% AI")
+
+    _render_enrichment_section()
 
     # Formation of hidden companies by discovery channel
     h_form = _read_output_csv("09a_hidden_formation_timeline.csv")
