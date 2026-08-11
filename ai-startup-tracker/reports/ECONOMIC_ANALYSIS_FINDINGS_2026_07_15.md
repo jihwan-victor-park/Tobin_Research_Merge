@@ -494,7 +494,37 @@ largest cluster in 2023 — independently corroborating the CB identity-dating t
 AI-identity adoption peaks post-ChatGPT. 19% already showed AI on the homepage in
 2019 (website led the PB description). Resumable/checkpointed.
 
-### 10g. Data provenance (section 10)
+### 10g. Pre-ChatGPT baseline via PitchBook 2021 -> CB bridge (scripts/pb_cb_unified_panel.py; CSVs 41-42) — READ THE CAVEAT
+Bridges PitchBook 2021 to CB 2023/2025 on domain (no shared ID; 241K overlap,
+188,050 matched across all three). A naive read says "43% of today's AI companies
+were already AI in 2021 (pre-ChatGPT)" — this is TRUE but MISLEADING; do not use
+it as a headline. Two confounds, verified:
+  1. SELECTION: the panel is BY CONSTRUCTION only firms already tracked by
+     PitchBook in 2021 (established companies). It excludes the entire post-2021
+     formation wave — which is where the generative-AI companies actually are.
+  2. DEFINITION: "AI in 2021" is ~99% decades-old "artificial intelligence"
+     (3.9%) + "machine learning" (2.1%) language, which predates ChatGPT. Clean
+     GENERATIVE-AI phrases (generative ai / large language model, no 'llm'
+     substring) were 0.007% in 2021 -> 0.011% (2023) -> 0.079% (2025) — i.e.
+     essentially zero pre-ChatGPT. (An earlier 0.48% "generative 2021" figure was
+     a bug: substring 'llm' matching words like enro-LLM-ent.)
+Within this established set, AI/ML language is FLAT-TO-DECLINING (AI 3.9->3.5%,
+ML 2.1->1.5%). CORRECT reading: the AI *label* is old; incumbents barely changed
+their descriptions; the explosion of "AI companies" is driven by new-company
+formation + category re-tagging, NOT incumbents pivoting their text. Reinforces
+10c-10e rather than contradicting them.
+
+### 10h. Who founds AI companies (scripts/cb_ai_founders.py; CSVs 43-46)
+CB people/jobs/degrees, AI-scoped: 30,806 distinct AI-company founders across
+18,481 AI companies. AI founders are more credentialed/technical than non-AI:
+PhD 20.5% vs 10.8%, bachelor-only 33% vs 47%, larger teams (1.72 vs 1.39). Top
+fields Computer Science / EE / Physics / Math; top schools Stanford, MIT, Tel
+Aviv, Berkeley, Harvard, CMU, Technion (Israel prominent). LESS likely serial
+(3.1% vs 11.9% — first-time-founder wave) and slightly less female (10.0% vs
+13.4% — NB contradicts the Revelio "no gender gap" aggregate; different source/
+definition, reconcile before citing). Aggregates only, no names.
+
+### 10i. Data provenance (section 10)
 CB 2023/2024/2025 = flat bulk parquet dumps; CB 2026 = API-style nested export
 (normalized to flat schema on load; description text carried inline). All under
 data/pb_longitudinal/ (git-ignored); only aggregates + a 500-row verdict sample

@@ -92,7 +92,11 @@ def main() -> None:
     tot_ai25 = con.execute("SELECT count(*) FROM panel WHERE ai25=1").fetchone()[0]
     pre = con.execute("SELECT count(*) FROM panel WHERE ai25=1 AND ai21=1").fetchone()[0]
     print(f"\nof {tot_ai25:,} companies AI in 2025: {pre:,} ({100*pre/tot_ai25:.0f}%) were already "
-          f"AI PRE-ChatGPT (2021); {tot_ai25-pre:,} ({100*(tot_ai25-pre)/tot_ai25:.0f}%) converted after.")
+          f"AI-in-text in 2021.")
+    print("  DO NOT read this as '43% of AI companies predate ChatGPT'. This panel is ONLY")
+    print("  firms tracked since 2021 (established; excludes the post-2021 wave), and '2021 AI'")
+    print("  is decades-old ML/AI language. Clean generative-AI phrases were ~0.007% in 2021 ->")
+    print("  0.079% in 2025 (near-zero pre-ChatGPT). See findings doc 10g.")
 
     # transition matrix (full), for the record
     mat = con.execute("""SELECT ai21, ai23, ai25, COUNT(*) n,
