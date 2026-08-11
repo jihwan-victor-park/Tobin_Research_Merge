@@ -265,6 +265,10 @@ def stage_web(engine, limit: int, workers: int, dry_run: bool) -> None:
         # 2) fetch site text, feed the LLM for description + Tier-2 signals
         site = fetch_site_text(domain) if domain else None
         blurb = row["description"] or ""
+        # llm_ok distinguishes "the model looked and found nothing" from "the
+        # model never ran" (credits out / transport error). Only the former is a
+        # real attempt — stamping the latter would skip the row forever.
+        llm_ok = True
         if site:
             prompt = (
                 f"From this company website text for {name!r}, extract JSON:\n{site[:4000]}\n\n"
@@ -276,7 +280,10 @@ def stage_web(engine, limit: int, workers: int, dry_run: bool) -> None:
                 "  accelerator: incubator/accelerator name if mentioned (e.g. Y Combinator)\n"
                 "  confidence: 0.0-1.0"
             )
-            data = _parse_json(_call_llm([{"role": "user", "content": prompt}]) or "") or {}
+            raw = _call_llm([{"role": "user", "content": prompt}])
+            if raw is None:
+                llm_ok = False
+            data = _parse_json(raw or "") or {}
             conf = float(data.get("confidence", 0.5) or 0.5)
             for col in ["location_city", "location_country", "team_size_bucket",
                         "product_status", "accelerator"]:
@@ -300,13 +307,15 @@ def stage_web(engine, limit: int, workers: int, dry_run: bool) -> None:
                     if v:
                         fields[col] = str(v)[:300]
                         src[col] = {"source": "llm_from_website", "confidence": tconf}
-        return row["id"], domain, blurb, fields, src
+        return row["id"], domain, blurb, fields, src, llm_ok
 
-    done = 0
+    done = stalled = 0
     with ThreadPoolExecutor(max_workers=workers) as ex:
         futs = [ex.submit(work, r) for r in rows]
         for f in as_completed(futs):
-            cid, domain, blurb, fields, src = f.result()
+            cid, domain, blurb, fields, src, llm_ok = f.result()
+            if not llm_ok:
+                stalled += 1
             if not dry_run:
                 # write back domain/description onto companies (canonical), signals onto enrichment
                 with engine.begin() as c:
@@ -319,12 +328,16 @@ def stage_web(engine, limit: int, workers: int, dry_run: bool) -> None:
                 clean = {k: v for k, v in fields.items() if k in _COLS}
                 if clean or src:
                     upsert(engine, cid, clean, src)
-                # stamp the attempt either way — a dead site or a no-result
-                # search must not be retried on the next pass
-                mark_attempt(engine, cid, "web_attempted_at")
+                # stamp the attempt only when the model actually ran: a dead
+                # site is a real attempt, a credit-out is not.
+                if llm_ok:
+                    mark_attempt(engine, cid, "web_attempted_at")
             done += 1
             if done % 25 == 0:
                 print(f"  {done}/{len(rows)}", flush=True)
+    if stalled:
+        print(f"  ! {stalled}/{len(rows)} rows had no LLM response (credits/keys?) "
+              f"— left unstamped for a later pass", flush=True)
     print(f"✓ web done ({'dry-run' if dry_run else 'written'})", flush=True)
 
 
@@ -355,7 +368,7 @@ def stage_deep(engine, limit: int, workers: int, min_conf: float, dry_run: bool)
             for h in tavily_search(query, max_results=5)
         )
         if not ctx.strip():
-            return row["id"], None
+            return row["id"], None, True       # search genuinely returned nothing
         prompt = (
             f"Search snippets about the startup {name!r}:\n{ctx[:3500]}\n\n"
             "Extract JSON (null when the snippets don't clearly say):\n"
@@ -365,10 +378,13 @@ def stage_deep(engine, limit: int, workers: int, min_conf: float, dry_run: bool)
             "  confidence: 0.0-1.0 — be strict; many startups share names\n"
             "Only include a field if the snippets are actually about THIS company."
         )
-        data = _parse_json(_call_llm([{"role": "user", "content": prompt}]) or "") or {}
+        raw = _call_llm([{"role": "user", "content": prompt}])
+        if raw is None:
+            return row["id"], None, False      # model never ran — don't stamp
+        data = _parse_json(raw) or {}
         conf = float(data.get("confidence", 0.0) or 0.0)
         if conf < min_conf:
-            return row["id"], None
+            return row["id"], None, True
         fields, src = {}, {}
         if isinstance(data.get("founders"), list) and data["founders"]:
             fields["founders"] = data["founders"][:6]
@@ -380,20 +396,26 @@ def stage_deep(engine, limit: int, workers: int, min_conf: float, dry_run: bool)
         if data.get("recent_funding"):
             fields["recent_funding"] = str(data["recent_funding"])[:120]
             src["recent_funding"] = {"source": "tavily_search", "confidence": conf}
-        return row["id"], ((fields, src) if fields else None)
+        return row["id"], ((fields, src) if fields else None), True
 
-    done = 0
+    done = stalled = 0
     with ThreadPoolExecutor(max_workers=workers) as ex:
         futs = [ex.submit(work, r) for r in rows]
         for f in as_completed(futs):
-            cid, res = f.result()
+            cid, res, llm_ok = f.result()
+            if not llm_ok:
+                stalled += 1
             if not dry_run:
                 if res:
                     upsert(engine, cid, res[0], res[1])
-                mark_attempt(engine, cid, "deep_attempted_at")
+                if llm_ok:
+                    mark_attempt(engine, cid, "deep_attempted_at")
             done += 1
             if done % 25 == 0:
                 print(f"  {done}/{len(rows)}", flush=True)
+    if stalled:
+        print(f"  ! {stalled}/{len(rows)} rows had no LLM response (credits/keys?) "
+              f"— left unstamped for a later pass", flush=True)
     print(f"✓ deep done ({'dry-run' if dry_run else 'written'})", flush=True)
 
 
