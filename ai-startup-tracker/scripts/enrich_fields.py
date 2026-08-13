@@ -502,25 +502,34 @@ def stage_deep(engine, limit: int, workers: int, min_conf: float, dry_run: bool)
 
 
 # ── WHOIS stage: founding-year proxy + discovery lag (free) ──────────
-def stage_whois(engine, limit: int, workers: int, dry_run: bool) -> None:
-    """Fill domain_created_year for every hidden-AI company with a domain.
+def stage_whois(engine, limit: int, workers: int, dry_run: bool,
+                all_hidden: bool = False) -> None:
+    """Fill domain_created_year for hidden companies that have a domain.
 
     This is the cheapest fix for the dataset's worst gap: founding year sits at
     ~13% coverage, which is what makes cohort/trend analysis fragile. WHOIS is
     free and hits ~70% of domained companies. It is a *proxy* — the domain
     registration date, not the incorporation date — and must be reported as one.
+
+    By default this is limited to companies already classified as AI, which is
+    only a few hundred rows once they have been attempted. --all-hidden drops
+    that restriction: a hidden company that has not been classified yet may
+    still be an AI company, and since WHOIS costs nothing there is no reason to
+    make it wait for a classification we cannot currently pay for.
     """
+    ai_clause = "" if all_hidden else f"AND {ai_filter_sql('c')}"
     with engine.connect() as c:
         rows = c.execute(text(f"""
             SELECT c.id, c.name, c.domain
             FROM companies c
             LEFT JOIN company_enrichment e ON e.company_id = c.id
-            WHERE {HIDDEN} AND {ai_filter_sql('c')}
+            WHERE {HIDDEN} {ai_clause}
               AND c.domain IS NOT NULL
               AND e.whois_attempted_at IS NULL
             LIMIT :lim
         """), {"lim": limit}).mappings().all()
-    print(f"whois: {len(rows)} domained hidden-AI companies", flush=True)
+    print(f"whois: {len(rows)} domained hidden companies"
+          f"{'' if all_hidden else ' (AI-classified only)'}", flush=True)
 
     def work(row):
         return row["id"], whois_year(row["domain"])
@@ -563,6 +572,8 @@ def main():
     ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--min-confidence", type=float, default=0.5)
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--all-hidden", action="store_true",
+                    help="whois: do not restrict to already-AI-classified companies")
     a = ap.parse_args()
 
     engine = get_engine()
@@ -578,7 +589,7 @@ def main():
     elif a.stage == "deep":
         stage_deep(engine, a.limit, a.workers, a.min_confidence, a.dry_run)
     elif a.stage == "whois":
-        stage_whois(engine, a.limit, a.workers, a.dry_run)
+        stage_whois(engine, a.limit, a.workers, a.dry_run, a.all_hidden)
 
 
 if __name__ == "__main__":
