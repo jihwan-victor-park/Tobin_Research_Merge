@@ -93,6 +93,21 @@ _COUNTRY_ALIASES: dict[str, str] = {
     "kw": "Kuwait",
     "pk": "Pakistan",
     "bd": "Bangladesh",
+    # EU nomenclature deviates from ISO 3166-1 for Greece: CORDIS and Eurostat
+    # write EL, not GR. Without this the code reaches the DB as a bare "EL".
+    "el": "Greece",
+    "cy": "Cyprus",
+    "si": "Slovenia",
+    "sk": "Slovakia",
+    "lu": "Luxembourg",
+    "is": "Iceland",
+    "mt": "Malta",
+    "md": "Moldova",
+    "ma": "Morocco",
+    "tn": "Tunisia",
+    "jo": "Jordan",
+    "gh": "Ghana",
+    "zm": "Zambia",
 }
 
 # Full country names that have coordinates on the globe — used to filter out

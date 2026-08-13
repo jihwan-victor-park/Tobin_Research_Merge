@@ -101,3 +101,6 @@ founder_poc/*_poc.parquet
 # from the repo root. Manifests (*.json, shard counts only) are fine to commit.
 scripts/founder_poc/*.parquet
 data/pb_longitudinal/
+
+# CORDIS bulk archives (90MB, re-downloadable)
+data/cordis/
