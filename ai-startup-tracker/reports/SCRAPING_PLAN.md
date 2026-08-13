@@ -34,10 +34,25 @@
 **원칙 1 — 정의를 먼저 고정한다**
 ```
 확인된 회사 (verified entity)
-  = hidden 이면서 (도메인 있음 OR 설명 있음 OR GitHub Organization 확인됨)
+  = hidden 이면서 (도메인 있음 OR 설명 있음 OR GitHub Organization 확인됨
+                  OR VC 포트폴리오 페이지에 게시됨)
 현재: 33,061개 + GitHub 확인분
 ```
 수집한 뒤에 세지 않고, **세는 기준을 먼저 정한 뒤 수집한다.**
+
+> **'이름뿐 21,670개'는 한 덩어리가 아니었다** (2026-08-13 실측)
+>
+> | 갈래 | 수 | 판정 방법 | 해석 |
+> |---|---|---|---|
+> | 이름에 공백·마침표 있음 | 4,527 | **규칙으로 확정 (호출 0회)** | GitHub 로그인일 수 없음 → "In-Pipe Robot Inc." 처럼 오히려 **회사명 형태**. 웹 보강 대상 |
+> | 핸들 형태 | 15,524 | GitHub API 조회 | 절반 정도가 실제 조직 |
+> | 그중 VC 포트폴리오 출처 | 1,270 | source_domain 보유 | **VC가 게시했다는 증거** → 도메인 없어도 회사 |
+>
+> 초기 조회 결과(핸들 형태 713건): Organization 282 · User 316 · 없음 115
+> → **해석되는 것 중 47%가 실제 조직.** 예전에 어림한 "2/3은 개인"보다 훨씬 낫다.
+>
+> **교훈: "데이터가 없다"를 "회사가 아니다"로 읽으면 안 된다.** 갈래마다 증거의
+> 종류가 다르므로 판정 방법도 달라야 한다.
 
 **원칙 2 — 모든 값에 출처와 신뢰도를 남긴다**
 이미 `company_enrichment.sources` 에 `{field: {source, confidence}}` 로 저장 중.
@@ -70,7 +85,7 @@
 
 | 단계 | 대상 | 수단 | 비용 | 기대 |
 |---|---|---|---|---|
-| **D1** | 이름뿐 21,670 | GitHub API | **$0** | 회사/개인 판정 (진행 중, ~4h) |
+| **D1** | 이름뿐 21,670 | 규칙 4,527 + GitHub API 15,524 | **$0** | 회사/개인 판정 (진행 중, ~3h) |
 | **D2** | 도메인만 있는 8,486 | 사이트 스크랩 → 설명 확보 → 분류 | **~$25** | 설명 8,486개 + 분류 |
 | **D3** | 도메인 있는 전체 | WHOIS 나머지 | **$0** | 설립연도 45%→60% |
 | **D4** | 설명 생긴 것 전부 | Tier 1 재분류 | **~$8** | 분류 64%→85% |
@@ -143,20 +158,23 @@ WHOIS      $0
 
 ---
 
-## 6. 충전하면 바로 돌릴 것 (순서대로)
+## 6. 실행 방법 — 명령 하나
+
+API 키를 넣고 옵션 이름만 고르면 된다. 단계는 **싼 것부터** 순서대로 돌고,
+중간에 크레딧이 떨어져도 이미 확보한 커버리지는 남는다 (전 단계 재개 가능).
 
 ```bash
-# 1) 무료 — 지금도 가능
-python scripts/classify_github_entities.py          # 진행 중
-python scripts/enrich_fields.py whois --limit 6000  # 설립연도 마저
+export DATABASE_URL='<Railway DATABASE_PUBLIC_URL>'
+export ANTHROPIC_API_KEY='...'
+export TAVILY_API_KEY='...'          # breadth 단계에만 필요
 
-# 2) Anthropic 충전 후 ($33)
-python scripts/enrich_fields.py web --limit 9000 --workers 8   # 도메인 있는 것만
-python scripts/enrich_fields.py classify --limit 9000          # 새 설명 분류
-
-# 3) 시계열 확보 ($15)
-python scripts/run_orchestrator.py --batch      # 기존 사이트 재수집
-
-# 4) 규모 확장 (Tavily 충전 후, $45)
-python scripts/run_scout.py --country ...       # 신규 사이트 발굴
+./scripts/run_scraping_plan.sh free           # $0    지금 바로 가능
+./scripts/run_scraping_plan.sh depth          # ~$33  세부정보 채우기
+./scripts/run_scraping_plan.sh longitudinal   # ~$15  시계열 확보
+./scripts/run_scraping_plan.sh breadth        # ~$45  회사 수 늘리기
+./scripts/run_scraping_plan.sh recommended    # free + depth + longitudinal  ⭐
+./scripts/run_scraping_plan.sh all
 ```
+
+각 실행은 시작·종료 시점의 커버리지를 함께 찍고 `logs/plan_*.log` 에 남긴다.
+`DATABASE_URL` 이 없으면 **실행을 거부한다** — 오래된 로컬 덤프에 잘못 쓰는 사고 방지.

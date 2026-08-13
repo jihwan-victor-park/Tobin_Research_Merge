@@ -41,6 +41,15 @@ HIDDEN = "verification_status = 'emerging_github'"
 # own data says whether it is a company
 NAME_ONLY = f"{HIDDEN} AND (description IS NULL OR description = '') AND domain IS NULL"
 
+# A GitHub login is at most 39 characters of alphanumerics and single interior
+# hyphens — spaces, dots and "Inc." can never appear in one. So a name like
+# "In-Pipe Robot Inc." is decidably not a login and asking the API about it only
+# ever returns 404, which we would then have to be careful not to misread as
+# "not a company". Settle those by rule instead, and spend the request budget on
+# names that could actually resolve. This is ~22% of the population.
+LOGIN_SYNTAX = r"^[A-Za-z0-9](?:-?[A-Za-z0-9]){0,38}$"
+IS_LOGIN = f"name ~ '{LOGIN_SYNTAX}'"
+
 # GitHub also enforces an unpublished secondary limit, so hold a steady pace
 # rather than bursting: 5,000/hour is ~1.4 req/s.
 MIN_INTERVAL = 0.72
@@ -142,12 +151,30 @@ def show_status(engine) -> None:
         print(f"   {str(k):14} {v:6,} ({share:4.1f}%)")
 
 
+def prefilter(engine) -> int:
+    """Settle the syntactically-impossible logins in one statement, no requests."""
+    with engine.begin() as c:
+        n = c.execute(text(f"""
+            INSERT INTO github_entity_check (company_id, login, entity_type, checked_at)
+            SELECT co.id, left(co.name, 200), 'not_github_login', now()
+            FROM companies co
+            LEFT JOIN github_entity_check g ON g.company_id = co.id
+            WHERE co.{NAME_ONLY} AND g.company_id IS NULL AND NOT ({IS_LOGIN})
+            ON CONFLICT (company_id) DO NOTHING
+        """)).rowcount
+    if n:
+        print(f"  · {n:,} names cannot be GitHub logins (spaces/punctuation) — "
+              f"settled by rule, {n:,} requests saved", flush=True)
+    return n
+
+
 def run(engine, limit: int, workers: int) -> None:
+    prefilter(engine)
     with engine.connect() as c:
         rows = c.execute(text(f"""
             SELECT co.id, co.name FROM companies co
             LEFT JOIN github_entity_check g ON g.company_id = co.id
-            WHERE co.{NAME_ONLY} AND g.company_id IS NULL
+            WHERE co.{NAME_ONLY} AND g.company_id IS NULL AND {IS_LOGIN}
             LIMIT :lim
         """), {"lim": limit}).mappings().all()
     print(f"to check: {len(rows):,}  (workers={workers}, ~{MIN_INTERVAL}s apart)", flush=True)
