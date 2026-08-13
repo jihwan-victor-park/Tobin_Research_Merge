@@ -545,6 +545,17 @@ def stage_whois(engine, limit: int, workers: int, dry_run: bool) -> None:
           f"({'dry-run' if dry_run else 'written'})", flush=True)
 
 
+def llm_available() -> bool:
+    """One cheap probe before a long stage starts.
+
+    Three runs so far died on exhausted credits partway through and then spun
+    for hours doing nothing. Failing loudly at the start is far better than
+    discovering it in the logs the next morning. (whois needs no LLM, so it
+    skips this check.)"""
+    reply = _call_llm([{"role": "user", "content": "Reply with: ok"}])
+    return bool(reply)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("stage", choices=["classify", "web", "deep", "whois"])
@@ -556,6 +567,10 @@ def main():
 
     engine = get_engine()
     ensure_table(engine)
+    if a.stage != "whois" and not llm_available():
+        print("! LLM backend unavailable (credits/keys) — stopping before the stage "
+              "starts so nothing gets marked as attempted.", flush=True)
+        sys.exit(2)
     if a.stage == "classify":
         stage_classify(engine, a.limit, a.workers, a.dry_run)
     elif a.stage == "web":
