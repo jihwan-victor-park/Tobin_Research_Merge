@@ -104,3 +104,6 @@ data/pb_longitudinal/
 
 # CORDIS bulk archives (90MB, re-downloadable)
 data/cordis/
+
+# SBIR bulk award file (350MB, re-downloadable)
+data/sbir/
