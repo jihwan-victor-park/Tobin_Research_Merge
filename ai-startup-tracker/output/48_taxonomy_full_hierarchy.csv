@@ -1,149 +1,160 @@
 domain,label,capability,n,hidden
-Agriculture/Food,AI-Powered Precision Agriculture,Predictive/Analytics,971,55
-Agriculture/Food,AI-Powered Food Discovery & Personalization,Predictive/Analytics,705,31
-Consumer/Lifestyle,AI-Powered Travel & Experience Planning,Agents,914,34
-Consumer/Lifestyle,Smart Home & Wearables,Robotics,2,1
-Data/Analytics,Data Analytics & Business Intelligence,Predictive/Analytics,1318,43
-Data/Analytics,Business Analytics & Intelligence,Predictive/Analytics,1146,42
-Data/Analytics,Analytics and Data Science Consulting,Predictive/Analytics,1049,6
-Data/Analytics,Business Analytics & Predictive Intelligence,Predictive/Analytics,902,36
-Data/Analytics,AI Consulting & Solutions,Predictive/Analytics,885,129
-Data/Analytics,Sports Performance Analytics,Computer Vision,871,30
-Data/Analytics,Data Analytics & Science,Predictive/Analytics,859,7
-Data/Analytics,AI & Data Consulting,Predictive/Analytics,812,1
-Data/Analytics,AI Business Solutions & Analytics,Predictive/Analytics,771,4
-Data/Analytics,Enterprise Data & Analytics Solutions,Predictive/Analytics,720,14
-Data/Analytics,Geospatial AI Analytics,Computer Vision,686,67
-Data/Analytics,Enterprise Software & Analytics,Predictive/Analytics,587,14
-Data/Analytics,Enterprise AI Platforms,Predictive/Analytics,367,8
-Data/Analytics,Business Intelligence & Analytics,Predictive/Analytics,215,3
-Data/Analytics,Predictive Analytics & Data Science,Predictive/Analytics,202,6
-Developer Tools/Infra,Enterprise AI Development & Solutions,ML Infra,1904,78
-Developer Tools/Infra,AI Agent Development Platforms,Agents,1870,842
-Developer Tools/Infra,IT Consulting & Software Development,ML Infra,1563,8
-Developer Tools/Infra,AI Software Development & Consulting,LLM/NLP,1273,3
-Developer Tools/Infra,Natural Language Processing,LLM/NLP,1273,464
-Developer Tools/Infra,AI-Powered Process Automation,Agents,1258,89
-Developer Tools/Infra,Cloud Infrastructure & Management,ML Infra,1071,40
-Developer Tools/Infra,Software Development & IT Consulting,ML Infra,1060,6
-Developer Tools/Infra,Software Development & Services,ML Infra,1045,102
-Developer Tools/Infra,Enterprise Software & IoT Solutions,ML Infra,1029,1
-Developer Tools/Infra,AI Software Development Services,Other,1005,22
-Developer Tools/Infra,AI Software & Consulting Services,Other,977,22
-Developer Tools/Infra,Blockchain & AI Infrastructure,Other,977,27
-Developer Tools/Infra,Software Development & Digital Transformation,Other,963,13
-Developer Tools/Infra,Voice AI & Speech Recognition,Speech/Audio,963,133
-Developer Tools/Infra,Custom Software Development,Other,946,38
-Developer Tools/Infra,Digital Transformation & AI Consulting,Other,922,2
-Developer Tools/Infra,ML Development & Operations,ML Infra,920,211
-Developer Tools/Infra,AI Software Solutions & Services,Other,859,26
-Developer Tools/Infra,AI & Software Development Services,Other,848,19
-Developer Tools/Infra,Network Infrastructure & Automation,ML Infra,787,32
-Developer Tools/Infra,Business & IT Consulting,Predictive/Analytics,735,12
-Developer Tools/Infra,Enterprise AI Software Solutions,Agents,704,14
-Developer Tools/Infra,AI Business Software Solutions,Agents,653,18
-Developer Tools/Infra,Deep Learning Solutions,Computer Vision,626,51
-Developer Tools/Infra,Enterprise Software & AI Solutions,Other,556,7
-Developer Tools/Infra,Enterprise Software & Consulting,Predictive/Analytics,540,7
-Developer Tools/Infra,Enterprise Software Platforms,Predictive/Analytics,538,5
-Developer Tools/Infra,Software Development & Data Services,Predictive/Analytics,519,14
-Developer Tools/Infra,AI-Powered Code Development,LLM/NLP,382,67
-Developer Tools/Infra,Enterprise AI & Software Solutions,Predictive/Analytics,373,10
-Developer Tools/Infra,Enterprise AI Solutions & Services,Other,370,8
-Developer Tools/Infra,Enterprise AI Solutions,Agents,364,4
-Developer Tools/Infra,AI Software & Solutions,Predictive/Analytics,346,3
-Developer Tools/Infra,Quantum Computing Software,Other,221,19
-Developer Tools/Infra,AI Software & Development Services,Other,215,5
-Developer Tools/Infra,Enterprise AI & Software Services,Predictive/Analytics,205,1
-Developer Tools/Infra,AI Software & Services,Other,190,5
-Developer Tools/Infra,Generative AI Development & Services,LLM/NLP,181,10
-Developer Tools/Infra,Simulation & Digital Twin Platforms,Other,146,12
-Education,AI-Powered Education Platforms,LLM/NLP,1496,83
-Education,AI-Powered Education & Learning,Predictive/Analytics,421,10
-Energy/Climate,AI Energy Management,Predictive/Analytics,877,74
-Energy/Climate,Carbon & Sustainability Analytics,Predictive/Analytics,656,55
-Energy/Climate,EV Battery & Charging Intelligence,Predictive/Analytics,482,30
-Energy/Climate,Energy & Sustainability AI,Predictive/Analytics,291,11
-Finance,AI-Powered Trading & Investment,Predictive/Analytics,1067,53
-Finance,Real Estate AI Analytics,Predictive/Analytics,885,43
-Finance,AI Credit & Lending,Predictive/Analytics,662,33
-Finance,Financial Analytics & Insights,Predictive/Analytics,638,34
-Finance,Fintech Payment & Lending,Predictive/Analytics,635,28
-Finance,AI Accounting Automation,Agents,632,56
-Finance,Financial Crime & Compliance,Predictive/Analytics,616,41
-Finance,Insurance AI Solutions,Predictive/Analytics,487,22
-Finance,AI-Powered Financial Services,Predictive/Analytics,486,19
-Healthcare,Clinical AI & Patient Care,Predictive/Analytics,1378,130
-Healthcare,AI-Powered Patient Care Management,Predictive/Analytics,1117,22
-Healthcare,AI Mental Health & Wellness,LLM/NLP,866,65
-Healthcare,AI-Powered Health Monitoring,Predictive/Analytics,802,47
-Healthcare,AI Healthcare Management,Predictive/Analytics,793,29
-Healthcare,Medical Imaging Diagnostics,Computer Vision,784,67
-Healthcare,AI-Powered Biotech Diagnostics,Predictive/Analytics,709,49
-Healthcare,AI-Powered Clinical Health Analytics,Predictive/Analytics,683,40
-Healthcare,Genomic Analysis & Cancer Diagnostics,Predictive/Analytics,636,36
-Healthcare,AI-Powered Brain Health,Predictive/Analytics,627,46
-Healthcare,Surgical Robotics & Navigation,Robotics,537,28
-Healthcare,AI-Powered Vision Care,Computer Vision,513,26
-Healthcare,Facial Recognition & Skin Analysis,Computer Vision,501,67
-Legal,Legal Document AI,LLM/NLP,789,98
-Legal,AI-Powered Legal Services,LLM/NLP,601,87
-Manufacturing/Industrial,Industrial Manufacturing Equipment,Robotics,1161,52
-Manufacturing/Industrial,Industrial Robotics & Automation,Robotics,1055,27
-Manufacturing/Industrial,Computer Vision & AR Solutions,Computer Vision,1024,90
-Manufacturing/Industrial,Industrial IoT Monitoring,Predictive/Analytics,959,17
-Manufacturing/Industrial,Industrial Process Automation,Robotics,909,14
-Manufacturing/Industrial,Computer Vision Platform,Computer Vision,855,70
-Manufacturing/Industrial,Industrial Predictive Maintenance,Predictive/Analytics,836,56
-Manufacturing/Industrial,Industrial AI Solutions,Predictive/Analytics,748,6
-Manufacturing/Industrial,AI-Powered Design & Construction,Generative Media,695,51
-Manufacturing/Industrial,Optical Imaging & Vision Systems,Computer Vision,620,52
+Agriculture/Food,AI-Powered Food Discovery & Personalization,Predictive/Analytics,673,29
+Agriculture/Food,AI-Powered Precision Agriculture,Predictive/Analytics,939,49
+Consumer/Lifestyle,AI-Powered Travel & Experience Planning,Agents,854,33
+Consumer/Lifestyle,Smart Home & Wearables,Robotics,1,0
+Data/Analytics,AI & Data Consulting,Predictive/Analytics,694,1
+Data/Analytics,AI Business Solutions & Analytics,Predictive/Analytics,743,4
+Data/Analytics,AI Consulting & Solutions,Predictive/Analytics,835,111
+Data/Analytics,Analytics and Data Science Consulting,Predictive/Analytics,952,4
+Data/Analytics,Business Analytics & Intelligence,Predictive/Analytics,1077,37
+Data/Analytics,Business Analytics & Predictive Intelligence,Predictive/Analytics,882,34
+Data/Analytics,Business Intelligence & Analytics,Predictive/Analytics,192,2
+Data/Analytics,Data Analytics & Business Intelligence,Predictive/Analytics,1212,41
+Data/Analytics,Data Analytics & Science,Predictive/Analytics,694,7
+Data/Analytics,Enterprise AI Platforms,Predictive/Analytics,351,8
+Data/Analytics,Enterprise Data & Analytics Solutions,Predictive/Analytics,664,12
+Data/Analytics,Enterprise Software & Analytics,Predictive/Analytics,546,14
+Data/Analytics,Geospatial AI Analytics,Computer Vision,629,46
+Data/Analytics,Predictive Analytics & Data Science,Predictive/Analytics,196,5
+Data/Analytics,Sports Performance Analytics,Computer Vision,855,29
+Developer Tools/Infra,AI & Software Development Services,Other,778,15
+Developer Tools/Infra,AI Agent Development Platforms,Agents,1853,833
+Developer Tools/Infra,AI Business Software Solutions,Agents,623,15
+Developer Tools/Infra,AI Software & Consulting Services,Other,911,20
+Developer Tools/Infra,AI Software & Development Services,Other,200,3
+Developer Tools/Infra,AI Software & Services,Other,180,4
+Developer Tools/Infra,AI Software & Solutions,Predictive/Analytics,326,3
+Developer Tools/Infra,AI Software Development & Consulting,LLM/NLP,1214,3
+Developer Tools/Infra,AI Software Development Services,Other,944,19
+Developer Tools/Infra,AI Software Solutions & Services,Other,838,22
+Developer Tools/Infra,AI-Powered Code Development,LLM/NLP,345,63
+Developer Tools/Infra,AI-Powered Process Automation,Agents,1240,81
+Developer Tools/Infra,Blockchain & AI Infrastructure,Other,881,23
+Developer Tools/Infra,Business & IT Consulting,Predictive/Analytics,627,7
+Developer Tools/Infra,Cloud Infrastructure & Management,ML Infra,971,37
+Developer Tools/Infra,Custom Software Development,Other,754,38
+Developer Tools/Infra,Deep Learning Solutions,Computer Vision,616,51
+Developer Tools/Infra,Digital Transformation & AI Consulting,Other,823,2
+Developer Tools/Infra,Enterprise AI & Software Services,Predictive/Analytics,190,1
+Developer Tools/Infra,Enterprise AI & Software Solutions,Predictive/Analytics,348,9
+Developer Tools/Infra,Enterprise AI Development & Solutions,ML Infra,1831,69
+Developer Tools/Infra,Enterprise AI Software Solutions,Agents,681,14
+Developer Tools/Infra,Enterprise AI Solutions,Agents,347,4
+Developer Tools/Infra,Enterprise AI Solutions & Services,Other,349,6
+Developer Tools/Infra,Enterprise Software & AI Solutions,Other,511,4
+Developer Tools/Infra,Enterprise Software & Consulting,Predictive/Analytics,502,5
+Developer Tools/Infra,Enterprise Software & IoT Solutions,ML Infra,938,0
+Developer Tools/Infra,Enterprise Software Platforms,Predictive/Analytics,511,5
+Developer Tools/Infra,Generative AI Development & Services,LLM/NLP,176,10
+Developer Tools/Infra,IT Consulting & Software Development,ML Infra,1349,6
+Developer Tools/Infra,ML Development & Operations,ML Infra,899,209
+Developer Tools/Infra,Natural Language Processing,LLM/NLP,1250,456
+Developer Tools/Infra,Network Infrastructure & Automation,ML Infra,707,19
+Developer Tools/Infra,Quantum Computing Software,Other,194,13
+Developer Tools/Infra,Simulation & Digital Twin Platforms,Other,134,11
+Developer Tools/Infra,Software Development & Data Services,Predictive/Analytics,476,14
+Developer Tools/Infra,Software Development & Digital Transformation,Other,789,10
+Developer Tools/Infra,Software Development & IT Consulting,ML Infra,901,4
+Developer Tools/Infra,Software Development & Services,ML Infra,966,94
+Developer Tools/Infra,Voice AI & Speech Recognition,Speech/Audio,944,128
+Developer Tools/Infra,agents,Agents,2,2
+Developer Tools/Infra,llm_nlp,LLM/NLP,6,6
+Developer Tools/Infra,ml_infrastructure,Agents,3,3
+Developer Tools/Infra,ml_infrastructure,ML Infra,4,4
+Developer Tools/Infra,speech_audio,Speech/Audio,4,4
+Education,AI-Powered Education & Learning,Predictive/Analytics,377,8
+Education,AI-Powered Education Platforms,LLM/NLP,1315,76
+Energy/Climate,AI Energy Management,Predictive/Analytics,824,56
+Energy/Climate,Carbon & Sustainability Analytics,Predictive/Analytics,606,40
+Energy/Climate,EV Battery & Charging Intelligence,Predictive/Analytics,432,13
+Energy/Climate,Energy & Sustainability AI,Predictive/Analytics,273,9
+Finance,AI Accounting Automation,Agents,597,56
+Finance,AI Credit & Lending,Predictive/Analytics,647,32
+Finance,AI-Powered Financial Services,Predictive/Analytics,455,18
+Finance,AI-Powered Trading & Investment,Predictive/Analytics,1054,52
+Finance,Financial Analytics & Insights,Predictive/Analytics,602,29
+Finance,Financial Crime & Compliance,Predictive/Analytics,585,38
+Finance,Fintech Payment & Lending,Predictive/Analytics,582,28
+Finance,Insurance AI Solutions,Predictive/Analytics,472,22
+Finance,Real Estate AI Analytics,Predictive/Analytics,837,42
+Healthcare,AI Healthcare Management,Predictive/Analytics,722,27
+Healthcare,AI Mental Health & Wellness,LLM/NLP,835,59
+Healthcare,AI-Powered Biotech Diagnostics,Predictive/Analytics,606,26
+Healthcare,AI-Powered Brain Health,Predictive/Analytics,577,36
+Healthcare,AI-Powered Clinical Health Analytics,Predictive/Analytics,646,35
+Healthcare,AI-Powered Health Monitoring,Predictive/Analytics,774,41
+Healthcare,AI-Powered Patient Care Management,Predictive/Analytics,1062,20
+Healthcare,AI-Powered Vision Care,Computer Vision,493,22
+Healthcare,Clinical AI & Patient Care,Other,53,53
+Healthcare,Clinical AI & Patient Care,Predictive/Analytics,1353,125
+Healthcare,Facial Recognition & Skin Analysis,Computer Vision,494,65
+Healthcare,Genomic Analysis & Cancer Diagnostics,Predictive/Analytics,583,23
+Healthcare,Medical Imaging Diagnostics,Computer Vision,756,59
+Healthcare,Surgical Robotics & Navigation,Robotics,501,15
+Healthcare,agents,Predictive/Analytics,1,1
+Healthcare,computer_vision,Computer Vision,10,10
+Healthcare,data_analytics,Predictive/Analytics,1,1
+Legal,AI-Powered Legal Services,LLM/NLP,588,86
+Legal,Legal Document AI,LLM/NLP,767,92
+Manufacturing/Industrial,AI-Powered Design & Construction,Generative Media,626,36
+Manufacturing/Industrial,Computer Vision & AR Solutions,Computer Vision,990,84
+Manufacturing/Industrial,Computer Vision Platform,Computer Vision,848,68
+Manufacturing/Industrial,Industrial AI Solutions,Predictive/Analytics,710,6
 Manufacturing/Industrial,Industrial Automation & Production Control,Agents,2,1
-Marketing/Media,AI-Powered Marketing Automation,LLM/NLP,1102,46
-Marketing/Media,AI-Powered Marketing & Media,Predictive/Analytics,1090,13
-Marketing/Media,AI-Powered 3D/AR/VR Content Creation,Generative Media,1077,127
-Marketing/Media,Web Data & SEO Intelligence,LLM/NLP,841,60
-Marketing/Media,AI Content Generation,LLM/NLP,833,165
-Marketing/Media,Creative AI & Design Studios,Generative Media,761,16
-Marketing/Media,Social Media Marketing Intelligence,Predictive/Analytics,758,39
-Marketing/Media,Programmatic Advertising Platform,Predictive/Analytics,693,25
-Marketing/Media,AI Music Generation,Generative Media,638,84
-Marketing/Media,B2B Sales & Marketing Intelligence,Predictive/Analytics,600,19
-Marketing/Media,VR/AR/MR Development,Generative Media,507,21
-Marketing/Media,Video & Digital Software Solutions,Computer Vision,368,12
-Marketing/Media,Customer Data & Marketing Automation,Predictive/Analytics,163,2
-Other,Venture Capital & Early-Stage Investment,Other,1072,40
-Productivity/Work,Enterprise AI Solutions,Agents,1403,137
-Productivity/Work,Business Software Platforms,LLM/NLP,1168,10
-Productivity/Work,AI Business Solutions & Services,Agents,1114,13
-Productivity/Work,Conversational AI Chatbots,LLM/NLP,1084,73
-Productivity/Work,Conversational AI Assistants,LLM/NLP,1047,132
-Productivity/Work,Enterprise Software & Business Solutions,Agents,902,13
-Productivity/Work,Customer Service & Engagement AI,LLM/NLP,764,53
-Productivity/Work,AI-Powered Recruitment Automation,Agents,744,50
-Productivity/Work,Enterprise Software Solutions,Predictive/Analytics,668,13
-Productivity/Work,Workforce Performance & Analytics,Predictive/Analytics,662,29
-Productivity/Work,AI Voice Customer Service,Speech/Audio,612,45
-Productivity/Work,Enterprise AI & Business Automation,Agents,511,24
-Productivity/Work,AI-Powered Workforce Management,Predictive/Analytics,490,19
-Productivity/Work,AI-Powered Talent Recruitment,Predictive/Analytics,425,15
-Productivity/Work,Enterprise AI Software Solutions,LLM/NLP,262,7
-Productivity/Work,Enterprise AI Enablement,Agents,7,1
+Manufacturing/Industrial,Industrial IoT Monitoring,Predictive/Analytics,884,16
+Manufacturing/Industrial,Industrial Manufacturing Equipment,Robotics,1062,26
+Manufacturing/Industrial,Industrial Predictive Maintenance,Predictive/Analytics,794,33
+Manufacturing/Industrial,Industrial Process Automation,Robotics,885,9
+Manufacturing/Industrial,Industrial Robotics & Automation,Robotics,1034,18
+Manufacturing/Industrial,Optical Imaging & Vision Systems,Computer Vision,540,12
+Marketing/Media,AI Content Generation,LLM/NLP,821,164
+Marketing/Media,AI Music Generation,Generative Media,623,80
+Marketing/Media,AI-Powered 3D/AR/VR Content Creation,Generative Media,1043,123
+Marketing/Media,AI-Powered Marketing & Media,Predictive/Analytics,1019,11
+Marketing/Media,AI-Powered Marketing Automation,LLM/NLP,1029,45
+Marketing/Media,B2B Sales & Marketing Intelligence,Predictive/Analytics,561,19
+Marketing/Media,Creative AI & Design Studios,Generative Media,701,15
+Marketing/Media,Customer Data & Marketing Automation,Predictive/Analytics,157,2
+Marketing/Media,Programmatic Advertising Platform,Predictive/Analytics,673,23
+Marketing/Media,Social Media Marketing Intelligence,Predictive/Analytics,714,39
+Marketing/Media,VR/AR/MR Development,Generative Media,467,16
+Marketing/Media,Video & Digital Software Solutions,Computer Vision,348,12
+Marketing/Media,Web Data & SEO Intelligence,LLM/NLP,801,59
+Marketing/Media,generative_media,Generative Media,3,3
+Other,Venture Capital & Early-Stage Investment,Other,1042,37
+Productivity/Work,AI Business Solutions & Services,Agents,1049,12
+Productivity/Work,AI Voice Customer Service,Speech/Audio,598,45
+Productivity/Work,AI-Powered Recruitment Automation,Agents,720,47
+Productivity/Work,AI-Powered Talent Recruitment,Predictive/Analytics,393,13
+Productivity/Work,AI-Powered Workforce Management,Predictive/Analytics,447,19
+Productivity/Work,Business Software Platforms,LLM/NLP,1131,9
+Productivity/Work,Conversational AI Assistants,LLM/NLP,1033,130
+Productivity/Work,Conversational AI Chatbots,LLM/NLP,1067,71
+Productivity/Work,Customer Service & Engagement AI,LLM/NLP,746,53
+Productivity/Work,Enterprise AI & Business Automation,Agents,493,23
+Productivity/Work,Enterprise AI Enablement,Agents,6,1
+Productivity/Work,Enterprise AI Software Solutions,LLM/NLP,251,7
+Productivity/Work,Enterprise AI Solutions,Agents,1327,119
 Productivity/Work,Enterprise Agile Transformation,Agents,1,0
-Retail/Commerce,Automotive Sales & Service,Other,1374,6
-Retail/Commerce,AI-Powered Retail Analytics,Predictive/Analytics,1209,51
-Retail/Commerce,AI-Powered Commerce Platforms,LLM/NLP,936,72
-Retail/Commerce,AI Fashion Virtual Try-On,Computer Vision,552,36
-Robotics/Hardware,Robotics and Automation,Robotics,1341,75
-Robotics/Hardware,Autonomous Drone Systems,Robotics,805,137
-Robotics/Hardware,AI-Powered Robotics Systems,Robotics,699,103
-Science/Research,AI Drug Discovery,Predictive/Analytics,901,123
-Science/Research,AI Research and Development Labs,ML Infra,773,20
-Security,AI-Powered Cybersecurity,Predictive/Analytics,1142,82
-Security,Video Analytics & Surveillance,Computer Vision,828,74
-Security,Identity Verification & Fraud Detection,Computer Vision,626,26
-Security,Data Security & Privacy,ML Infra,433,31
-Transport/Logistics,Autonomous Vehicle AI,Computer Vision,813,57
-Transport/Logistics,AI Logistics & Supply Chain,Predictive/Analytics,790,61
-Transport/Logistics,Urban Mobility & Transportation,Predictive/Analytics,740,21
-Transport/Logistics,Aviation & Drone Operations AI,Computer Vision,458,27
+Productivity/Work,Enterprise Software & Business Solutions,Agents,844,11
+Productivity/Work,Enterprise Software Solutions,Predictive/Analytics,612,9
+Productivity/Work,Workforce Performance & Analytics,Predictive/Analytics,611,28
+Retail/Commerce,AI Fashion Virtual Try-On,Computer Vision,540,35
+Retail/Commerce,AI-Powered Commerce Platforms,LLM/NLP,917,71
+Retail/Commerce,AI-Powered Retail Analytics,Predictive/Analytics,1136,51
+Retail/Commerce,Automotive Sales & Service,Other,1370,5
+Robotics/Hardware,AI-Powered Robotics Systems,Robotics,691,101
+Robotics/Hardware,Autonomous Drone Systems,Robotics,721,74
+Robotics/Hardware,Robotics and Automation,Robotics,1308,68
+Robotics/Hardware,robotics,Robotics,20,20
+Science/Research,AI Drug Discovery,Predictive/Analytics,826,104
+Science/Research,AI Research and Development Labs,ML Infra,706,16
+Security,AI-Powered Cybersecurity,Predictive/Analytics,1071,72
+Security,Data Security & Privacy,ML Infra,407,27
+Security,Identity Verification & Fraud Detection,Computer Vision,578,21
+Security,Video Analytics & Surveillance,Computer Vision,816,69
+Transport/Logistics,AI Logistics & Supply Chain,Predictive/Analytics,681,52
+Transport/Logistics,Autonomous Vehicle AI,Computer Vision,790,47
+Transport/Logistics,Aviation & Drone Operations AI,Computer Vision,435,15
+Transport/Logistics,Urban Mobility & Transportation,Predictive/Analytics,687,16
