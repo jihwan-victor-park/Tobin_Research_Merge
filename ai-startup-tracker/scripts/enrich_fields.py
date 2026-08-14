@@ -41,6 +41,7 @@ from sqlalchemy import text
 
 from backend.db.connection import get_engine
 from backend.utils.ai_filter import ai_filter_sql
+from backend.utils.country import GLOBE_COUNTRIES, normalize_country
 # reuse the LLM + Tavily helpers already built for company resolution
 from scripts.enrich_companies_with_ai import (
     BAD_RESOLVED_HOSTS, _call_llm, _parse_json, tavily_search,
@@ -216,22 +217,97 @@ def whois_year(domain: str) -> Optional[int]:
 
 
 # ── Tier 1: classify from description ────────────────────────────────
-def classify_from_text(name: str, blurb: str) -> Optional[dict]:
-    prompt = (
-        f"You are labeling an AI startup for a research dataset. Company: {name!r}.\n"
-        f"Description:\n{blurb[:1500]}\n\n"
-        "Return ONLY compact JSON with these keys, choosing values from the allowed sets:\n"
-        f"  ai_application: one of {AI_APPLICATION}\n"
-        f"  ai_subfield: one of {AI_SUBFIELD}\n"
-        f"  business_model: one of {BUSINESS_MODEL}\n"
-        "  sector: 2-4 word industry (free text, e.g. 'healthcare diagnostics')\n"
-        "  target_customer: who they sell to, <=8 words\n"
-        "  problem_solved: one sentence, <=20 words\n"
-        "  confidence: 0.0-1.0 how sure you are given the description\n"
-        "If the description is too thin to tell, use 'other'/'unknown' and low confidence."
+#
+# Cost here is dominated by output tokens, which bill at five times input, so
+# the JSON the model writes back uses two-letter keys and the batch prompt
+# carries the instruction block once for many companies instead of once each.
+# Long key names, repeated per company across twenty thousand companies, were
+# most of the bill.
+_SHORT = {
+    "ap": "ai_application", "sf": "ai_subfield", "bm": "business_model",
+    "se": "sector", "tc": "target_customer", "ps": "problem_solved",
+    "ci": "location_city", "co": "location_country", "fy": "founding_year",
+    "st": "product_status", "ts": "team_size_bucket", "ai": "ai_stack",
+    "cm": "commercialization", "rg": "regulatory", "os": "open_source",
+    "cf": "confidence", "bs": "basis",
+}
+
+
+def _expand(d: dict) -> dict:
+    """Map the compact keys the model returns back to real field names."""
+    out = {}
+    for k, v in (d or {}).items():
+        out[_SHORT.get(k, k)] = v
+    basis = out.get("basis")
+    if isinstance(basis, dict):
+        out["basis"] = {_SHORT.get(k, k): v for k, v in basis.items()}
+    return out
+
+
+def _instructions() -> str:
+    """The shared instruction block — sent once per batch, not once per company."""
+    return (
+        "Label AI startups for a research dataset.\n"
+        "Reply with ONLY a JSON array, one object per company, same order as given.\n"
+        "Use these exact short keys to keep the reply small:\n"
+        f"  ap: one of {AI_APPLICATION}\n"
+        f"  sf: one of {AI_SUBFIELD}\n"
+        f"  bm: one of {BUSINESS_MODEL}\n"
+        "  se: 2-4 word industry, e.g. 'healthcare diagnostics'\n"
+        "  tc: who they sell to, <=5 words\n"
+        "  ps: what problem they solve, <=12 words\n"
+        "  cf: 0.0-1.0 how sure you are\n"
+        # Asked to estimate these, the model returns the same modal startup for
+        # almost every company - a third of them in San Francisco, 71% at 11-50
+        # people, founded 2020 - which is its prior, not a reading of the text.
+        # A distribution built from that describes the model, not the companies,
+        # so these are extraction only: quote the description or return null.
+        "\nAlso report these, but ONLY when the description states them.\n"
+        "Return null when it does not say. Do NOT guess, estimate, or infer -\n"
+        "a null here is correct and useful, a plausible-looking guess is not:\n"
+        "  ci: city named in the text\n"
+        "  co: country named in the text (a real country, not a region)\n"
+        "  fy: 4-digit founding year given in the text\n"
+        f"  st: one of {[s for s in PRODUCT_STATUS if s != 'unknown']} if the text says so\n"
+        f"  ts: one of {[s for s in TEAM_BUCKET if s != 'unknown']} if the text says so\n"
+        f"  ai: one of {[s for s in AI_STACK if s != 'not_stated']} if the text says so\n"
+        f"  cm: one of {[s for s in COMMERCIALIZATION if s != 'not_stated']} if the text says so\n"
+        "  rg: regulated regime the text mentions (HIPAA/FDA/GDPR/finance), else null\n"
+        "  os: true or false only if the text says whether it is open source\n"
     )
-    raw = _call_llm([{"role": "user", "content": prompt}], temperature=0.0)
+
+
+def classify_batch(items: list[tuple[str, str]]) -> list[Optional[dict]]:
+    """Classify several companies in one call. Returns one result per input,
+    None where the model did not return a usable object for that position."""
+    if not items:
+        return []
+    body = "\n\n".join(
+        f"[{i}] {name!r}\n{(blurb or '')[:600]}" for i, (name, blurb) in enumerate(items)
+    )
+    raw = _call_llm([{"role": "user", "content": _instructions() + "\n\n" + body}],
+                    temperature=0.0)
     data = _parse_json(raw or "")
+    # _parse_json hands back whatever shape the model produced; a single object
+    # is a valid reply when the batch is one company.
+    if isinstance(data, dict):
+        data = [data]
+    if not isinstance(data, list):
+        return [None] * len(items)
+    out: list[Optional[dict]] = []
+    for i in range(len(items)):
+        rec = data[i] if i < len(data) and isinstance(data[i], dict) else None
+        out.append(_normalize(_expand(rec)) if rec else None)
+    return out
+
+
+def classify_from_text(name: str, blurb: str) -> Optional[dict]:
+    return classify_batch([(name, blurb)])[0]
+
+
+def _normalize(data: dict) -> Optional[dict]:
+    """Validate whatever the model returned. Inference is allowed;
+    nonsense is not."""
     if not data:
         return None
     # normalize to allowed sets
@@ -241,60 +317,122 @@ def classify_from_text(name: str, blurb: str) -> Optional[dict]:
         data["ai_subfield"] = "other"
     if data.get("business_model") not in BUSINESS_MODEL:
         data["business_model"] = "other"
+    # Storing a catch-all is worse than storing nothing: it looks like coverage
+    # in every count while telling us nothing, and it blocks the row from being
+    # revisited later by a method that could actually answer.
+    for key, allowed, empty in (("product_status", PRODUCT_STATUS, "unknown"),
+                                ("team_size_bucket", TEAM_BUCKET, "unknown"),
+                                ("ai_stack", AI_STACK, "not_stated"),
+                                ("commercialization", COMMERCIALIZATION, "not_stated")):
+        if data.get(key) not in allowed or data.get(key) == empty:
+            data[key] = None
+    reg = str(data.get("regulatory") or "").strip()[:40]
+    data["regulatory"] = None if reg.lower() in ("none", "n/a", "unknown", "") else reg
+    data["open_source"] = data["open_source"] if isinstance(data.get("open_source"), bool) else None
+    # Inference is allowed; nonsense is not. A country still has to be a real
+    # country, so "EU" and "Global" are rejected however confident the model is.
+    cc = normalize_country(str(data.get("location_country") or "").strip())
+    data["location_country"] = cc if cc in GLOBE_COUNTRIES else None
+    year = data.get("founding_year")
+    try:
+        year = int(str(year)[:4])
+    except (TypeError, ValueError):
+        year = None
+    data["founding_year"] = year if year and 1970 <= year <= 2026 else None
+    if not isinstance(data.get("basis"), dict):
+        data["basis"] = {}
     return data
 
 
-def stage_classify(engine, limit: int, workers: int, dry_run: bool) -> None:
+def stage_classify(engine, limit: int, workers: int, dry_run: bool,
+                   all_hidden: bool = False) -> None:
+    # Restricting this to companies already flagged as AI is circular: a hidden
+    # company with a description that has never been flagged can never be
+    # classified, so it can never be found to be AI. --all-hidden lets the
+    # classifier decide instead of requiring the answer up front.
+    ai_clause = "" if all_hidden else f"AND {ai_filter_sql('c')}"
     with engine.connect() as c:
         rows = c.execute(text(f"""
             SELECT c.id, c.name, c.description
             FROM companies c
             LEFT JOIN company_enrichment e ON e.company_id = c.id
-            WHERE {HIDDEN} AND {ai_filter_sql('c')}
+            WHERE {HIDDEN} {ai_clause}
               AND c.description IS NOT NULL AND c.description <> ''
               AND (e.ai_application IS NULL)
             LIMIT :lim
         """), {"lim": limit}).mappings().all()
-    print(f"classify: {len(rows)} hidden AI companies with a description")
+    print(f"classify: {len(rows)} hidden companies with a description{'' if all_hidden else ' (AI-flagged only)'}", flush=True)
 
-    def work(row):
-        data = classify_from_text(row["name"], row["description"])
-        if not data:
-            return row["id"], None
-        conf = float(data.get("confidence", 0.5) or 0.5)
-        fields = {
-            "sector": (data.get("sector") or "")[:64] or None,
-            "ai_application": data.get("ai_application"),
-            "ai_subfield": data.get("ai_subfield"),
-            "business_model": data.get("business_model"),
-            "target_customer": (data.get("target_customer") or "")[:200] or None,
-            "problem_solved": (data.get("problem_solved") or "")[:300] or None,
-        }
-        src = {k: {"source": "llm_from_description", "confidence": conf}
-               for k, v in fields.items() if v}
-        return row["id"], (fields, src)
+    BATCH = 8      # one instruction block covers eight companies
 
+    def work(chunk):
+        results = classify_batch([(r["name"], r["description"]) for r in chunk])
+        out = []
+        for row, data in zip(chunk, results):
+            if not data:
+                out.append((row["id"], None))
+                continue
+            conf = float(data.get("confidence", 0.5) or 0.5)
+            fields = {
+                "sector": (data.get("sector") or "")[:64] or None,
+                "ai_application": data.get("ai_application"),
+                "ai_subfield": data.get("ai_subfield"),
+                "business_model": data.get("business_model"),
+                "target_customer": (data.get("target_customer") or "")[:200] or None,
+                "problem_solved": (data.get("problem_solved") or "")[:300] or None,
+                "location_city": (data.get("location_city") or "")[:128] or None,
+                "location_country": data.get("location_country"),
+                "founding_year": data.get("founding_year"),
+                "product_status": data.get("product_status"),
+                "team_size_bucket": data.get("team_size_bucket"),
+                "ai_stack": data.get("ai_stack"),
+                "commercialization": data.get("commercialization"),
+                "regulatory": data.get("regulatory"),
+                "open_source": data.get("open_source"),
+            }
+            # Two kinds of value, kept apart by source: the taxonomy fields are
+            # the model's reading of the description, the rest are quoted out of
+            # it. Nothing here is estimated, so nothing is labelled inferred.
+            judged = {"sector", "ai_application", "ai_subfield", "business_model",
+                      "target_customer", "problem_solved"}
+            src = {}
+            for k, v in fields.items():
+                if v is None:
+                    continue
+                src[k] = {"source": "llm_from_description" if k in judged
+                                    else "llm_quoted_from_description",
+                          "confidence": conf}
+            out.append((row["id"], (fields, src)))
+        return out
+
+    chunks = [rows[i:i + BATCH] for i in range(0, len(rows), BATCH)]
     done = 0
     with ThreadPoolExecutor(max_workers=workers) as ex:
-        futs = [ex.submit(work, r) for r in rows]
-        for f in as_completed(futs):
-            cid, res = f.result()
-            if res and not dry_run:
-                upsert(engine, cid, res[0], res[1])
-            done += 1
-            if done % 50 == 0:
+        for f in as_completed([ex.submit(work, ch) for ch in chunks]):
+            for cid, res in f.result():
+                if res and not dry_run:
+                    upsert(engine, cid, res[0], res[1])
+                done += 1
+            if done % 200 < BATCH:
                 print(f"  {done}/{len(rows)}", flush=True)
     print(f"✓ classify done ({'dry-run' if dry_run else 'written'})", flush=True)
 
 
 # ── Tier 1-2: web fill (domain / description / location / signals) ───
-def stage_web(engine, limit: int, workers: int, dry_run: bool) -> None:
+def stage_web(engine, limit: int, workers: int, dry_run: bool,
+              all_hidden: bool = False, have_domain: bool = False) -> None:
+    # Rows that already have a domain are fetched directly; rows without one
+    # have to be searched for first, and that search is the only part of this
+    # stage that costs Tavily credit. --have-domain keeps the run on the free
+    # half, which is also the half with the better hit rate.
+    ai_clause = "" if all_hidden else f"AND {ai_filter_sql('c')}"
+    dom_clause = "AND c.domain IS NOT NULL" if have_domain else ""
     with engine.connect() as c:
         rows = c.execute(text(f"""
             SELECT c.id, c.name, c.domain, c.description, c.country, c.city
             FROM companies c
             LEFT JOIN company_enrichment e ON e.company_id = c.id
-            WHERE {HIDDEN} AND {ai_filter_sql('c')}
+            WHERE {HIDDEN} {ai_clause} {dom_clause}
               AND e.web_attempted_at IS NULL
               AND (c.domain IS NULL OR c.description IS NULL OR c.country IS NULL
                    OR e.product_status IS NULL)
@@ -572,6 +710,8 @@ def main():
     ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--min-confidence", type=float, default=0.5)
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--have-domain", action="store_true",
+                    help="web: only companies that already have a domain (no Tavily spend)")
     ap.add_argument("--all-hidden", action="store_true",
                     help="whois: do not restrict to already-AI-classified companies")
     a = ap.parse_args()
@@ -583,9 +723,9 @@ def main():
               "starts so nothing gets marked as attempted.", flush=True)
         sys.exit(2)
     if a.stage == "classify":
-        stage_classify(engine, a.limit, a.workers, a.dry_run)
+        stage_classify(engine, a.limit, a.workers, a.dry_run, a.all_hidden)
     elif a.stage == "web":
-        stage_web(engine, a.limit, a.workers, a.dry_run)
+        stage_web(engine, a.limit, a.workers, a.dry_run, a.all_hidden, a.have_domain)
     elif a.stage == "deep":
         stage_deep(engine, a.limit, a.workers, a.min_confidence, a.dry_run)
     elif a.stage == "whois":
