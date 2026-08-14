@@ -244,18 +244,24 @@ def classify_from_text(name: str, blurb: str) -> Optional[dict]:
     return data
 
 
-def stage_classify(engine, limit: int, workers: int, dry_run: bool) -> None:
+def stage_classify(engine, limit: int, workers: int, dry_run: bool,
+                   all_hidden: bool = False) -> None:
+    # Restricting this to companies already flagged as AI is circular: a hidden
+    # company with a description that has never been flagged can never be
+    # classified, so it can never be found to be AI. --all-hidden lets the
+    # classifier decide instead of requiring the answer up front.
+    ai_clause = "" if all_hidden else f"AND {ai_filter_sql('c')}"
     with engine.connect() as c:
         rows = c.execute(text(f"""
             SELECT c.id, c.name, c.description
             FROM companies c
             LEFT JOIN company_enrichment e ON e.company_id = c.id
-            WHERE {HIDDEN} AND {ai_filter_sql('c')}
+            WHERE {HIDDEN} {ai_clause}
               AND c.description IS NOT NULL AND c.description <> ''
               AND (e.ai_application IS NULL)
             LIMIT :lim
         """), {"lim": limit}).mappings().all()
-    print(f"classify: {len(rows)} hidden AI companies with a description")
+    print(f"classify: {len(rows)} hidden companies with a description{'' if all_hidden else ' (AI-flagged only)'}", flush=True)
 
     def work(row):
         data = classify_from_text(row["name"], row["description"])
@@ -288,13 +294,15 @@ def stage_classify(engine, limit: int, workers: int, dry_run: bool) -> None:
 
 
 # ── Tier 1-2: web fill (domain / description / location / signals) ───
-def stage_web(engine, limit: int, workers: int, dry_run: bool) -> None:
+def stage_web(engine, limit: int, workers: int, dry_run: bool,
+              all_hidden: bool = False) -> None:
+    ai_clause = "" if all_hidden else f"AND {ai_filter_sql('c')}"
     with engine.connect() as c:
         rows = c.execute(text(f"""
             SELECT c.id, c.name, c.domain, c.description, c.country, c.city
             FROM companies c
             LEFT JOIN company_enrichment e ON e.company_id = c.id
-            WHERE {HIDDEN} AND {ai_filter_sql('c')}
+            WHERE {HIDDEN} {ai_clause}
               AND e.web_attempted_at IS NULL
               AND (c.domain IS NULL OR c.description IS NULL OR c.country IS NULL
                    OR e.product_status IS NULL)
@@ -583,9 +591,9 @@ def main():
               "starts so nothing gets marked as attempted.", flush=True)
         sys.exit(2)
     if a.stage == "classify":
-        stage_classify(engine, a.limit, a.workers, a.dry_run)
+        stage_classify(engine, a.limit, a.workers, a.dry_run, a.all_hidden)
     elif a.stage == "web":
-        stage_web(engine, a.limit, a.workers, a.dry_run)
+        stage_web(engine, a.limit, a.workers, a.dry_run, a.all_hidden)
     elif a.stage == "deep":
         stage_deep(engine, a.limit, a.workers, a.min_confidence, a.dry_run)
     elif a.stage == "whois":
