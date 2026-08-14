@@ -41,6 +41,7 @@ from sqlalchemy import text
 
 from backend.db.connection import get_engine
 from backend.utils.ai_filter import ai_filter_sql
+from backend.utils.country import GLOBE_COUNTRIES, normalize_country
 # reuse the LLM + Tavily helpers already built for company resolution
 from scripts.enrich_companies_with_ai import (
     BAD_RESOLVED_HOSTS, _call_llm, _parse_json, tavily_search,
@@ -228,6 +229,17 @@ def classify_from_text(name: str, blurb: str) -> Optional[dict]:
         "  target_customer: who they sell to, <=8 words\n"
         "  problem_solved: one sentence, <=20 words\n"
         "  confidence: 0.0-1.0 how sure you are given the description\n"
+        # These are extraction, not inference. The descriptions frequently state
+        # a city or a first-award year and we were paying to read the text and
+        # then throwing those away. The model must quote the text or say null:
+        # guessing a location for an obscure company is exactly the failure mode
+        # that makes LLM-sourced facts unusable.
+        "\nAlso extract these ONLY if the description states them explicitly.\n"
+        "Use null when the description does not say. Never guess or infer:\n"
+        "  location_city: city named in the description, else null\n"
+        "  location_country: country named in the description, else null\n"
+        "  founding_year: 4-digit year the company was founded, else null\n"
+        f"  product_status: one of {PRODUCT_STATUS} if stated, else null\n"
         "If the description is too thin to tell, use 'other'/'unknown' and low confidence."
     )
     raw = _call_llm([{"role": "user", "content": prompt}], temperature=0.0)
@@ -241,6 +253,18 @@ def classify_from_text(name: str, blurb: str) -> Optional[dict]:
         data["ai_subfield"] = "other"
     if data.get("business_model") not in BUSINESS_MODEL:
         data["business_model"] = "other"
+    if data.get("product_status") not in PRODUCT_STATUS:
+        data["product_status"] = None
+    # A country only counts if it is a country; the model will otherwise return
+    # regions ("EU"), cities, or "Global".
+    cc = normalize_country(str(data.get("location_country") or "").strip())
+    data["location_country"] = cc if cc in GLOBE_COUNTRIES else None
+    year = data.get("founding_year")
+    try:
+        year = int(str(year)[:4])
+    except (TypeError, ValueError):
+        year = None
+    data["founding_year"] = year if year and 1970 <= year <= 2026 else None
     return data
 
 
@@ -275,8 +299,17 @@ def stage_classify(engine, limit: int, workers: int, dry_run: bool,
             "business_model": data.get("business_model"),
             "target_customer": (data.get("target_customer") or "")[:200] or None,
             "problem_solved": (data.get("problem_solved") or "")[:300] or None,
+            # Quoted back out of the description rather than judged, so these
+            # carry their own source label below.
+            "location_city": (data.get("location_city") or "")[:128] or None,
+            "location_country": data.get("location_country"),
+            "founding_year": data.get("founding_year"),
+            "product_status": data.get("product_status"),
         }
-        src = {k: {"source": "llm_from_description", "confidence": conf}
+        quoted = {"location_city", "location_country", "founding_year", "product_status"}
+        src = {k: {"source": "llm_quoted_from_description" if k in quoted
+                             else "llm_from_description",
+                   "confidence": conf}
                for k, v in fields.items() if v}
         return row["id"], (fields, src)
 
