@@ -172,6 +172,7 @@ def ensure_schema(engine) -> None:
                 country_guess VARCHAR(96),
                 country_conf  REAL,
                 blog          VARCHAR(300),
+                bio           TEXT,
                 created_year  INTEGER,
                 public_repos  INTEGER,
                 followers     INTEGER,
@@ -180,6 +181,7 @@ def ensure_schema(engine) -> None:
         """))
         c.execute(text("ALTER TABLE company_enrichment "
                        "ADD COLUMN IF NOT EXISTS github_created_year INTEGER"))
+        c.execute(text("ALTER TABLE github_profile ADD COLUMN IF NOT EXISTS bio TEXT"))
 
 
 def _throttle() -> None:
@@ -269,7 +271,7 @@ def run(engine, limit: int, workers: int, dry_run: bool) -> None:
         j = fetch(session, str(row["name"]).strip())
         return row, j
 
-    buf, done, stats = [], 0, {"country": 0, "year": 0, "domain": 0}
+    buf, done, stats = [], 0, {"country": 0, "year": 0, "domain": 0, "bio": 0}
     with ThreadPoolExecutor(max_workers=workers) as ex:
         for f in as_completed([ex.submit(work, r) for r in rows]):
             row, j = f.result()
@@ -277,7 +279,7 @@ def run(engine, limit: int, workers: int, dry_run: bool) -> None:
             if not j:
                 buf.append({"cid": row["id"], "login": str(row["name"])[:200], "name": None,
                             "loc": None, "cc": None, "conf": None, "blog": None,
-                            "year": None, "repos": None, "followers": None})
+                            "year": None, "repos": None, "followers": None, "bio": None})
             else:
                 cc, conf = parse_country(j.get("location") or "")
                 created = (j.get("created_at") or "")[:4]
@@ -289,6 +291,7 @@ def run(engine, limit: int, workers: int, dry_run: bool) -> None:
                     "blog": (j.get("blog") or None) and j["blog"][:300],
                     "year": int(created) if created.isdigit() else None,
                     "repos": j.get("public_repos"), "followers": j.get("followers"),
+                    "bio": (j.get("bio") or None) and " ".join(j["bio"].split())[:500],
                 })
                 if cc:
                     stats["country"] += 1
@@ -296,12 +299,15 @@ def run(engine, limit: int, workers: int, dry_run: bool) -> None:
                     stats["year"] += 1
                 if j.get("blog"):
                     stats["domain"] += 1
+                if j.get("bio"):
+                    stats["bio"] = stats.get("bio", 0) + 1
             if len(buf) >= 200 or done == len(rows):
                 if not dry_run:
                     flush(engine, buf)
                 buf = []
                 print(f"  {done}/{len(rows)} — country {stats['country']:,} "
-                      f"year {stats['year']:,} web {stats['domain']:,}", flush=True)
+                      f"year {stats['year']:,} web {stats['domain']:,} "
+                      f"bio {stats['bio']:,}", flush=True)
     print(f"✓ done ({done:,}) {stats}", flush=True)
 
 
@@ -311,12 +317,13 @@ def flush(engine, buf: list) -> None:
         for b in buf:
             c.execute(text("""
                 INSERT INTO github_profile (company_id, login, display_name, location_raw,
-                    country_guess, country_conf, blog, created_year, public_repos, followers, fetched_at)
-                VALUES (:cid, :login, :name, :loc, :cc, :conf, :blog, :year, :repos, :followers, now())
+                    country_guess, country_conf, blog, bio, created_year, public_repos, followers, fetched_at)
+                VALUES (:cid, :login, :name, :loc, :cc, :conf, :blog, :bio, :year, :repos, :followers, now())
                 ON CONFLICT (company_id) DO UPDATE SET
                     display_name = EXCLUDED.display_name, location_raw = EXCLUDED.location_raw,
                     country_guess = EXCLUDED.country_guess, country_conf = EXCLUDED.country_conf,
-                    blog = EXCLUDED.blog, created_year = EXCLUDED.created_year,
+                    blog = EXCLUDED.blog, bio = EXCLUDED.bio,
+                    created_year = EXCLUDED.created_year,
                     public_repos = EXCLUDED.public_repos, followers = EXCLUDED.followers,
                     fetched_at = now()
             """), b)
@@ -334,6 +341,14 @@ def flush(engine, buf: list) -> None:
                 """), {"cid": b["cid"], "y": b["year"],
                        "s": '{"github_created_year": {"source": "github_profile", '
                             '"confidence": 0.5, "note": "account creation year, upper bound on founding"}}'})
+            # The profile bio is often the only sentence anyone has written about
+            # these companies, and a description is what every downstream
+            # classifier needs. Only fills a genuinely empty description.
+            if b.get("bio") and len(b["bio"]) >= 15:
+                c.execute(text("""
+                    UPDATE companies SET description = :bio, updated_at = now()
+                    WHERE id = :cid AND (description IS NULL OR description = '')
+                """), {"bio": b["bio"], "cid": b["cid"]})
             dom = _hostname(b["blog"] or "")
             if dom:
                 # domain is UNIQUE; leave it alone if any company already holds it
