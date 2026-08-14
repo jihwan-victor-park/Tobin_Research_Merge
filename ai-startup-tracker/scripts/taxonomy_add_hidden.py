@@ -147,7 +147,7 @@ def _write(full):
     cur.execute("""CREATE TABLE company_taxonomy (
         company_id INTEGER PRIMARY KEY, bucket VARCHAR(12), domain_l1 VARCHAR(48),
         cluster_label VARCHAR(90), capability VARCHAR(40), cluster_id INTEGER,
-        ai_application VARCHAR(40), ai_subfield VARCHAR(40), status VARCHAR(12))""")
+        ai_application VARCHAR(40), ai_subfield VARCHAR(40), status VARCHAR(20))""")
     conn.commit()
     rows = [(int(r.id), r.bucket, r.domain, str(r.label)[:90], r.capability, int(r.cluster),
              r.ai_application, r.ai_subfield, r.status) for r in full.itertuples()]
