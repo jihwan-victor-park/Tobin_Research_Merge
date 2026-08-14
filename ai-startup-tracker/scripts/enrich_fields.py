@@ -229,18 +229,30 @@ def classify_from_text(name: str, blurb: str) -> Optional[dict]:
         "  target_customer: who they sell to, <=8 words\n"
         "  problem_solved: one sentence, <=20 words\n"
         "  confidence: 0.0-1.0 how sure you are given the description\n"
-        # These are extraction, not inference. The descriptions frequently state
-        # a city or a first-award year and we were paying to read the text and
-        # then throwing those away. The model must quote the text or say null:
-        # guessing a location for an obscure company is exactly the failure mode
-        # that makes LLM-sourced facts unusable.
-        "\nAlso extract these ONLY if the description states them explicitly.\n"
-        "Use null when the description does not say. Never guess or infer:\n"
-        "  location_city: city named in the description, else null\n"
-        "  location_country: country named in the description, else null\n"
-        "  founding_year: 4-digit year the company was founded, else null\n"
-        f"  product_status: one of {PRODUCT_STATUS} if stated, else null\n"
-        "If the description is too thin to tell, use 'other'/'unknown' and low confidence."
+        # The analysis these feed is distributional — what are these companies
+        # doing, where, at what stage — so a reasoned estimate is more useful
+        # than a null, provided it is never mistaken for a fact. The model gives
+        # its best answer for everything and then says, per field, whether the
+        # description stated it or it inferred it. That flag is what keeps the
+        # two kinds of value separable afterwards.
+        "\nAlso fill these. Give your best answer even when the description does\n"
+        "not say it outright — infer from the company name, the technology, the\n"
+        "domain, the customer, and how the text is written. Use null only when\n"
+        "you truly have nothing to go on:\n"
+        "  location_city: most likely city\n"
+        "  location_country: most likely country (a real country, not a region)\n"
+        "  founding_year: most likely 4-digit founding year\n"
+        f"  product_status: one of {PRODUCT_STATUS}\n"
+        f"  team_size_bucket: one of {TEAM_BUCKET}\n"
+        f"  ai_stack: one of {AI_STACK}\n"
+        f"  commercialization: one of {COMMERCIALIZATION}\n"
+        "  regulatory: regulated regime it plausibly touches (HIPAA/FDA/GDPR/"
+        "finance/none), <=40 chars\n"
+        "  open_source: true or false\n"
+        "\nThen add a 'basis' object marking, for each of the fields above, either\n"
+        "'stated' when the description says it or 'inferred' when you reasoned it\n"
+        "out, e.g. {\"location_country\": \"inferred\", \"founding_year\": \"stated\"}.\n"
+        "Be honest in 'basis' — it is what the research relies on."
     )
     raw = _call_llm([{"role": "user", "content": prompt}], temperature=0.0)
     data = _parse_json(raw or "")
@@ -255,8 +267,16 @@ def classify_from_text(name: str, blurb: str) -> Optional[dict]:
         data["business_model"] = "other"
     if data.get("product_status") not in PRODUCT_STATUS:
         data["product_status"] = None
-    # A country only counts if it is a country; the model will otherwise return
-    # regions ("EU"), cities, or "Global".
+    if data.get("team_size_bucket") not in TEAM_BUCKET:
+        data["team_size_bucket"] = None
+    if data.get("ai_stack") not in AI_STACK:
+        data["ai_stack"] = None
+    if data.get("commercialization") not in COMMERCIALIZATION:
+        data["commercialization"] = None
+    data["regulatory"] = (str(data.get("regulatory") or "").strip()[:40]) or None
+    data["open_source"] = data["open_source"] if isinstance(data.get("open_source"), bool) else None
+    # Inference is allowed; nonsense is not. A country still has to be a real
+    # country, so "EU" and "Global" are rejected however confident the model is.
     cc = normalize_country(str(data.get("location_country") or "").strip())
     data["location_country"] = cc if cc in GLOBE_COUNTRIES else None
     year = data.get("founding_year")
@@ -265,6 +285,8 @@ def classify_from_text(name: str, blurb: str) -> Optional[dict]:
     except (TypeError, ValueError):
         year = None
     data["founding_year"] = year if year and 1970 <= year <= 2026 else None
+    if not isinstance(data.get("basis"), dict):
+        data["basis"] = {}
     return data
 
 
@@ -299,18 +321,37 @@ def stage_classify(engine, limit: int, workers: int, dry_run: bool,
             "business_model": data.get("business_model"),
             "target_customer": (data.get("target_customer") or "")[:200] or None,
             "problem_solved": (data.get("problem_solved") or "")[:300] or None,
-            # Quoted back out of the description rather than judged, so these
-            # carry their own source label below.
+            # Read out of the text where it is there, estimated where it is not;
+            # which of the two applies is recorded per field below.
             "location_city": (data.get("location_city") or "")[:128] or None,
             "location_country": data.get("location_country"),
             "founding_year": data.get("founding_year"),
             "product_status": data.get("product_status"),
+            "team_size_bucket": data.get("team_size_bucket"),
+            "ai_stack": data.get("ai_stack"),
+            "commercialization": data.get("commercialization"),
+            "regulatory": data.get("regulatory"),
+            "open_source": data.get("open_source"),
         }
-        quoted = {"location_city", "location_country", "founding_year", "product_status"}
-        src = {k: {"source": "llm_quoted_from_description" if k in quoted
-                             else "llm_from_description",
-                   "confidence": conf}
-               for k, v in fields.items() if v}
+        basis = data.get("basis") or {}
+        judged = {"sector", "ai_application", "ai_subfield", "business_model",
+                  "target_customer", "problem_solved"}
+
+        def label(field: str) -> str:
+            if field in judged:
+                return "llm_from_description"
+            return ("llm_quoted_from_description"
+                    if str(basis.get(field, "")).lower() == "stated" else "llm_inferred")
+
+        # An inferred value is worth less than a stated one no matter how sure
+        # the model sounds, so its recorded confidence is capped.
+        src = {}
+        for k, v in fields.items():
+            if v is None:
+                continue
+            source = label(k)
+            src[k] = {"source": source,
+                      "confidence": min(conf, 0.5) if source == "llm_inferred" else conf}
         return row["id"], (fields, src)
 
     done = 0
