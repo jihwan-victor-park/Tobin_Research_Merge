@@ -217,45 +217,97 @@ def whois_year(domain: str) -> Optional[int]:
 
 
 # ── Tier 1: classify from description ────────────────────────────────
-def classify_from_text(name: str, blurb: str) -> Optional[dict]:
-    prompt = (
-        f"You are labeling an AI startup for a research dataset. Company: {name!r}.\n"
-        f"Description:\n{blurb[:1500]}\n\n"
-        "Return ONLY compact JSON with these keys, choosing values from the allowed sets:\n"
-        f"  ai_application: one of {AI_APPLICATION}\n"
-        f"  ai_subfield: one of {AI_SUBFIELD}\n"
-        f"  business_model: one of {BUSINESS_MODEL}\n"
-        "  sector: 2-4 word industry (free text, e.g. 'healthcare diagnostics')\n"
-        "  target_customer: who they sell to, <=8 words\n"
-        "  problem_solved: one sentence, <=20 words\n"
-        "  confidence: 0.0-1.0 how sure you are given the description\n"
-        # The analysis these feed is distributional — what are these companies
-        # doing, where, at what stage — so a reasoned estimate is more useful
-        # than a null, provided it is never mistaken for a fact. The model gives
-        # its best answer for everything and then says, per field, whether the
-        # description stated it or it inferred it. That flag is what keeps the
-        # two kinds of value separable afterwards.
-        "\nAlso fill these. Give your best answer even when the description does\n"
-        "not say it outright — infer from the company name, the technology, the\n"
-        "domain, the customer, and how the text is written. Use null only when\n"
-        "you truly have nothing to go on:\n"
-        "  location_city: most likely city\n"
-        "  location_country: most likely country (a real country, not a region)\n"
-        "  founding_year: most likely 4-digit founding year\n"
-        f"  product_status: one of {PRODUCT_STATUS}\n"
-        f"  team_size_bucket: one of {TEAM_BUCKET}\n"
-        f"  ai_stack: one of {AI_STACK}\n"
-        f"  commercialization: one of {COMMERCIALIZATION}\n"
-        "  regulatory: regulated regime it plausibly touches (HIPAA/FDA/GDPR/"
-        "finance/none), <=40 chars\n"
-        "  open_source: true or false\n"
-        "\nThen add a 'basis' object marking, for each of the fields above, either\n"
+#
+# Cost here is dominated by output tokens, which bill at five times input, so
+# the JSON the model writes back uses two-letter keys and the batch prompt
+# carries the instruction block once for many companies instead of once each.
+# Long key names, repeated per company across twenty thousand companies, were
+# most of the bill.
+_SHORT = {
+    "ap": "ai_application", "sf": "ai_subfield", "bm": "business_model",
+    "se": "sector", "tc": "target_customer", "ps": "problem_solved",
+    "ci": "location_city", "co": "location_country", "fy": "founding_year",
+    "st": "product_status", "ts": "team_size_bucket", "ai": "ai_stack",
+    "cm": "commercialization", "rg": "regulatory", "os": "open_source",
+    "cf": "confidence", "bs": "basis",
+}
+
+
+def _expand(d: dict) -> dict:
+    """Map the compact keys the model returns back to real field names."""
+    out = {}
+    for k, v in (d or {}).items():
+        out[_SHORT.get(k, k)] = v
+    basis = out.get("basis")
+    if isinstance(basis, dict):
+        out["basis"] = {_SHORT.get(k, k): v for k, v in basis.items()}
+    return out
+
+
+def _instructions() -> str:
+    """The shared instruction block — sent once per batch, not once per company."""
+    return (
+        "Label AI startups for a research dataset.\n"
+        "Reply with ONLY a JSON array, one object per company, same order as given.\n"
+        "Use these exact short keys to keep the reply small:\n"
+        f"  ap: one of {AI_APPLICATION}\n"
+        f"  sf: one of {AI_SUBFIELD}\n"
+        f"  bm: one of {BUSINESS_MODEL}\n"
+        "  se: 2-4 word industry, e.g. 'healthcare diagnostics'\n"
+        "  tc: who they sell to, <=5 words\n"
+        "  ps: what problem they solve, <=12 words\n"
+        "  cf: 0.0-1.0 how sure you are\n"
+        "\nAlso fill these. COMMIT TO A BEST ESTIMATE for every one.\n"
+        "Reason from the company name, the language and spelling of the text,\n"
+        "the technology, the customer, and what is typical for such a company.\n"
+        "'unknown' is not an acceptable answer and null is a last resort:\n"
+        "  ci: single most likely city\n"
+        "  co: single most likely country (a real country, not a region)\n"
+        "  fy: single most likely 4-digit founding year\n"
+        f"  st: one of {[s for s in PRODUCT_STATUS if s != 'unknown']}\n"
+        f"  ts: one of {[s for s in TEAM_BUCKET if s != 'unknown']}\n"
+        f"  ai: one of {[s for s in AI_STACK if s != 'not_stated']}\n"
+        f"  cm: one of {[s for s in COMMERCIALIZATION if s != 'not_stated']}\n"
+        "  rg: regulated regime it plausibly touches (HIPAA/FDA/GDPR/finance/none)\n"
+        "  os: true or false for open source\n"
+        "\nAdd 'bs': an object marking each of ci/co/fy/st/ts/ai/cm/rg/os as\n"
         "'stated' when the description says it or 'inferred' when you reasoned it\n"
-        "out, e.g. {\"location_country\": \"inferred\", \"founding_year\": \"stated\"}.\n"
-        "Be honest in 'basis' — it is what the research relies on."
+        "out, e.g. {\"co\":\"inferred\",\"fy\":\"stated\"}. Be honest in bs — the\n"
+        "research depends on knowing which values were estimated."
     )
-    raw = _call_llm([{"role": "user", "content": prompt}], temperature=0.0)
+
+
+def classify_batch(items: list[tuple[str, str]]) -> list[Optional[dict]]:
+    """Classify several companies in one call. Returns one result per input,
+    None where the model did not return a usable object for that position."""
+    if not items:
+        return []
+    body = "\n\n".join(
+        f"[{i}] {name!r}\n{(blurb or '')[:600]}" for i, (name, blurb) in enumerate(items)
+    )
+    raw = _call_llm([{"role": "user", "content": _instructions() + "\n\n" + body}],
+                    temperature=0.0)
     data = _parse_json(raw or "")
+    # _parse_json hands back whatever shape the model produced; a single object
+    # is a valid reply when the batch is one company.
+    if isinstance(data, dict):
+        data = [data]
+    if not isinstance(data, list):
+        return [None] * len(items)
+    out: list[Optional[dict]] = []
+    for i in range(len(items)):
+        rec = data[i] if i < len(data) and isinstance(data[i], dict) else None
+        out.append(_normalize(_expand(rec)) if rec else None)
+    return out
+
+
+def classify_from_text(name: str, blurb: str) -> Optional[dict]:
+    return classify_batch([(name, blurb)])[0]
+
+
+def _normalize(data: dict) -> Optional[dict]:
+    """Validate whatever the model returned. Inference is allowed;
+    nonsense is not."""
     if not data:
         return None
     # normalize to allowed sets
@@ -265,15 +317,17 @@ def classify_from_text(name: str, blurb: str) -> Optional[dict]:
         data["ai_subfield"] = "other"
     if data.get("business_model") not in BUSINESS_MODEL:
         data["business_model"] = "other"
-    if data.get("product_status") not in PRODUCT_STATUS:
-        data["product_status"] = None
-    if data.get("team_size_bucket") not in TEAM_BUCKET:
-        data["team_size_bucket"] = None
-    if data.get("ai_stack") not in AI_STACK:
-        data["ai_stack"] = None
-    if data.get("commercialization") not in COMMERCIALIZATION:
-        data["commercialization"] = None
-    data["regulatory"] = (str(data.get("regulatory") or "").strip()[:40]) or None
+    # Storing a catch-all is worse than storing nothing: it looks like coverage
+    # in every count while telling us nothing, and it blocks the row from being
+    # revisited later by a method that could actually answer.
+    for key, allowed, empty in (("product_status", PRODUCT_STATUS, "unknown"),
+                                ("team_size_bucket", TEAM_BUCKET, "unknown"),
+                                ("ai_stack", AI_STACK, "not_stated"),
+                                ("commercialization", COMMERCIALIZATION, "not_stated")):
+        if data.get(key) not in allowed or data.get(key) == empty:
+            data[key] = None
+    reg = str(data.get("regulatory") or "").strip()[:40]
+    data["regulatory"] = None if reg.lower() in ("none", "n/a", "unknown", "") else reg
     data["open_source"] = data["open_source"] if isinstance(data.get("open_source"), bool) else None
     # Inference is allowed; nonsense is not. A country still has to be a real
     # country, so "EU" and "Global" are rejected however confident the model is.
@@ -309,60 +363,64 @@ def stage_classify(engine, limit: int, workers: int, dry_run: bool,
         """), {"lim": limit}).mappings().all()
     print(f"classify: {len(rows)} hidden companies with a description{'' if all_hidden else ' (AI-flagged only)'}", flush=True)
 
-    def work(row):
-        data = classify_from_text(row["name"], row["description"])
-        if not data:
-            return row["id"], None
-        conf = float(data.get("confidence", 0.5) or 0.5)
-        fields = {
-            "sector": (data.get("sector") or "")[:64] or None,
-            "ai_application": data.get("ai_application"),
-            "ai_subfield": data.get("ai_subfield"),
-            "business_model": data.get("business_model"),
-            "target_customer": (data.get("target_customer") or "")[:200] or None,
-            "problem_solved": (data.get("problem_solved") or "")[:300] or None,
-            # Read out of the text where it is there, estimated where it is not;
-            # which of the two applies is recorded per field below.
-            "location_city": (data.get("location_city") or "")[:128] or None,
-            "location_country": data.get("location_country"),
-            "founding_year": data.get("founding_year"),
-            "product_status": data.get("product_status"),
-            "team_size_bucket": data.get("team_size_bucket"),
-            "ai_stack": data.get("ai_stack"),
-            "commercialization": data.get("commercialization"),
-            "regulatory": data.get("regulatory"),
-            "open_source": data.get("open_source"),
-        }
-        basis = data.get("basis") or {}
-        judged = {"sector", "ai_application", "ai_subfield", "business_model",
-                  "target_customer", "problem_solved"}
+    BATCH = 8      # one instruction block covers eight companies
 
-        def label(field: str) -> str:
-            if field in judged:
-                return "llm_from_description"
-            return ("llm_quoted_from_description"
-                    if str(basis.get(field, "")).lower() == "stated" else "llm_inferred")
-
-        # An inferred value is worth less than a stated one no matter how sure
-        # the model sounds, so its recorded confidence is capped.
-        src = {}
-        for k, v in fields.items():
-            if v is None:
+    def work(chunk):
+        results = classify_batch([(r["name"], r["description"]) for r in chunk])
+        out = []
+        for row, data in zip(chunk, results):
+            if not data:
+                out.append((row["id"], None))
                 continue
-            source = label(k)
-            src[k] = {"source": source,
-                      "confidence": min(conf, 0.5) if source == "llm_inferred" else conf}
-        return row["id"], (fields, src)
+            conf = float(data.get("confidence", 0.5) or 0.5)
+            fields = {
+                "sector": (data.get("sector") or "")[:64] or None,
+                "ai_application": data.get("ai_application"),
+                "ai_subfield": data.get("ai_subfield"),
+                "business_model": data.get("business_model"),
+                "target_customer": (data.get("target_customer") or "")[:200] or None,
+                "problem_solved": (data.get("problem_solved") or "")[:300] or None,
+                "location_city": (data.get("location_city") or "")[:128] or None,
+                "location_country": data.get("location_country"),
+                "founding_year": data.get("founding_year"),
+                "product_status": data.get("product_status"),
+                "team_size_bucket": data.get("team_size_bucket"),
+                "ai_stack": data.get("ai_stack"),
+                "commercialization": data.get("commercialization"),
+                "regulatory": data.get("regulatory"),
+                "open_source": data.get("open_source"),
+            }
+            basis = data.get("basis") or {}
+            judged = {"sector", "ai_application", "ai_subfield", "business_model",
+                      "target_customer", "problem_solved"}
 
+            def label(field):
+                if field in judged:
+                    return "llm_from_description"
+                return ("llm_quoted_from_description"
+                        if str(basis.get(field, "")).lower() == "stated" else "llm_inferred")
+
+            src = {}
+            for k, v in fields.items():
+                if v is None:
+                    continue
+                source = label(k)
+                # An inferred value is worth less than a stated one however sure
+                # the model sounds, so its recorded confidence is capped.
+                src[k] = {"source": source,
+                          "confidence": min(conf, 0.5) if source == "llm_inferred" else conf}
+            out.append((row["id"], (fields, src)))
+        return out
+
+    chunks = [rows[i:i + BATCH] for i in range(0, len(rows), BATCH)]
     done = 0
     with ThreadPoolExecutor(max_workers=workers) as ex:
-        futs = [ex.submit(work, r) for r in rows]
-        for f in as_completed(futs):
-            cid, res = f.result()
-            if res and not dry_run:
-                upsert(engine, cid, res[0], res[1])
-            done += 1
-            if done % 50 == 0:
+        for f in as_completed([ex.submit(work, ch) for ch in chunks]):
+            for cid, res in f.result():
+                if res and not dry_run:
+                    upsert(engine, cid, res[0], res[1])
+                done += 1
+            if done % 200 < BATCH:
                 print(f"  {done}/{len(rows)}", flush=True)
     print(f"✓ classify done ({'dry-run' if dry_run else 'written'})", flush=True)
 
