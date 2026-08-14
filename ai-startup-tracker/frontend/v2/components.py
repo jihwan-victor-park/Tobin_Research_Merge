@@ -110,42 +110,85 @@ def hero() -> None:
         '</div>')
 
 
+def hero_map(df: pd.DataFrame, p: Palette, height: int = 268) -> None:
+    """A quiet density map beside the headline.
+
+    Low-contrast and non-interactive: it anchors the opening band and shows the
+    coverage the page is about, without competing with the ask panel or
+    duplicating the detailed map further down.
+    """
+    if df.empty:
+        return
+    import numpy as np
+
+    m = df.copy()
+    m["z"] = np.log10(m["total"].clip(lower=1))
+    # Deliberately shallow: this is a locator, and at full accent strength it
+    # pulled the eye away from the ask panel it sits beside.
+    ramp = ([[0, "#171c22"], [0.6, "#22384f"], [1, "#3a6a9e"]] if p.is_dark
+            else [[0, "#e6e4da"], [0.6, "#c3cfe2"], [1, "#8ba6cd"]])
+    fig = go.Figure(go.Choropleth(
+        locations=m["country"], locationmode="country names", z=m["z"],
+        colorscale=ramp, showscale=False,
+        marker_line_color=p.bg, marker_line_width=0.5,
+        hoverinfo="skip",
+    ))
+    fig.update_geos(showframe=False, showcoastlines=False, showland=True,
+                    landcolor=p.surface_alt, bgcolor="rgba(0,0,0,0)",
+                    lakecolor="rgba(0,0,0,0)", projection_type="natural earth",
+                    lataxis_range=[-58, 84])
+    fig.update_layout(height=height, margin=dict(l=0, r=0, t=0, b=0),
+                      paper_bgcolor="rgba(0,0,0,0)", dragmode=False)
+    # A real container, not a markdown <div>: Streamlit closes each markdown
+    # block in its own wrapper, so an opening tag never actually encloses the
+    # chart that follows it.
+    with st.container(key="v2heromap"):
+        st.plotly_chart(fig, use_container_width=True,
+                        config={"displayModeBar": False, "staticPlot": True})
+
+
 # ── Ask bar ──────────────────────────────────────────────────────────────
 
-def ask_bar(examples: list[str]) -> str | None:
-    """The natural-language query bar. Returns a question when one is submitted."""
-    _md('<p class="v2-label" style="margin-bottom:10px">Ask the global AI ecosystem</p>')
+def ask_panel(examples: list[str]) -> str | None:
+    """The natural-language query bar, label and prompts as one surface.
 
+    Returns a question when one is submitted. Kept inside the opening band so
+    the reader meets it as the way into the page, not as a search widget parked
+    beneath the headline.
+    """
     submitted: str | None = None
-    with st.container(key="v2ask"):
-        field, button = st.columns([5.4, 1], vertical_alignment="center")
-        with field:
-            typed = st.text_input(
-                "Question", key="v2_question",
-                placeholder="Ask anything about companies, sectors, locations, or trends...",
-                label_visibility="collapsed",
-            )
-        with button:
-            clicked = st.button("Ask →", key="v2_ask_go", use_container_width=True)
+    with st.container(key="v2askpanel"):
+        _md('<p class="v2-label" style="margin-bottom:11px">'
+            'Ask the global AI ecosystem</p>')
+        with st.container(key="v2ask"):
+            field, button = st.columns([4.6, 1.15], vertical_alignment="center")
+            with field:
+                typed = st.text_input(
+                    "Question", key="v2_question",
+                    placeholder="Ask anything about companies, sectors, "
+                                "locations, or trends...",
+                    label_visibility="collapsed",
+                )
+            with button:
+                clicked = st.button("Ask →", key="v2_ask_go", use_container_width=True)
 
-    # Enter in the field and the button both submit; a queued example wins once.
-    queued = st.session_state.pop("v2_queued_question", None)
-    if queued:
-        submitted = queued
-    elif typed and (clicked or typed != st.session_state.get("v2_last_question")):
-        submitted = typed
-    if submitted:
-        st.session_state["v2_last_question"] = submitted
+        # Enter in the field and the button both submit; a queued example wins once.
+        queued = st.session_state.pop("v2_queued_question", None)
+        if queued:
+            submitted = queued
+        elif typed and (clicked or typed != st.session_state.get("v2_last_question")):
+            submitted = typed
+        if submitted:
+            st.session_state["v2_last_question"] = submitted
 
-    spacer(12)
-    with st.container(key="v2examples"):
-        cols = st.columns(len(examples))
-        for col, example in zip(cols, examples):
-            with col:
-                if st.button(example, key=f"v2_ex_{hash(example) & 0xffff}",
-                             type="tertiary", use_container_width=True):
-                    st.session_state["v2_queued_question"] = example
-                    st.rerun()
+        with st.container(key="v2examples"):
+            cols = st.columns(len(examples))
+            for col, example in zip(cols, examples):
+                with col:
+                    if st.button(example, key=f"v2_ex_{hash(example) & 0xffff}",
+                                 use_container_width=True):
+                        st.session_state["v2_queued_question"] = example
+                        st.rerun()
     return submitted
 
 
@@ -211,20 +254,51 @@ def loading(message: str = "Querying dataset") -> None:
 
 # ── Strips, rows, tables ─────────────────────────────────────────────────
 
-def metrics_strip(items: list[tuple[str, str, str | None]]) -> None:
-    """Compact market strip: (label, value, sub) per cell."""
+def sparkline(values: list[float], p: Palette, width: int = 66, height: int = 24) -> str:
+    """An inline SVG trend line for a metric cell.
+
+    Drawn by hand rather than with the chart library: four of these render on
+    every page load, and at this size a polyline is both lighter and easier to
+    keep on the type baseline.
+    """
+    pts = [float(v) for v in values if v is not None]
+    if len(pts) < 3:
+        return ""
+    lo, hi = min(pts), max(pts)
+    span = (hi - lo) or 1.0
+    step = width / (len(pts) - 1)
+    pad = 2.5
+    coords = [
+        (i * step, height - pad - (v - lo) / span * (height - 2 * pad))
+        for i, v in enumerate(pts)
+    ]
+    path = " ".join(f"{x:.1f},{y:.1f}" for x, y in coords)
+    ex, ey = coords[-1]
+    return (
+        f'<span class="spark"><svg width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" aria-hidden="true">'
+        f'<polyline points="{path}" fill="none" stroke="{p.accent}" '
+        f'stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>'
+        f'<circle cx="{ex:.1f}" cy="{ey:.1f}" r="2" fill="{p.accent}"/>'
+        f"</svg></span>"
+    )
+
+
+def metrics_strip(items: list[tuple[str, str, str | None, str]]) -> None:
+    """Compact market strip: (label, value, sub, sparkline_html) per cell."""
     cells = "".join(
         f'<div class="cell"><span class="k">{escape(k)}</span>'
-        f'<span class="v">{v}</span>'
+        f'<span class="row"><span class="v">{v}</span>{spark}</span>'
         + (f'<span class="d">{sub}</span>' if sub else "")
         + "</div>"
-        for k, v, sub in items
+        for k, v, sub, spark in items
     )
     _md(f'<div class="v2-strip">{cells}</div>')
 
 
 def rank_rows(df: pd.DataFrame, unit: str = "%", signed: bool = False,
-              show_bar: bool = False, rank: bool = False) -> None:
+              show_bar: bool = False, rank: bool = False,
+              count: bool = False) -> None:
     """A ranked list on hairlines. Expects columns label, value, and optional sub."""
     if df.empty:
         empty_state("No ranking available for this scope.")
@@ -233,8 +307,12 @@ def rank_rows(df: pd.DataFrame, unit: str = "%", signed: bool = False,
     rows = []
     for i, r in df.reset_index(drop=True).iterrows():
         val = float(r["value"])
-        value_html = _signed(val, unit) if signed else \
-            f'<span>{val:.1f}{unit}</span>'
+        if signed:
+            value_html = _signed(val, unit)
+        elif count:
+            value_html = f"<span>{int(round(val)):,}{unit}</span>"
+        else:
+            value_html = f'<span>{val:.1f}{unit}</span>'
         parts = []
         if rank:
             parts.append(f'<span class="rank">{i + 1:02d}</span>')
@@ -359,141 +437,42 @@ def formation_chart(f: D.Formation, p: Palette) -> None:
         _md(f'<p class="v2-small" style="margin-top:10px">{escape(note)}</p>')
 
 
-def world_map(df: pd.DataFrame, p: Palette, height: int = 380) -> None:
-    """Choropleth on a log scale — one hue, light to dark, magnitude only."""
-    if df.empty:
-        empty_state("No country coverage available.")
-        return
-    import numpy as np
+# ── Weekly briefing ──────────────────────────────────────────────────────
 
-    scale = [[0, p.accent_soft.replace("rgba", "rgba")], [1, p.accent]] if p.is_dark else \
-            [[0, "#dfe8f8"], [0.55, "#5b8ede"], [1, p.accent]]
-    if p.is_dark:
-        scale = [[0, "#16233a"], [0.55, "#2f5f9f"], [1, p.accent]]
+def briefing(briefs: list) -> None:
+    """The week's briefs as one continuous stream on a timeline rail.
 
-    m = df.copy()
-    m["log_total"] = np.log10(m["total"].clip(lower=1))
-    fig = go.Figure(go.Choropleth(
-        locations=m["country"], locationmode="country names", z=m["log_total"],
-        customdata=m[["total", "ai"]], colorscale=scale,
-        marker_line_color=p.bg, marker_line_width=0.4,
-        colorbar=dict(
-            title=dict(text="", font=dict(size=10, color=p.text3)),
-            tickvals=[0, 1, 2, 3, 4, 5],
-            ticktext=["1", "10", "100", "1K", "10K", "100K"],
-            thickness=8, len=0.62, outlinewidth=0, x=1.0,
-            tickfont=dict(size=10, color=p.text3, family="IBM Plex Mono"),
-        ),
-        hovertemplate="<b>%{location}</b><br>%{customdata[0]:,} companies · "
-                      "%{customdata[1]:,} AI<extra></extra>",
-    ))
-    fig.update_geos(showframe=False, showcoastlines=False, showland=True,
-                    landcolor=p.surface_alt, bgcolor="rgba(0,0,0,0)",
-                    lakecolor="rgba(0,0,0,0)", projection_type="natural earth")
-    fig.update_layout(
-        height=height, margin=dict(l=0, r=0, t=0, b=0),
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Inter", color=p.text3),
-        hoverlabel=dict(bgcolor=p.surface, bordercolor=p.border,
-                        font=dict(family="Inter", size=12, color=p.text)),
-    )
-    st.plotly_chart(fig, use_container_width=True, config=PLOT_CONFIG)
-
-
-# ── Weekly brief ─────────────────────────────────────────────────────────
-
-def lead_story(week: D.Week, facts: dict, snap: D.Snapshot) -> None:
-    """The main data-driven story, written from the week's own numbers."""
-    if not week.total:
-        empty_state("No ingestion recorded for the most recent week.")
+    Each brief is a paragraph, the figure it rests on, and where to read around
+    it. The first is set larger because it is the lead, not because it is a
+    different kind of thing.
+    """
+    if not briefs:
+        empty_state("Not enough recent activity to assemble a briefing.")
         return
 
-    share = week.hidden_share
-    if share >= 60:
-        headline = "Most new arrivals are invisible to commercial databases"
-        lede = (f"Of the {week.total:,} companies that entered the dataset this week, "
-                f"<b>{week.hidden:,} ({share:.1f}%)</b> appear in neither Crunchbase nor "
-                f"PitchBook. They surface first through code hosts, model hubs, "
-                f"accelerator portfolios and public grant awards — months before a "
-                f"commercial database registers them, if it ever does.")
-    else:
-        headline = "Commercial coverage caught up with this week's intake"
-        lede = (f"{week.total:,} companies entered the dataset this week, of which "
-                f"<b>{week.hidden:,} ({share:.1f}%)</b> are in neither Crunchbase nor "
-                f"PitchBook — a lower hidden share than the {snap.hidden_share:.1f}% "
-                f"the full dataset carries.")
-
-    channel = ""
-    if not week.channels.empty:
-        top = week.channels.iloc[0]
-        channel = (f" The largest single channel was <b>{escape(str(top['channel']))}</b>, "
-                   f"accounting for {int(top['n']):,} of them.")
-
-    reach = ""
-    if week.countries:
-        reach = f" The week's arrivals carry headquarters in {week.countries:,} countries."
-
-    _md('<p class="v2-lead-kicker">Lead · dataset intake</p>'
-        f'<h2 class="v2-lead-title">{escape(headline)}</h2>'
-        f'<p class="v2-body">{lede}{channel}{reach}</p>')
-
-    _md('<div class="v2-datacallout">'
-        '<span class="tag">Our data</span>'
-        f'<span class="fig">{share:.1f}%</span>'
-        '<span class="cap">of this week&rsquo;s arrivals are in neither Crunchbase '
-        'nor PitchBook</span>'
-        '</div>')
-
-
-def secondary_stories(week: D.Week, facts: dict, snap: D.Snapshot,
-                      cats: pd.DataFrame, geo: pd.DataFrame) -> None:
-    """Three more findings, each carrying the figure it rests on."""
-    stories: list[tuple[str, str]] = []
-
-    if facts.get("github_native"):
-        stories.append((
-            "GitHub-native companies keep arriving before anyone lists them",
-            f"<b>{facts['github_native']:,}</b> hidden AI companies were found through a "
-            f"public code repository rather than a funding announcement or a directory.",
-        ))
-
-    if not cats.empty:
-        top = cats.iloc[0]
-        stories.append((
-            f"{top['label']} is taking share of new AI company formation",
-            f"Its share of AI companies founded in the latest three-year cohort is "
-            f"<b>{float(top['growth']):+.1f}%</b> against the previous cohort, on "
-            f"<b>{int(top['recent']):,}</b> companies.",
-        ))
-
-    if not geo.empty:
-        non_us = geo[geo["country"] != "United States"]
-        if not non_us.empty:
-            city = non_us.iloc[0]
-            stories.append((
-                f"{city['city']} leads formation outside the United States",
-                f"It accounts for <b>{float(city['share']):.1f}%</b> of AI companies "
-                f"founded in the latest cohort, on <b>{int(city['recent']):,}</b> firms.",
-            ))
-
-    if facts.get("grant_backed"):
-        stories.append((
-            "Federal grant awards keep surfacing firms with no commercial footprint",
-            f"<b>{facts['grant_backed']:,}</b> hidden AI companies entered the dataset "
-            f"through NIH or NSF award records.",
-        ))
-
-    if not stories:
-        empty_state("Not enough recent activity to derive secondary findings.")
-        return
-
-    html = "".join(
-        f'<div class="v2-story"><span class="idx">{i + 1:02d}</span>'
-        f'<div class="body"><p class="t">{escape(title)}</p>'
-        f'<p class="d">{body}</p></div></div>'
-        for i, (title, body) in enumerate(stories[:3])
-    )
-    _md(f'<div style="margin-top:30px">{html}</div>')
+    blocks = []
+    for i, b in enumerate(briefs):
+        cls = "v2-brief v2-reveal" + (" lead" if i == 0 else "")
+        fig = ""
+        if b.figure:
+            fig = ('<div class="fig"><span class="tag">Our data</span>'
+                   f'<span class="n">{escape(b.figure)}</span>'
+                   f'<span class="cap">{escape(b.figure_caption)}</span></div>')
+        more = ""
+        if b.sources:
+            links = "".join(
+                f'<a href="{escape(url)}" target="_blank" rel="noopener">'
+                f'{escape(name)}</a>'
+                for name, url in b.sources
+            )
+            more = f'<div class="more"><span class="lbl">Read more</span>{links}</div>'
+        kicker = (f'<p class="kicker">{escape(b.kicker)}</p>' if b.kicker else "")
+        blocks.append(
+            f'<div class="{cls}">{kicker}'
+            f'<p class="t">{escape(b.headline)}</p>'
+            f'<p class="d">{b.body}</p>{fig}{more}</div>'
+        )
+    _md("".join(blocks))
 
 
 def market_signals(cats: pd.DataFrame) -> None:
@@ -545,7 +524,13 @@ _SHORT_COUNTRY = {
 }
 
 
-def geographic_momentum(geo: pd.DataFrame) -> None:
+def headquarters(geo: pd.DataFrame) -> None:
+    """Cities ranked by companies founded in the recent cohort.
+
+    The count is the value and the share change is the annotation: "how many
+    were founded here" is the question a reader actually brings to a list of
+    cities, and the share tells them whether it is rising.
+    """
     if geo.empty:
         empty_state("City-level coverage is too thin to rank.")
         return
@@ -555,14 +540,17 @@ def geographic_momentum(geo: pd.DataFrame) -> None:
         if not pd.notna(r["country"]):
             return city
         country = str(r["country"])
+        # City states repeat themselves — "Singapore, Singapore" reads as a bug.
+        if country.lower() == city.lower():
+            return city
         return f"{city}, {_SHORT_COUNTRY.get(country, country)}"
 
     df = pd.DataFrame({
         "label": geo.apply(label, axis=1),
-        "value": geo["share"].astype(float),
+        "value": geo["recent"].astype(float),
         "sub": geo["growth"].map(lambda g: "—" if pd.isna(g) else f"{float(g):+.0f}%"),
     })
-    rank_rows(df, unit="%", show_bar=True)
+    rank_rows(df, unit="", count=True, rank=True)
 
 
 def latest_additions(df: pd.DataFrame) -> None:

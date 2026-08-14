@@ -10,6 +10,7 @@ the default route; this package renders only when the "Home V2" nav entry or the
 ``?v=2`` query parameter selects it.
 """
 
-from . import theme, data, intelligence, components, home, shell  # noqa: F401
+from . import (theme, stylesheet, data, intelligence, briefing, components,  # noqa: F401
+               home, shell)
 
 __all__ = ["theme", "data", "intelligence", "components", "home", "shell"]

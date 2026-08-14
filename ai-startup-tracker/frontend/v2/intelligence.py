@@ -36,11 +36,13 @@ log = logging.getLogger("v2.intelligence")
 AI = ai_filter_sql()
 _FALLBACK_MODEL = "claude-haiku-4-5-20251001"
 
+# Short enough to sit on one or two lines in a prompt pill, specific enough
+# that each resolves to a different scope in the engine.
 EXAMPLES = [
-    "Which AI sectors are growing fastest?",
-    "Where are new AI companies forming outside the U.S.?",
-    "Which companies are missing from Crunchbase?",
-    "What is happening in AI robotics?",
+    "Fastest-growing AI sectors",
+    "Formation outside the U.S.",
+    "Missing from Crunchbase",
+    "What is happening in robotics",
 ]
 
 
@@ -374,8 +376,10 @@ def _ask_model(system: str, user: str, max_tokens: int = 400) -> str | None:
 
 
 _NARRATIVE_SYSTEM = (
-    "You write two to four sentences of analyst commentary for a company-formation "
-    "dataset covering AI startups.\n"
+    "You write analyst commentary for a company-formation dataset covering AI "
+    "startups. Hard limit: four sentences. Three is better.\n"
+    "When the facts contain a ranking, name at most the top two entries and "
+    "characterise the rest as a group. Never walk through every row.\n"
     "Absolute rule: every number you write must appear verbatim in the FACTS block. "
     "Never estimate, extrapolate, round differently, or introduce a figure that is "
     "not given. If the facts do not support a claim, leave the claim out.\n"
@@ -457,7 +461,7 @@ def _narrate(question: str, scope: Scope, facts: dict) -> tuple[str, str]:
         system=_NARRATIVE_SYSTEM,
         user=(f"QUESTION: {question}\n\nFACTS (the only numbers you may use):\n"
               f"{json.dumps(facts, indent=2, default=str)}"),
-        max_tokens=350,
+        max_tokens=260,
     )
     if not reply or not reply.strip():
         return fallback, "computed"

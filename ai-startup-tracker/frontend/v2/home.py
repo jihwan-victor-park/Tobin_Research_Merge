@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import streamlit as st
 
+from . import briefing as B
 from . import components as C
 from . import data as D
 from . import intelligence as I
@@ -40,16 +41,23 @@ def render(p: Palette) -> None:
     snap = D.snapshot()
 
     C.status_line(snap)
-    C.hero()
 
-    # ── Ask the ecosystem ────────────────────────────────────────────────
-    question = C.ask_bar(I.EXAMPLES)
+    # ── Opening band: headline, ask panel and coverage map as one block ───
+    with st.container(key="v2opening"):
+        left, right = st.columns([1.42, 1], gap="large")
+        with left:
+            C.hero()
+            question = C.ask_panel(I.EXAMPLES)
+        with right:
+            C.hero_map(D.country_totals(), p)
+
     active = question or st.session_state.get("v2_last_question")
     if active:
         C.answer_panel(_answer_for(active), p)
-    C.spacer(46)
+    C.spacer(26)
 
     # ── Dataset scale ────────────────────────────────────────────────────
+    trends = D.metric_trends()
     ai_share = f'{snap.ai_share:.1f}<span style="font-size:0.55em">%</span>'
     as_of = snap.as_of.strftime("%b %d") if snap.as_of else "—"
     C.metrics_strip([
@@ -57,13 +65,17 @@ def render(p: Palette) -> None:
          # Ingestion, not formation — bulk imports land in single days, so this
          # is deliberately labelled as records added rather than growth.
          f"+{snap.added_30d:,} records in the 30 days to {as_of}"
-         if snap.added_30d else "no additions recorded"),
+         if snap.added_30d else "no additions recorded",
+         C.sparkline(trends.get("total", []), p)),
         ("Not in Crunchbase or PitchBook", f"{snap.hidden:,}",
-         f"{snap.hidden_share:.1f}% of the dataset"),
-        ("AI share", ai_share, "of all tracked companies"),
-        ("Countries", f"{snap.countries:,}", "with at least one headquarters"),
+         f"{snap.hidden_share:.1f}% of the dataset",
+         C.sparkline(trends.get("hidden", []), p)),
+        ("AI share", ai_share, "of all tracked companies",
+         C.sparkline(trends.get("ai_share", []), p)),
+        ("Countries", f"{snap.countries:,}", "with at least one headquarters",
+         C.sparkline(trends.get("countries", []), p)),
     ])
-    C.spacer(52)
+    C.spacer(44)
 
     # ── This week in AI ──────────────────────────────────────────────────
     week = D.latest_week()
@@ -80,9 +92,7 @@ def render(p: Palette) -> None:
 
     lead, signals = st.columns([1.62, 1], gap="large")
     with lead:
-        C.lead_story(week, facts, snap)
-        C.coverage(I.coverage_links("AI startups"))
-        C.secondary_stories(week, facts, snap, cats, geo)
+        C.briefing(B.build(week, snap, facts, cats, geo))
     with signals:
         C.section_head("Market signals", "SHARE Δ", soft=True)
         C.market_signals(cats)
@@ -94,7 +104,18 @@ def render(p: Palette) -> None:
                   f'current share and company count.</p>')
         C.section_head("Where the week came from", "COMPANIES", soft=True, top=40)
         C.discovery_channels(week)
-    C.spacer(56)
+        if not week.top_countries.empty:
+            C.section_head("This week by country", "COMPANIES", soft=True, top=36)
+            wk_total = int(week.top_countries["n"].sum()) or 1
+            C.rank_rows(
+                week.top_countries.head(6).assign(
+                    label=week.top_countries["country"],
+                    value=week.top_countries["n"] / wk_total * 100,
+                    sub=week.top_countries["n"].map(lambda n: f"{int(n):,}"),
+                )[["label", "value", "sub"]],
+                unit="%", show_bar=True,
+            )
+    C.spacer(46)
 
     # ── Formation analysis ───────────────────────────────────────────────
     f = D.formation()
@@ -105,24 +126,21 @@ def render(p: Palette) -> None:
             meta += f" · PEAK {f.peak_year}"
     C.section_head("AI company formation", meta)
 
-    chart, ranking = st.columns([1.75, 1], gap="large")
+    # Chart and the two rankings that read off it, on one row — the analysis
+    # sits together instead of being split across two scrolls.
+    cohort = f"{f.recent_range[0]}–{f.recent_range[1]}" if f.recent_range else ""
+    chart, categories, places = st.columns([1.62, 1, 1], gap="large")
     with chart:
         C.formation_chart(f, p)
-    with ranking:
+    with categories:
         C.section_head("Fastest-growing categories", "SHARE Δ", soft=True)
         C.category_ranking(cats)
-    C.spacer(52)
-
-    # ── Geography ────────────────────────────────────────────────────────
-    C.section_head("Geographic momentum",
-                   f"SHARE OF {f.recent_range[0]}–{f.recent_range[1]} FORMATION"
-                   if f.recent_range else "")
-    cities, world = st.columns([1, 1.65], gap="large")
-    with cities:
-        C.geographic_momentum(geo)
+    with places:
+        C.section_head("Top headquarters", f"NEW {cohort}".strip(), soft=True)
+        C.headquarters(geo)
         regions = D.region_totals()
         if not regions.empty:
-            C.section_head("Hidden companies by region", "SHARE", soft=True, top=40)
+            C.section_head("Hidden companies by region", "SHARE", soft=True, top=36)
             total = int(regions["n"].sum()) or 1
             C.rank_rows(
                 regions.head(5).assign(
@@ -132,9 +150,7 @@ def render(p: Palette) -> None:
                 )[["label", "value", "sub"]],
                 unit="%", show_bar=True,
             )
-    with world:
-        C.world_map(D.country_totals(), p, height=414)
-    C.spacer(52)
+    C.spacer(46)
 
     # ── Latest additions ─────────────────────────────────────────────────
     C.section_head("Latest hidden discoveries",

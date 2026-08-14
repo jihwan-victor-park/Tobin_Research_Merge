@@ -260,43 +260,58 @@ html, body, .stApp,
 }}
 
 /* ── Hero ──────────────────────────────────────────────────────────── */
-.v2-hero {{ padding: 46px 0 32px 0; }}
+/* The hero, the ask panel and the metric strip are one block: the opening
+   band runs from the status rule to the strip with no section break, so the
+   query bar reads as the way into the page rather than a module parked under
+   a headline. */
+.st-key-v2opening {{ padding: 34px 0 0 0; }}
+.st-key-v2opening [data-testid="stHorizontalBlock"] {{ align-items: start; }}
+.v2-hero {{ padding: 0 0 26px 0; }}
 .stApp .v2-hero-title {{
   font-family: var(--v2-display) !important;
-  font-size: clamp(2.4rem, 4.7vw, 3.5rem) !important;
-  font-weight: 700 !important;
-  letter-spacing: -0.04em !important;
-  line-height: 1.02 !important;
+  font-size: clamp(2.35rem, 4.3vw, 3.25rem) !important;
+  font-weight: 750 !important;
+  letter-spacing: -0.042em !important;
+  line-height: 1.0 !important;
   color: var(--v2-text) !important;
-  margin: 0 0 17px 0;
+  margin: 0 0 15px 0;
   text-wrap: balance;
 }}
 .stApp .v2-hero-lede {{
-  font-size: 1.06rem !important;
+  font-size: 1.0rem !important;
   font-weight: 400 !important;
-  line-height: 1.52 !important;
-  letter-spacing: -0.008em !important;
+  line-height: 1.5 !important;
+  letter-spacing: -0.006em !important;
   color: var(--v2-text2) !important;
-  max-width: 74ch;
+  max-width: 56ch;
   margin: 0;
 }}
+.st-key-v2heromap {{ padding-top: 6px; }}
 
-/* ── Ask bar ───────────────────────────────────────────────────────── */
+/* ── Ask panel ─────────────────────────────────────────────────────── */
+/* One bordered surface holds the label, the field and the prompts, so they
+   stop reading as three stacked widgets. */
+.st-key-v2askpanel {{
+  border: 1px solid var(--v2-border);
+  border-top: 2px solid var(--v2-text);
+  background: var(--v2-surface);
+  padding: 17px 20px 15px 20px;
+}}
 .st-key-v2ask [data-testid="stHorizontalBlock"] {{ gap: 0 !important; }}
 .st-key-v2ask [data-testid="stTextInput"] > div {{
   border: none !important; background: transparent !important; box-shadow: none !important;
 }}
 .st-key-v2ask [data-testid="stTextInput"] input {{
   font-family: var(--v2-sans) !important;
-  font-size: 1.04rem !important;
+  font-size: 1.0rem !important;
   font-weight: 400 !important;
   color: var(--v2-text) !important;
   background: var(--v2-surface) !important;
   border: 1px solid var(--v2-border) !important;
   border-right: none !important;
   border-radius: 2px 0 0 2px !important;
-  padding: 0 18px !important;
-  height: 58px !important;
+  padding: 0 16px !important;
+  height: 52px !important;
   box-shadow: none !important;
   transition: border-color 180ms ease;
 }}
@@ -307,7 +322,7 @@ html, body, .stApp,
   border-color: var(--v2-accent) !important; outline: none !important;
 }}
 .st-key-v2ask button {{
-  height: 58px !important;
+  height: 52px !important;
   width: 100% !important;
   border-radius: 0 2px 2px 0 !important;
   border: 1px solid {p.ink_button} !important;
@@ -316,46 +331,44 @@ html, body, .stApp,
 }}
 .st-key-v2ask button p {{
   font-family: var(--v2-mono) !important;
-  font-size: 0.73rem !important;
+  font-size: 0.71rem !important;
   font-weight: 600 !important;
-  letter-spacing: 0.13em !important;
+  letter-spacing: 0.14em !important;
   text-transform: uppercase;
   color: {p.ink_button_text} !important;
 }}
 .st-key-v2ask button:hover {{ opacity: 0.84; }}
 
-/* Example questions — plain text prompts, each on its own hairline. */
-.st-key-v2examples [data-testid="stHorizontalBlock"] {{ gap: 0 !important; }}
+/* Example questions — quiet pills on the same surface as the field. */
+.st-key-v2examples {{ margin-top: 11px; }}
+.st-key-v2examples [data-testid="stHorizontalBlock"] {{ gap: 7px !important; }}
 .st-key-v2examples button {{
-  padding: 10px 18px 10px 0 !important;
-  /* Equal height keeps the hairlines above them on one line even when one
-     prompt wraps to two and another does not. */
-  min-height: 62px !important;
-  align-items: flex-start !important;
-  border: none !important;
-  border-top: 1px solid var(--v2-border-soft) !important;
-  border-radius: 0 !important;
+  padding: 7px 11px !important;
+  /* Equal height across the row whether a prompt wraps or not. */
+  min-height: 34px !important;
+  width: 100% !important;
+  border: 1px solid var(--v2-border) !important;
+  border-radius: 2px !important;
   background: transparent !important;
-  text-align: left !important;
-  justify-content: flex-start !important;
-  transition: border-color 160ms ease;
+  transition: border-color 160ms ease, background 160ms ease;
 }}
 .st-key-v2examples button > div {{
-  justify-content: flex-start !important;
+  justify-content: center !important;
   width: 100%;
-  text-align: left !important;
 }}
 .st-key-v2examples button p {{
   font-family: var(--v2-sans) !important;
-  font-size: 0.815rem !important;
-  font-weight: 400 !important;
-  line-height: 1.4 !important;
+  font-size: 0.775rem !important;
+  font-weight: 450 !important;
+  line-height: 1.35 !important;
   color: var(--v2-text2) !important;
-  text-align: left !important;
   transition: color 160ms ease;
 }}
-.st-key-v2examples button:hover {{ border-top-color: var(--v2-accent) !important; }}
-.st-key-v2examples button:hover p {{ color: var(--v2-accent) !important; }}
+.st-key-v2examples button:hover {{
+  border-color: var(--v2-text3) !important;
+  background: var(--v2-surface-alt) !important;
+}}
+.st-key-v2examples button:hover p {{ color: var(--v2-text) !important; }}
 
 /* ── AI answer panel ───────────────────────────────────────────────── */
 @keyframes v2-open {{
@@ -444,6 +457,14 @@ html, body, .stApp,
   color: var(--v2-text3) !important;
   font-variant-numeric: tabular-nums;
 }}
+/* Value and its trend share a baseline row, so the sparkline reads as part of
+   the figure rather than as a separate chart. */
+.v2-strip .row {{
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;
+}}
+.v2-strip .spark {{ flex: none; opacity: 0.62; }}
+.v2-strip .spark svg {{ display: block; }}
+
 .v2-strip.compact {{ border: none; margin: 20px 0 4px 0; }}
 .v2-strip.compact .cell {{ padding: 0 20px; min-width: 124px; }}
 .v2-strip.compact .cell:first-child {{ padding-left: 0; }}
@@ -477,9 +498,12 @@ html, body, .stApp,
   flex: 1 1 auto;
   font-size: 0.875rem !important;
   font-weight: 500 !important;
+  line-height: 1.3 !important;
   color: var(--v2-text) !important;
   min-width: 0;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  /* Wrap rather than ellipsis: in a three-column analysis row the labels are
+     the content, and "Predictive Analy…" tells the reader nothing. */
+  overflow-wrap: anywhere;
 }}
 .stApp .v2-rows .sub {{
   font-family: var(--v2-mono) !important;
@@ -558,36 +582,144 @@ html, body, .stApp,
   color: var(--v2-text3) !important;
 }}
 
-.v2-story {{
-  display: flex; gap: 18px; padding: 17px 0;
-  border-top: 1px solid var(--v2-border-soft);
+/* ── Briefing stream ───────────────────────────────────────────────── */
+/* One continuous column of briefs on a timeline rail: paragraph, the figure it
+   rests on, then where to read around it. Reads as a briefing rather than as a
+   lead article followed by a list of teasers. */
+.v2-brief {{
+  position: relative;
+  padding: 0 0 30px 30px;
+  border-left: 1px solid var(--v2-border);
 }}
-.stApp .v2-story .idx {{
+/* The rail stops with the last brief rather than trailing into whitespace. */
+.v2-brief:last-child {{ padding-bottom: 4px; }}
+.v2-brief::before {{
+  content: "";
+  position: absolute; left: -4px; top: 6px;
+  width: 7px; height: 7px;
+  background: var(--v2-text3);
+  border: 2px solid var(--v2-bg);
+  border-radius: 50%;
+}}
+.v2-brief.lead::before {{ background: var(--v2-accent); }}
+.v2-brief + .v2-brief {{ padding-top: 26px; }}
+.v2-brief + .v2-brief::before {{ top: 32px; }}
+
+.stApp .v2-brief .kicker {{
   font-family: var(--v2-mono) !important;
-  font-size: 0.71rem !important;
-  font-weight: 500 !important;
+  font-size: 0.63rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.15em !important;
+  text-transform: uppercase;
   color: var(--v2-text3) !important;
-  flex: none; padding-top: 3px;
-  font-variant-numeric: tabular-nums;
+  margin: 0 0 9px 0;
 }}
-.v2-story .body {{ flex: 1 1 auto; min-width: 0; }}
-.stApp .v2-story .t {{
+.stApp .v2-brief.lead .kicker {{ color: var(--v2-accent) !important; }}
+.stApp .v2-brief .t {{
   font-family: var(--v2-display) !important;
-  font-size: 1.02rem !important;
-  font-weight: 650 !important;
-  letter-spacing: -0.018em !important;
-  line-height: 1.28 !important;
+  font-size: 1.32rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.026em !important;
+  line-height: 1.16 !important;
   color: var(--v2-text) !important;
-  margin: 0 0 5px 0;
+  margin: 0 0 9px 0;
+  text-wrap: balance;
 }}
-.stApp .v2-story .d {{
-  font-size: 0.85rem !important;
+.stApp .v2-brief.lead .t {{
+  font-size: clamp(1.55rem, 2.3vw, 1.95rem) !important;
+  letter-spacing: -0.032em !important;
+  line-height: 1.08 !important;
+  margin-bottom: 12px;
+}}
+.stApp .v2-brief .d {{
+  font-size: 0.925rem !important;
   font-weight: 400 !important;
-  line-height: 1.52 !important;
+  line-height: 1.62 !important;
+  letter-spacing: -0.003em !important;
   color: var(--v2-text2) !important;
   margin: 0;
+  max-width: 70ch;
 }}
-.stApp .v2-story .d b {{ color: var(--v2-text) !important; font-weight: 600 !important; }}
+.stApp .v2-brief .d b {{ color: var(--v2-text) !important; font-weight: 600 !important; }}
+
+/* The figure the brief rests on, pulled out of the prose. */
+.v2-brief .fig {{
+  display: flex; align-items: baseline; gap: 13px;
+  margin: 15px 0 0 0; padding: 12px 0 0 0;
+  border-top: 1px solid var(--v2-border-soft);
+}}
+.stApp .v2-brief .fig .tag {{
+  font-family: var(--v2-mono) !important;
+  font-size: 0.6rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase;
+  color: var(--v2-text3) !important;
+  border: 1px solid var(--v2-border);
+  padding: 3px 7px;
+  flex: none;
+}}
+.stApp .v2-brief .fig .n {{
+  font-family: var(--v2-display) !important;
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.035em !important;
+  line-height: 1 !important;
+  color: var(--v2-text) !important;
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}}
+.stApp .v2-brief .fig .cap {{
+  font-size: 0.795rem !important;
+  font-weight: 400 !important;
+  line-height: 1.4 !important;
+  color: var(--v2-text3) !important;
+}}
+
+/* Read more — the label and its links on one line. */
+.v2-brief .more {{
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 16px;
+  margin-top: 13px;
+}}
+.stApp .v2-brief .more .lbl {{
+  font-family: var(--v2-mono) !important;
+  font-size: 0.605rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase;
+  color: var(--v2-text3) !important;
+  flex: none;
+}}
+.stApp .v2-brief .more a {{
+  font-size: 0.815rem !important;
+  font-weight: 450 !important;
+  color: var(--v2-text2) !important;
+  border-bottom: 1px solid var(--v2-border);
+  padding-bottom: 1px;
+  transition: color 160ms ease, border-color 160ms ease;
+}}
+.stApp .v2-brief .more a:hover {{
+  color: var(--v2-accent) !important; border-bottom-color: var(--v2-accent);
+}}
+.v2-brief .more a::after {{ content: " \\2197"; font-size: 0.7rem; opacity: 0.55; }}
+
+/* ── Scroll reveal ─────────────────────────────────────────────────── */
+/* Pure CSS scroll-driven animation. Content is visible by default and the
+   animation is only attached where the feature exists, so browsers without
+   it — and readers who ask for reduced motion — simply get the page. */
+@keyframes v2-reveal {{
+  from {{ opacity: 0; transform: translateY(9px); }}
+  to   {{ opacity: 1; transform: translateY(0); }}
+}}
+@supports (animation-timeline: view()) {{
+  @media (prefers-reduced-motion: no-preference) {{
+    .v2-reveal {{
+      animation: v2-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 4% cover 22%;
+    }}
+  }}
+}}
 
 /* ── Coverage links ────────────────────────────────────────────────── */
 .v2-coverage {{ margin-top: 22px; }}
@@ -776,6 +908,12 @@ html, body, .stApp,
   .stApp .v2-lead-title {{ font-size: 1.5rem !important; }}
   .v2-rows .bar {{ display: none; }}
   .v2-status .seg {{ padding: 0 10px; }}
+  /* The hero map is a locator, not content; stacked on a phone it costs a
+     whole screen of scrolling before the reader reaches any figures. */
+  .st-key-v2heromap {{ display: none; }}
+  .v2-brief {{ padding-left: 22px; }}
+  .stApp .v2-brief.lead .t {{ font-size: 1.42rem !important; }}
+  .stApp .v2-brief .t {{ font-size: 1.15rem !important; }}
 }}
 @media (prefers-reduced-motion: reduce) {{
   .st-key-v2answer {{ animation: none; }}

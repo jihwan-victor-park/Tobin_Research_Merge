@@ -180,6 +180,56 @@ def snapshot() -> Snapshot:
     )
 
 
+@st.cache_data(ttl=600, show_spinner=False)
+def metric_trends() -> dict[str, list[float]]:
+    """Short cumulative series behind each headline metric, for the sparklines.
+
+    All four describe the same thing the strip reports — how the dataset itself
+    has grown — so the little charts and the numbers beside them cannot be read
+    as measuring different quantities. Returns empty lists when there is not
+    enough history to draw an honest line.
+    """
+    df = _frame(f"""
+        SELECT date_trunc('month', first_seen_at)::date AS m,
+               COUNT(*)                                             AS n,
+               COUNT(*) FILTER (WHERE verification_status = :hidden) AS hidden,
+               COUNT(*) FILTER (WHERE {AI})                          AS ai
+        FROM companies WHERE first_seen_at IS NOT NULL
+        GROUP BY 1 ORDER BY 1
+    """, hidden=HIDDEN)
+    if df.empty or len(df) < 3:
+        return {}
+
+    total = df["n"].cumsum()
+    hidden = df["hidden"].cumsum()
+    ai = df["ai"].cumsum()
+
+    # Distinct countries has no cumulative form in SQL; accumulate the sets.
+    pairs = _frame("""
+        SELECT date_trunc('month', first_seen_at)::date AS m, country
+        FROM companies
+        WHERE first_seen_at IS NOT NULL AND country IS NOT NULL AND country <> ''
+        GROUP BY 1, 2 ORDER BY 1
+    """)
+    countries: list[float] = []
+    if not pairs.empty:
+        pairs["country"] = pairs["country"].map(clean_country)
+        pairs = pairs.dropna(subset=["country"])
+        seen: set[str] = set()
+        by_month = {m: set(g["country"]) for m, g in pairs.groupby("m")}
+        for m in df["m"]:
+            seen |= by_month.get(m, set())
+            countries.append(float(len(seen)))
+
+    return {
+        "total": [float(v) for v in total],
+        "hidden": [float(v) for v in hidden],
+        "ai_share": [float(a) / float(t) * 100 if t else 0.0
+                     for a, t in zip(ai, total)],
+        "countries": countries,
+    }
+
+
 # ── Formation over time ──────────────────────────────────────────────────
 
 @dataclass

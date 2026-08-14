@@ -70,22 +70,26 @@ class Palette:
         return self.name == "dark"
 
 
+# Light mode read as washed out because the secondary ink and the hairlines
+# were both too close to the ground. Ink and borders are stepped down together
+# here: the page gets its "sharper, more credible" weight from contrast, not
+# from heavier type.
 LIGHT = Palette(
     name="light",
     bg="#f7f7f4",
     surface="#ffffff",
-    surface_alt="#efefea",
-    text="#111315",
-    text2="#565d63",
-    text3="#868d94",
-    border="#dcdcd4",
-    border_soft="#e7e7e0",
+    surface_alt="#eceae3",
+    text="#0e1012",
+    text2="#41474d",
+    text3="#767c83",
+    border="#cfcec3",
+    border_soft="#e0ded4",
     accent="#1a56c4",
-    accent_soft="rgba(26,86,196,0.08)",
-    pos="#127a52",
-    neg="#b3261e",
-    context="#b9b9ae",
-    ink_button="#111315",
+    accent_soft="rgba(26,86,196,0.07)",
+    pos="#0f6b48",
+    neg="#a51f18",
+    context="#adaca0",
+    ink_button="#0e1012",
     ink_button_text="#f7f7f4",
 )
 
@@ -93,12 +97,12 @@ DARK = Palette(
     name="dark",
     bg="#0b0d0f",
     surface="#111417",
-    surface_alt="#14171a",
+    surface_alt="#161a1d",
     text="#f1f1ed",
-    text2="#a2aab0",
-    text3="#6f777e",
-    border="#23282c",
-    border_soft="#1b1f22",
+    text2="#adb4ba",
+    text3="#767e85",
+    border="#282e33",
+    border_soft="#1d2225",
     accent="#4a8ae0",
     accent_soft="rgba(74,138,224,0.12)",
     pos="#35986b",
