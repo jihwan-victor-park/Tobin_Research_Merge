@@ -23,6 +23,7 @@ from dotenv import load_dotenv
 
 from backend.db.connection import session_scope
 from backend.db.models import Company, LocationSource
+from backend.utils.country import normalize_country
 
 load_dotenv()
 
@@ -143,7 +144,10 @@ def main():
         if not tld:
             skipped_no_match += 1
             continue
-        country = TLD_TO_COUNTRY[tld]
+        # TLD_TO_COUNTRY yields ISO codes, but the country column holds full
+        # names everywhere else ("Germany", not "DE"); writing the raw code here
+        # would split every country in two for anything that groups by it.
+        country = normalize_country(TLD_TO_COUNTRY[tld]) or TLD_TO_COUNTRY[tld]
         stats[country] = stats.get(country, 0) + 1
         updates.append({
             "id": row.id,
@@ -165,15 +169,15 @@ def main():
                     )
             logger.info(f"  Committed batch {i // BATCH + 1}/{(len(updates) + BATCH - 1) // BATCH}")
 
-        logger.info("=" * 55)
-        logger.info(f"TLD Country Inference {'(dry run) ' if args.dry_run else ''}Complete")
-        logger.info(f"  Would tag / Tagged: {updated:,}")
-        logger.info(f"  No TLD match:       {skipped_no_match:,}")
-        logger.info("")
-        logger.info("  By country:")
-        for country, count in sorted(stats.items(), key=lambda x: -x[1]):
-            logger.info(f"    {country}: {count:,}")
-        logger.info("=" * 55)
+    logger.info("=" * 55)
+    logger.info(f"TLD Country Inference {'(dry run) ' if args.dry_run else ''}Complete")
+    logger.info(f"  Would tag / Tagged: {updated:,}")
+    logger.info(f"  No TLD match:       {skipped_no_match:,}")
+    logger.info("")
+    logger.info("  By country:")
+    for country, count in sorted(stats.items(), key=lambda x: -x[1]):
+        logger.info(f"    {country}: {count:,}")
+    logger.info("=" * 55)
 
 
 if __name__ == "__main__":
