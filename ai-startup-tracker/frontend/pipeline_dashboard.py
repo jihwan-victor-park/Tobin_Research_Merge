@@ -4259,7 +4259,125 @@ def _company_frames():
 
 
 # Public pages lead; operations pages live behind the "Internal" tab.
-_PUBLIC_PAGES = ["Overview", "Findings", "Companies", "GitHub Discovery", "About"]
+# ── Landscape: what AI companies do (embedding taxonomy) ─────────────
+
+@st.cache_data(ttl=300)
+def _tax_overview() -> pd.DataFrame:
+    return pd.read_sql("""
+        SELECT count(*) AS total,
+          count(*) FILTER (WHERE status <> 'pending') AS mapped,
+          count(*) FILTER (WHERE status = 'pending')  AS pending,
+          count(*) FILTER (WHERE bucket = 'hidden')   AS hidden,
+          count(DISTINCT domain_l1) FILTER (WHERE domain_l1 <> 'Pending enrichment') AS domains
+        FROM company_taxonomy
+    """, get_engine())
+
+
+@st.cache_data(ttl=300)
+def _tax_domains() -> pd.DataFrame:
+    return pd.read_sql("""
+        SELECT domain_l1 AS domain,
+          count(*) FILTER (WHERE bucket = 'published') AS published,
+          count(*) FILTER (WHERE bucket = 'hidden')    AS hidden,
+          count(*) AS total
+        FROM company_taxonomy
+        WHERE status IN ('mapped', 'category_mapped')
+        GROUP BY domain_l1 ORDER BY total DESC
+    """, get_engine())
+
+
+@st.cache_data(ttl=300)
+def _tax_clusters(domain: str) -> pd.DataFrame:
+    return pd.read_sql(text("""
+        SELECT cluster_label AS cluster, max(capability) AS capability,
+          count(*) AS companies,
+          round(100.0 * count(*) FILTER (WHERE bucket = 'hidden') / count(*), 0) AS hidden_pct
+        FROM company_taxonomy
+        WHERE domain_l1 = :d AND status IN ('mapped', 'category_mapped')
+        GROUP BY cluster_label ORDER BY companies DESC
+    """), get_engine(), params={"d": domain})
+
+
+@st.cache_data(ttl=300)
+def _tax_companies(domain: str, cluster: str) -> pd.DataFrame:
+    return pd.read_sql(text("""
+        SELECT co.name, co.domain, t.bucket,
+               coalesce(t.ai_application, '') AS application,
+               coalesce(t.ai_subfield, '')    AS subfield
+        FROM company_taxonomy t JOIN companies co ON co.id = t.company_id
+        WHERE t.domain_l1 = :d AND t.cluster_label = :c
+        ORDER BY co.name LIMIT 500
+    """), get_engine(), params={"d": domain, "c": cluster})
+
+
+def page_landscape():
+    ov = _tax_overview().iloc[0]
+    st.markdown(
+        '<div class="section-header">What AI companies do</div>'
+        '<div class="section-sub" style="max-width:80ch;">A map of what these AI '
+        'companies actually do, discovered bottom-up from their own descriptions '
+        '(neural embeddings &rarr; clusters &rarr; a labelled domain hierarchy) rather '
+        'than a fixed taxonomy. Hidden companies &mdash; those not in Crunchbase or '
+        'PitchBook &mdash; are shown alongside the published sample so you can see '
+        'where each population lives.</div>',
+        unsafe_allow_html=True,
+    )
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("AI companies mapped", f"{int(ov.mapped):,}")
+    m2.metric("Domains", int(ov.domains))
+    m3.metric("Hidden AI", f"{int(ov.hidden):,}")
+    m4.metric("Pending enrichment", f"{int(ov.pending):,}")
+
+    doms = _tax_domains()
+    fig = go.Figure()
+    fig.add_bar(y=doms["domain"], x=doms["published"], name="Published (CB/PB)",
+                orientation="h", marker_color=ACCENT)
+    fig.add_bar(y=doms["domain"], x=doms["hidden"], name="Hidden (not in CB/PB)",
+                orientation="h", marker_color=YALE_BLUE)
+    fig.update_layout(
+        barmode="stack", height=520, margin=dict(l=8, r=8, t=8, b=8),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        legend=dict(orientation="h", y=1.05, x=0, font=dict(size=11, color=TXT2)),
+        yaxis=dict(autorange="reversed", tickfont=dict(size=11, color=TXT)),
+        xaxis=dict(title="Companies", gridcolor=BORDER_LIGHT,
+                   tickfont=dict(size=10, color=TXT3)),
+    )
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+    st.markdown('<div class="section-header" style="margin-top:12px;">Explore a domain</div>',
+                unsafe_allow_html=True)
+    d = st.selectbox("Domain", doms["domain"].tolist(), label_visibility="collapsed")
+    cl = _tax_clusters(d)
+    st.caption(f"{len(cl)} clusters in {d} · {int(cl['companies'].sum()):,} companies")
+    show = cl.rename(columns={"cluster": "What they do", "capability": "AI capability",
+                              "companies": "Companies", "hidden_pct": "% hidden"})
+    st.dataframe(show, use_container_width=True, hide_index=True,
+                 height=min(430, 46 + 35 * len(cl)))
+
+    if len(cl):
+        c = st.selectbox("Cluster", cl["cluster"].tolist(), label_visibility="collapsed")
+        comp = _tax_companies(d, c)
+        hid = int((comp["bucket"] == "hidden").sum())
+        st.caption(f"&ldquo;{c}&rdquo; — {len(comp)} companies shown ({hid} hidden)")
+        cv = comp.copy()
+        cv["Source"] = cv["bucket"].map({"hidden": "Hidden", "published": "CB/PB"})
+        cv["Category (enrichment)"] = (cv["application"] + " / " + cv["subfield"]).str.strip(" /")
+        cv["domain"] = cv["domain"].map(
+            lambda x: f"https://{x}" if isinstance(x, str) and x and not x.startswith("http") else x)
+        st.dataframe(
+            cv[["name", "domain", "Source", "Category (enrichment)"]].rename(
+                columns={"name": "Company", "domain": "Website"}),
+            use_container_width=True, hide_index=True, height=430,
+            column_config={"Website": st.column_config.LinkColumn("Website")})
+
+    st.caption("Method: descriptions embedded (MiniLM) → k-means clusters → LLM-labelled into "
+               "domains; the AI population was verified by re-checking weak &lsquo;AI-mentioned&rsquo; "
+               "matches with an LLM. &lsquo;Pending enrichment&rsquo; = hidden companies without a "
+               "usable description yet — they join the map as enrichment fills their text.")
+
+
+_PUBLIC_PAGES = ["Overview", "Findings", "Landscape", "Companies", "GitHub Discovery", "About"]
 _INTERNAL_PAGES = ["AI Analysis", "Trends", "Pipeline Health", "Inventory", "Scraper"]
 
 
@@ -4296,6 +4414,8 @@ def main():
             page_home()
         elif page == "Findings":
             page_research()
+        elif page == "Landscape":
+            page_landscape()
         elif page == "Companies":
             page_companies()
         elif page == "GitHub Discovery":
