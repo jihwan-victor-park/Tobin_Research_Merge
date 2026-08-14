@@ -295,14 +295,19 @@ def stage_classify(engine, limit: int, workers: int, dry_run: bool,
 
 # ── Tier 1-2: web fill (domain / description / location / signals) ───
 def stage_web(engine, limit: int, workers: int, dry_run: bool,
-              all_hidden: bool = False) -> None:
+              all_hidden: bool = False, have_domain: bool = False) -> None:
+    # Rows that already have a domain are fetched directly; rows without one
+    # have to be searched for first, and that search is the only part of this
+    # stage that costs Tavily credit. --have-domain keeps the run on the free
+    # half, which is also the half with the better hit rate.
     ai_clause = "" if all_hidden else f"AND {ai_filter_sql('c')}"
+    dom_clause = "AND c.domain IS NOT NULL" if have_domain else ""
     with engine.connect() as c:
         rows = c.execute(text(f"""
             SELECT c.id, c.name, c.domain, c.description, c.country, c.city
             FROM companies c
             LEFT JOIN company_enrichment e ON e.company_id = c.id
-            WHERE {HIDDEN} {ai_clause}
+            WHERE {HIDDEN} {ai_clause} {dom_clause}
               AND e.web_attempted_at IS NULL
               AND (c.domain IS NULL OR c.description IS NULL OR c.country IS NULL
                    OR e.product_status IS NULL)
@@ -580,6 +585,8 @@ def main():
     ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--min-confidence", type=float, default=0.5)
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--have-domain", action="store_true",
+                    help="web: only companies that already have a domain (no Tavily spend)")
     ap.add_argument("--all-hidden", action="store_true",
                     help="whois: do not restrict to already-AI-classified companies")
     a = ap.parse_args()
@@ -593,7 +600,7 @@ def main():
     if a.stage == "classify":
         stage_classify(engine, a.limit, a.workers, a.dry_run, a.all_hidden)
     elif a.stage == "web":
-        stage_web(engine, a.limit, a.workers, a.dry_run, a.all_hidden)
+        stage_web(engine, a.limit, a.workers, a.dry_run, a.all_hidden, a.have_domain)
     elif a.stage == "deep":
         stage_deep(engine, a.limit, a.workers, a.min_confidence, a.dry_run)
     elif a.stage == "whois":
