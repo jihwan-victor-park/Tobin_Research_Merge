@@ -157,3 +157,102 @@ def count_distinct_countries(raw_values: list[str]) -> int:
         if norm and norm in GLOBE_COUNTRIES:
             seen.add(norm)
     return len(seen)
+
+
+# ── Regions ──────────────────────────────────────────────────────────
+#
+# Per-country counts get thin fast outside the top twenty, which makes a
+# country-level breakdown mostly noise for the long tail. Grouping gives the
+# same data a denominator big enough to say something. Two levels are kept
+# because they answer different questions: REGION separates places that behave
+# differently as startup ecosystems (Israel does not belong with Egypt just
+# because both are geographically near), while CONTINENT is the coarse cut for
+# a headline chart.
+_REGION: dict[str, str] = {}
+
+
+def _reg(region: str, *countries: str) -> None:
+    for c in countries:
+        _REGION[c] = region
+
+
+_reg("North America", "United States", "Canada")
+_reg("Latin America", "Mexico", "Brazil", "Argentina", "Chile", "Colombia",
+     "Peru", "Uruguay", "Ecuador", "Bolivia", "Venezuela", "Panama",
+     "Costa Rica", "Guatemala", "Jamaica", "Dominican Republic", "Puerto Rico",
+     "Paraguay", "Honduras", "El Salvador", "Nicaragua", "Cuba", "Trinidad and Tobago")
+_reg("Western Europe", "United Kingdom", "Ireland", "France", "Germany",
+     "Netherlands", "Belgium", "Switzerland", "Austria", "Luxembourg", "Monaco",
+     "Liechtenstein")
+_reg("Northern Europe", "Sweden", "Norway", "Denmark", "Finland", "Iceland",
+     "Estonia", "Latvia", "Lithuania")
+_reg("Southern Europe", "Spain", "Portugal", "Italy", "Greece", "Malta",
+     "Cyprus", "San Marino", "Andorra")
+_reg("Central & Eastern Europe", "Poland", "Czech Republic", "Slovakia",
+     "Hungary", "Romania", "Bulgaria", "Croatia", "Slovenia", "Serbia",
+     "Bosnia and Herzegovina", "North Macedonia", "Montenegro", "Albania",
+     "Kosovo", "Ukraine", "Belarus", "Moldova", "Russia")
+_reg("Middle East", "Israel", "United Arab Emirates", "Saudi Arabia", "Qatar",
+     "Kuwait", "Bahrain", "Oman", "Jordan", "Lebanon", "Turkey", "Iran", "Iraq",
+     "Palestine", "Yemen", "Syria")
+_reg("North Africa", "Egypt", "Morocco", "Tunisia", "Algeria", "Libya", "Sudan")
+_reg("Sub-Saharan Africa", "Nigeria", "Kenya", "South Africa", "Ghana",
+     "Ethiopia", "Uganda", "Tanzania", "Rwanda", "Senegal", "Cameroon",
+     "Ivory Coast", "Zambia", "Zimbabwe", "Botswana", "Namibia", "Mozambique",
+     "Angola", "Benin", "Mali", "Malawi", "Mauritius", "Madagascar",
+     "Burkina Faso", "Somalia", "Congo", "Democratic Republic of the Congo")
+_reg("East Asia", "China", "Japan", "South Korea", "Taiwan", "Hong Kong",
+     "Macau", "Mongolia", "North Korea")
+_reg("South Asia", "India", "Pakistan", "Bangladesh", "Sri Lanka", "Nepal",
+     "Bhutan", "Maldives", "Afghanistan")
+_reg("Southeast Asia", "Singapore", "Indonesia", "Malaysia", "Thailand",
+     "Vietnam", "Philippines", "Myanmar", "Cambodia", "Laos", "Brunei")
+_reg("Central Asia & Caucasus", "Kazakhstan", "Uzbekistan", "Georgia",
+     "Armenia", "Azerbaijan", "Kyrgyzstan", "Tajikistan", "Turkmenistan")
+_reg("Oceania", "Australia", "New Zealand", "Fiji", "Papua New Guinea")
+
+_CONTINENT: dict[str, str] = {
+    "North America": "Americas",
+    "Latin America": "Americas",
+    "Western Europe": "Europe",
+    "Northern Europe": "Europe",
+    "Southern Europe": "Europe",
+    "Central & Eastern Europe": "Europe",
+    "Middle East": "Asia",
+    "East Asia": "Asia",
+    "South Asia": "Asia",
+    "Southeast Asia": "Asia",
+    "Central Asia & Caucasus": "Asia",
+    "North Africa": "Africa",
+    "Sub-Saharan Africa": "Africa",
+    "Oceania": "Oceania",
+}
+
+
+def country_region(raw: str | None) -> str | None:
+    """Region for a raw country string, or None when the value is not a country.
+
+    The country column holds plenty of things that are not countries — US
+    states, bare city names, stray coordinates — so this returns None rather
+    than inventing a region for them, and a caller counting regions will simply
+    not count those rows.
+    """
+    norm = normalize_country(raw)
+    if not norm or norm not in GLOBE_COUNTRIES:
+        return None
+    return _REGION.get(norm)
+
+
+def country_continent(raw: str | None) -> str | None:
+    region = country_region(raw)
+    return _CONTINENT.get(region) if region else None
+
+
+def unmapped_countries(raw_values: list[str]) -> set[str]:
+    """Recognised countries that no region covers — the maintenance list."""
+    missing = set()
+    for v in raw_values:
+        norm = normalize_country(v)
+        if norm and norm in GLOBE_COUNTRIES and norm not in _REGION:
+            missing.add(norm)
+    return missing

@@ -257,23 +257,23 @@ def _instructions() -> str:
         "  tc: who they sell to, <=5 words\n"
         "  ps: what problem they solve, <=12 words\n"
         "  cf: 0.0-1.0 how sure you are\n"
-        "\nAlso fill these. COMMIT TO A BEST ESTIMATE for every one.\n"
-        "Reason from the company name, the language and spelling of the text,\n"
-        "the technology, the customer, and what is typical for such a company.\n"
-        "'unknown' is not an acceptable answer and null is a last resort:\n"
-        "  ci: single most likely city\n"
-        "  co: single most likely country (a real country, not a region)\n"
-        "  fy: single most likely 4-digit founding year\n"
-        f"  st: one of {[s for s in PRODUCT_STATUS if s != 'unknown']}\n"
-        f"  ts: one of {[s for s in TEAM_BUCKET if s != 'unknown']}\n"
-        f"  ai: one of {[s for s in AI_STACK if s != 'not_stated']}\n"
-        f"  cm: one of {[s for s in COMMERCIALIZATION if s != 'not_stated']}\n"
-        "  rg: regulated regime it plausibly touches (HIPAA/FDA/GDPR/finance/none)\n"
-        "  os: true or false for open source\n"
-        "\nAdd 'bs': an object marking each of ci/co/fy/st/ts/ai/cm/rg/os as\n"
-        "'stated' when the description says it or 'inferred' when you reasoned it\n"
-        "out, e.g. {\"co\":\"inferred\",\"fy\":\"stated\"}. Be honest in bs — the\n"
-        "research depends on knowing which values were estimated."
+        # Asked to estimate these, the model returns the same modal startup for
+        # almost every company - a third of them in San Francisco, 71% at 11-50
+        # people, founded 2020 - which is its prior, not a reading of the text.
+        # A distribution built from that describes the model, not the companies,
+        # so these are extraction only: quote the description or return null.
+        "\nAlso report these, but ONLY when the description states them.\n"
+        "Return null when it does not say. Do NOT guess, estimate, or infer -\n"
+        "a null here is correct and useful, a plausible-looking guess is not:\n"
+        "  ci: city named in the text\n"
+        "  co: country named in the text (a real country, not a region)\n"
+        "  fy: 4-digit founding year given in the text\n"
+        f"  st: one of {[s for s in PRODUCT_STATUS if s != 'unknown']} if the text says so\n"
+        f"  ts: one of {[s for s in TEAM_BUCKET if s != 'unknown']} if the text says so\n"
+        f"  ai: one of {[s for s in AI_STACK if s != 'not_stated']} if the text says so\n"
+        f"  cm: one of {[s for s in COMMERCIALIZATION if s != 'not_stated']} if the text says so\n"
+        "  rg: regulated regime the text mentions (HIPAA/FDA/GDPR/finance), else null\n"
+        "  os: true or false only if the text says whether it is open source\n"
     )
 
 
@@ -390,25 +390,18 @@ def stage_classify(engine, limit: int, workers: int, dry_run: bool,
                 "regulatory": data.get("regulatory"),
                 "open_source": data.get("open_source"),
             }
-            basis = data.get("basis") or {}
+            # Two kinds of value, kept apart by source: the taxonomy fields are
+            # the model's reading of the description, the rest are quoted out of
+            # it. Nothing here is estimated, so nothing is labelled inferred.
             judged = {"sector", "ai_application", "ai_subfield", "business_model",
                       "target_customer", "problem_solved"}
-
-            def label(field):
-                if field in judged:
-                    return "llm_from_description"
-                return ("llm_quoted_from_description"
-                        if str(basis.get(field, "")).lower() == "stated" else "llm_inferred")
-
             src = {}
             for k, v in fields.items():
                 if v is None:
                     continue
-                source = label(k)
-                # An inferred value is worth less than a stated one however sure
-                # the model sounds, so its recorded confidence is capped.
-                src[k] = {"source": source,
-                          "confidence": min(conf, 0.5) if source == "llm_inferred" else conf}
+                src[k] = {"source": "llm_from_description" if k in judged
+                                    else "llm_quoted_from_description",
+                          "confidence": conf}
             out.append((row["id"], (fields, src)))
         return out
 
