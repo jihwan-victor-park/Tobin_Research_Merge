@@ -298,28 +298,49 @@ html, body, .stApp,
   padding: 17px 20px 15px 20px;
 }}
 .st-key-v2ask [data-testid="stHorizontalBlock"] {{ gap: 0 !important; }}
+/* The border belongs on BaseWeb's wrapper, not on the <input>. Putting it on
+   the input drew the box inside the wrapper's own padding, so the rectangle
+   came out clipped on the right and sat off the button's baseline. */
+.st-key-v2ask [data-testid="stTextInput"] {{ margin: 0 !important; }}
 .st-key-v2ask [data-testid="stTextInput"] > div {{
-  border: none !important; background: transparent !important; box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  height: 52px !important;
+  border: 1px solid var(--v2-border) !important;
+  border-right: none !important;
+  border-radius: 2px 0 0 2px !important;
+  background: var(--v2-surface) !important;
+  box-shadow: none !important;
+  overflow: hidden;
+  transition: border-color 180ms ease;
+}}
+.st-key-v2ask [data-testid="stTextInput"] > div:focus-within {{
+  border-color: var(--v2-accent) !important;
+}}
+/* Only the inner `base-input` is reset. The outer root element also carries
+   data-baseweb="input", so resetting that selector too stripped the border
+   this panel had just been given. */
+.st-key-v2ask [data-testid="stTextInput"] div[data-baseweb="base-input"] {{
+  background: transparent !important;
+  border: none !important;
+  height: 100% !important;
+  width: 100%;
 }}
 .st-key-v2ask [data-testid="stTextInput"] input {{
   font-family: var(--v2-sans) !important;
   font-size: 1.0rem !important;
   font-weight: 400 !important;
   color: var(--v2-text) !important;
-  background: var(--v2-surface) !important;
-  border: 1px solid var(--v2-border) !important;
-  border-right: none !important;
-  border-radius: 2px 0 0 2px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
   padding: 0 16px !important;
-  height: 52px !important;
+  height: 100% !important;
   box-shadow: none !important;
-  transition: border-color 180ms ease;
+  outline: none !important;
 }}
 .st-key-v2ask [data-testid="stTextInput"] input::placeholder {{
   color: var(--v2-text3) !important; font-weight: 400 !important;
-}}
-.st-key-v2ask [data-testid="stTextInput"] input:focus {{
-  border-color: var(--v2-accent) !important; outline: none !important;
 }}
 .st-key-v2ask button {{
   height: 52px !important;
@@ -874,6 +895,303 @@ html, body, .stApp,
   color: var(--v2-text2) !important; font-size: 0.83rem !important;
 }}
 .stApp [data-testid="stTooltipHoverTarget"] svg {{ fill: var(--v2-text3); }}
+
+/* ── The existing pages, drawn on this surface ─────────────────────── */
+/* Companies, Findings, GitHub Discovery, About and Internal render through
+   their original functions, so their markup still carries the V1 class names
+   and Streamlit's stock widgets. These rules restate those pieces in the V2
+   language rather than duplicating the pages. */
+
+.stApp .section-header {{
+  font-family: var(--v2-display) !important;
+  font-size: 1.2rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.025em !important;
+  line-height: 1.2 !important;
+  color: var(--v2-text) !important;
+  margin: 0 0 5px 0 !important;
+}}
+.stApp .section-sub {{
+  font-size: 0.845rem !important;
+  font-weight: 400 !important;
+  line-height: 1.55 !important;
+  color: var(--v2-text3) !important;
+  margin: 0 0 18px 0 !important;
+}}
+.stApp .eyebrow {{
+  font-family: var(--v2-mono) !important;
+  font-size: 0.63rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.15em !important;
+  text-transform: uppercase;
+  color: var(--v2-accent) !important;
+}}
+.stApp .hero-eyebrow {{
+  font-family: var(--v2-mono) !important;
+  font-size: 0.66rem !important;
+  letter-spacing: 0.11em !important;
+  color: var(--v2-text3) !important;
+}}
+.stApp .hero-title {{
+  font-family: var(--v2-display) !important;
+  font-size: clamp(1.9rem, 3.2vw, 2.5rem) !important;
+  font-weight: 750 !important;
+  letter-spacing: -0.035em !important;
+  line-height: 1.05 !important;
+  color: var(--v2-text) !important;
+}}
+.stApp .hero-lede {{
+  font-size: 0.96rem !important;
+  line-height: 1.6 !important;
+  color: var(--v2-text2) !important;
+}}
+.stApp .hero-lede b {{ color: var(--v2-text) !important; }}
+
+/* The V1 stat band becomes the V2 strip: square, hairlines, no card. */
+.stApp .statband {{
+  background: transparent !important;
+  border: none !important;
+  border-top: 1px solid var(--v2-border) !important;
+  border-bottom: 1px solid var(--v2-border) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}}
+.stApp .statband .stat {{ padding: 18px 22px 17px 22px !important; }}
+.stApp .statband .stat:first-child {{ padding-left: 0 !important; }}
+.stApp .statband .stat + .stat {{ border-left: 1px solid var(--v2-border-soft) !important; }}
+.stApp .statband .stat-label {{
+  font-family: var(--v2-mono) !important;
+  font-size: 0.635rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.12em !important;
+  color: var(--v2-text3) !important;
+}}
+.stApp .statband .stat-value {{
+  font-family: var(--v2-display) !important;
+  font-size: 2.05rem !important;
+  font-weight: 650 !important;
+  letter-spacing: -0.035em !important;
+  color: var(--v2-text) !important;
+}}
+.stApp .statband .stat-sub {{
+  font-family: var(--v2-mono) !important;
+  font-size: 0.665rem !important;
+  color: var(--v2-text3) !important;
+}}
+.stApp .statband .stat-sub b {{ color: var(--v2-accent) !important; }}
+
+/* Metric cards lose the card. */
+.stApp [data-testid="stMetric"] {{
+  background: transparent !important;
+  border: none !important;
+  border-top: 1px solid var(--v2-border) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 14px 0 12px 0 !important;
+}}
+.stApp [data-testid="stMetricValue"],
+.stApp [data-testid="stMetricValue"] > div {{
+  font-family: var(--v2-display) !important;
+  font-size: 1.7rem !important;
+  font-weight: 650 !important;
+  letter-spacing: -0.03em !important;
+  color: var(--v2-text) !important;
+  font-variant-numeric: tabular-nums;
+}}
+.stApp [data-testid="stMetricLabel"] p {{
+  font-family: var(--v2-mono) !important;
+  font-size: 0.62rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.12em !important;
+  color: var(--v2-text3) !important;
+}}
+.stApp [data-testid="stMetricDelta"] {{ font-family: var(--v2-mono) !important; }}
+
+/* Headings inside those pages. */
+.stApp h1 {{
+  font-family: var(--v2-display) !important;
+  font-size: 1.55rem !important;
+  font-weight: 750 !important;
+  letter-spacing: -0.03em !important;
+  color: var(--v2-text) !important;
+}}
+.stApp h2 {{
+  font-family: var(--v2-display) !important;
+  font-size: 1.2rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.022em !important;
+  color: var(--v2-text) !important;
+}}
+.stApp h3 {{
+  font-family: var(--v2-mono) !important;
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase;
+  color: var(--v2-text3) !important;
+}}
+.stApp [data-testid="stCaptionContainer"], .stApp [data-testid="stCaptionContainer"] p {{
+  font-size: 0.775rem !important;
+  color: var(--v2-text3) !important;
+}}
+
+/* Tabs — the same underline the top nav uses. */
+.stApp .stTabs [data-baseweb="tab-list"] {{
+  gap: 20px; background: transparent;
+  border-bottom: 1px solid var(--v2-border);
+}}
+.stApp .stTabs [data-baseweb="tab"] {{
+  font-family: var(--v2-mono) !important;
+  font-size: 0.685rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase;
+  color: var(--v2-text2) !important;
+  background: transparent !important;
+  border-radius: 0;
+  padding: 9px 2px;
+  border-bottom: 2px solid transparent;
+}}
+.stApp .stTabs [aria-selected="true"] {{
+  color: var(--v2-text) !important;
+  border-bottom: 2px solid var(--v2-accent) !important;
+  font-weight: 600 !important;
+}}
+.stApp .stTabs [data-baseweb="tab-highlight"],
+.stApp .stTabs [data-baseweb="tab-border"] {{ display: none; }}
+
+/* Internal sub-nav. */
+.st-key-v2subnav [role="radiogroup"] {{ display: flex; flex-wrap: wrap; gap: 0; }}
+.st-key-v2subnav [role="radiogroup"] label {{
+  margin: 0 !important; padding: 6px 14px 6px 0;
+  background: transparent !important;
+  border: none !important;
+}}
+.st-key-v2subnav [role="radiogroup"] label > div:first-child {{ display: none; }}
+.st-key-v2subnav [role="radiogroup"] label p {{
+  font-family: var(--v2-mono) !important;
+  font-size: 0.66rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.09em !important;
+  text-transform: uppercase;
+  color: var(--v2-text3) !important;
+}}
+.st-key-v2subnav [role="radiogroup"] label:has(input:checked) p {{
+  color: var(--v2-accent) !important; font-weight: 600 !important;
+}}
+
+/* Form controls on those pages. */
+.stApp [data-testid="stTextInput"] > div,
+.stApp [data-testid="stNumberInput"] > div,
+.stApp [data-testid="stSelectbox"] > div > div,
+.stApp [data-testid="stMultiSelect"] > div > div {{
+  background: var(--v2-surface) !important;
+  border: 1px solid var(--v2-border) !important;
+  border-radius: 2px !important;
+  box-shadow: none !important;
+  color: var(--v2-text) !important;
+}}
+/* BaseWeb paints its own inner wrapper, which sat as a light slab inside the
+   dark field until it was reset alongside the input itself. */
+.stApp div[data-baseweb="base-input"] {{
+  background: transparent !important;
+  border: none !important;
+}}
+.stApp [data-testid="stTextInput"] input,
+.stApp [data-testid="stNumberInput"] input,
+.stApp [data-testid="stTextArea"] textarea {{
+  background: transparent !important;
+  border: none !important;
+  color: var(--v2-text) !important;
+  font-size: 0.87rem !important;
+}}
+.stApp [data-testid="stTextInput"] input::placeholder,
+.stApp [data-testid="stTextArea"] textarea::placeholder {{
+  color: var(--v2-text3) !important;
+}}
+.stApp [data-baseweb="select"] * {{ color: var(--v2-text) !important; }}
+.stApp [data-baseweb="popover"] li {{
+  background: var(--v2-surface) !important; color: var(--v2-text) !important;
+  font-size: 0.85rem !important;
+}}
+.stApp [data-baseweb="popover"] li:hover {{ background: var(--v2-surface-alt) !important; }}
+.stApp [data-testid="stWidgetLabel"] p {{
+  font-family: var(--v2-mono) !important;
+  font-size: 0.63rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.11em !important;
+  text-transform: uppercase;
+  color: var(--v2-text3) !important;
+}}
+
+/* Buttons outside the ask panel. */
+.stApp [data-testid="stBaseButton-secondary"],
+.stApp [data-testid="stBaseButton-primary"],
+.stApp [data-testid="stBaseButton-secondaryFormSubmit"],
+.stApp [data-testid="stDownloadButton"] button {{
+  font-family: var(--v2-mono) !important;
+  font-size: 0.665rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.11em !important;
+  text-transform: uppercase;
+  border-radius: 2px !important;
+  border: 1px solid var(--v2-border) !important;
+  background: var(--v2-surface) !important;
+  color: var(--v2-text) !important;
+}}
+.stApp [data-testid="stDownloadButton"] button p,
+.stApp [data-testid="stBaseButton-secondary"] p {{
+  font-family: var(--v2-mono) !important;
+  font-size: 0.665rem !important;
+  letter-spacing: 0.11em !important;
+  color: var(--v2-text) !important;
+}}
+.stApp [data-testid="stBaseButton-secondary"]:hover,
+.stApp [data-testid="stDownloadButton"] button:hover {{
+  border-color: var(--v2-text3) !important;
+  background: var(--v2-surface-alt) !important;
+}}
+
+.stApp [data-testid="stExpander"] {{
+  border: 1px solid var(--v2-border) !important;
+  border-radius: 2px !important;
+  background: var(--v2-surface) !important;
+}}
+.stApp [data-testid="stExpander"] summary p {{
+  font-size: 0.83rem !important; color: var(--v2-text2) !important;
+}}
+.stApp hr {{ border-color: var(--v2-border) !important; }}
+.stApp code {{
+  font-family: var(--v2-mono) !important;
+  font-size: 0.8rem !important;
+  background: var(--v2-surface-alt) !important;
+  color: var(--v2-text) !important;
+}}
+
+/* Dataframes paint to a canvas the stylesheet cannot reach; the grid reads
+   these custom properties instead, which is the only way to keep a table from
+   staying stubbornly light in the dark theme. */
+.stApp [data-testid="stDataFrame"], .stApp [data-testid="stTable"] {{
+  --gdg-bg-cell: {p.surface};
+  --gdg-bg-cell-medium: {p.surface_alt};
+  --gdg-bg-header: {p.surface_alt};
+  --gdg-bg-header-has-focus: {p.surface_alt};
+  --gdg-bg-header-hovered: {p.surface_alt};
+  --gdg-text-dark: {p.text};
+  --gdg-text-medium: {p.text2};
+  --gdg-text-light: {p.text3};
+  --gdg-text-header: {p.text3};
+  --gdg-text-header-selected: {p.text};
+  --gdg-border-color: {p.border_soft};
+  --gdg-horizontal-border-color: {p.border_soft};
+  --gdg-accent-color: {p.accent};
+  --gdg-accent-light: {p.accent_soft};
+  --gdg-bg-bubble: {p.surface};
+  --gdg-bg-bubble-selected: {p.surface_alt};
+  --gdg-font-family: {mono};
+  border: 1px solid {p.border} !important;
+  border-radius: 2px !important;
+}}
 
 /* ── Responsive ────────────────────────────────────────────────────── */
 @media (max-width: 1100px) {{
