@@ -92,7 +92,7 @@ def status_line(snap: D.Snapshot) -> None:
     """The thin live-dataset rule under the nav. Information, not a badge."""
     as_of = snap.as_of.strftime("%b %d, %Y").upper() if snap.as_of else "—"
     segs = [
-        '<span class="seg"><span class="live">● LIVE DATASET</span></span>',
+        '<span class="seg"><span class="live">LIVE DATASET</span></span>',
         f'<span class="seg"><b>{snap.total:,}</b> COMPANIES</span>',
         f'<span class="seg"><b>{snap.hidden:,}</b> NOT IN CRUNCHBASE OR PITCHBOOK</span>',
         f'<span class="seg"><b>{snap.countries:,}</b> COUNTRIES</span>',

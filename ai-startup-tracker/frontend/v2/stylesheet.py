@@ -207,7 +207,7 @@ html, body, .stApp,
 .st-key-v2theme [data-testid="stElementContainer"] {{
   display: flex; justify-content: flex-end;
 }}
-.st-key-v2theme button {{
+.stApp .st-key-v2theme button {{
   padding: 4px 10px !important;
   min-height: 0 !important;
   border-radius: 2px !important;
@@ -215,7 +215,7 @@ html, body, .stApp,
   background: transparent !important;
   transition: background 160ms ease, border-color 160ms ease;
 }}
-.st-key-v2theme button p {{
+.stApp .st-key-v2theme button p {{
   font-family: var(--v2-mono) !important;
   font-size: 0.615rem !important;
   font-weight: 500 !important;
@@ -224,7 +224,7 @@ html, body, .stApp,
   color: var(--v2-text3) !important;
   transition: color 160ms ease;
 }}
-.st-key-v2theme button:hover p {{ color: var(--v2-text) !important; }}
+.stApp .st-key-v2theme button:hover p {{ color: var(--v2-text) !important; }}
 .st-key-v2theme [data-testid="stBaseButton-segmented_controlActive"] {{
   background: var(--v2-surface-alt) !important;
   border-color: var(--v2-text3) !important;
@@ -342,7 +342,21 @@ html, body, .stApp,
 .st-key-v2ask [data-testid="stTextInput"] input::placeholder {{
   color: var(--v2-text3) !important; font-weight: 400 !important;
 }}
-.st-key-v2ask button {{
+/* Streamlit's "Press Enter to apply" hint. The panel already carries an Ask
+   button, so the instruction is noise that also shifts the layout as you type.
+   Something in Streamlit's own sheet keeps winning the `display` declaration,
+   so the element is taken out of flow rather than merely un-displayed. */
+.stApp [data-testid="InputInstructions"] {{
+  display: none !important;
+  visibility: hidden !important;
+  position: absolute !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}}
+.stApp .st-key-v2ask button {{
   height: 52px !important;
   width: 100% !important;
   border-radius: 0 2px 2px 0 !important;
@@ -350,7 +364,7 @@ html, body, .stApp,
   background: {p.ink_button} !important;
   transition: opacity 160ms ease;
 }}
-.st-key-v2ask button p {{
+.stApp .st-key-v2ask button p {{
   font-family: var(--v2-mono) !important;
   font-size: 0.71rem !important;
   font-weight: 600 !important;
@@ -358,38 +372,43 @@ html, body, .stApp,
   text-transform: uppercase;
   color: {p.ink_button_text} !important;
 }}
-.st-key-v2ask button:hover {{ opacity: 0.84; }}
+.stApp .st-key-v2ask button:hover {{ opacity: 0.84; }}
 
 /* Example questions — quiet pills on the same surface as the field. */
 .st-key-v2examples {{ margin-top: 11px; }}
 .st-key-v2examples [data-testid="stHorizontalBlock"] {{ gap: 7px !important; }}
-.st-key-v2examples button {{
+.stApp .st-key-v2examples button {{
   padding: 7px 11px !important;
   /* Equal height across the row whether a prompt wraps or not. */
-  min-height: 34px !important;
+  min-height: 38px !important;
   width: 100% !important;
+  /* The generic page-compat button rule uppercases every button; these are
+     sentences, not labels, so the transform is switched back off here. */
+  text-transform: none !important;
   border: 1px solid var(--v2-border) !important;
   border-radius: 2px !important;
   background: transparent !important;
   transition: border-color 160ms ease, background 160ms ease;
 }}
-.st-key-v2examples button > div {{
+.stApp .st-key-v2examples button > div {{
   justify-content: center !important;
   width: 100%;
 }}
-.st-key-v2examples button p {{
+.stApp .st-key-v2examples button p {{
   font-family: var(--v2-sans) !important;
-  font-size: 0.775rem !important;
+  font-size: 0.79rem !important;
   font-weight: 450 !important;
+  letter-spacing: 0 !important;
   line-height: 1.35 !important;
+  text-transform: none !important;
   color: var(--v2-text2) !important;
   transition: color 160ms ease;
 }}
-.st-key-v2examples button:hover {{
+.stApp .st-key-v2examples button:hover {{
   border-color: var(--v2-text3) !important;
   background: var(--v2-surface-alt) !important;
 }}
-.st-key-v2examples button:hover p {{ color: var(--v2-text) !important; }}
+.stApp .st-key-v2examples button:hover p {{ color: var(--v2-text) !important; }}
 
 /* ── AI answer panel ───────────────────────────────────────────────── */
 @keyframes v2-open {{
@@ -1115,6 +1134,21 @@ html, body, .stApp,
   font-size: 0.85rem !important;
 }}
 .stApp [data-baseweb="popover"] li:hover {{ background: var(--v2-surface-alt) !important; }}
+/* Checkboxes and radios paint with Streamlit's stock red, which is the one
+   colour on the page that belongs to no palette. The checked box is an
+   otherwise unmarked span, so it is reached through the label's checked state. */
+.stApp [data-testid="stCheckbox"] label:has(input:checked) span:first-of-type {{
+  background-color: var(--v2-accent) !important;
+  border-color: var(--v2-accent) !important;
+}}
+.stApp [data-testid="stCheckbox"] label span:first-of-type {{
+  border-color: var(--v2-border) !important;
+  border-radius: 2px !important;
+}}
+.stApp [data-testid="stCheckbox"] label p {{
+  font-size: 0.8rem !important; color: var(--v2-text2) !important;
+}}
+
 .stApp [data-testid="stWidgetLabel"] p {{
   font-family: var(--v2-mono) !important;
   font-size: 0.63rem !important;
