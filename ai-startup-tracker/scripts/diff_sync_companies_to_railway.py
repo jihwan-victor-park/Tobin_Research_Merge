@@ -32,13 +32,16 @@ load_dotenv(ROOT / ".env")
 LOCAL_URL = os.getenv("DATABASE_URL")
 RAILWAY_URL = os.getenv("RAILWAY_DATABASE_URL")
 
-# Columns we copy. id/created_at are intentionally excluded so Railway assigns
-# its own PK and timestamps (avoids PK collisions with Railway-only rows).
-COLS = [
+# Columns we copy. `id` is intentionally excluded so Railway assigns its own PK
+# and avoids collisions with Railway-only rows. The runtime sync filters this
+# list to columns that exist on both databases, which keeps the script usable
+# while older local DBs are being migrated.
+COPY_COLS = [
     "name", "domain", "normalized_name", "country", "city",
     "latitude", "longitude", "description", "founded_year", "team_size",
-    "stage", "operating_status", "ai_score", "startup_score",
-    "first_seen_at", "last_seen_at", "incubator_source",
+    "stage", "total_raised", "operating_status", "ai_score", "startup_score",
+    "ai_tags", "cb_ai_tagged", "ai_mentioned", "categories",
+    "first_seen_at", "last_seen_at", "incubator_source", "source_domain",
     # These are NOT NULL on both DBs but the model defaults are Python-side
     # (not DB defaults), so a raw INSERT must carry them explicitly. We copy the
     # local values rather than re-stamping — preserves true first-seen history.
@@ -57,6 +60,15 @@ def _guard(url: str | None, label: str) -> str:
     return url
 
 
+def _company_columns(conn) -> set[str]:
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_name = 'companies'"
+        )
+        return {row[0] for row in cur.fetchall()}
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true", help="Insert (default: dry-run)")
@@ -70,6 +82,13 @@ def main() -> None:
     rconn = psycopg2.connect(railway_url)
     lcur = lconn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     rcur = rconn.cursor()
+
+    local_cols = _company_columns(lconn)
+    railway_cols = _company_columns(rconn)
+    cols = [c for c in COPY_COLS if c in local_cols and c in railway_cols]
+    skipped_cols = [c for c in COPY_COLS if c not in local_cols or c not in railway_cols]
+    if skipped_cols:
+        print("Skipping columns missing on at least one DB: " + ", ".join(skipped_cols))
 
     # 1. Existing Railway keys.
     print("Reading Railway keys…", flush=True)
@@ -85,7 +104,7 @@ def main() -> None:
 
     # 2. Local rows, stream, filter to those missing on Railway.
     print("Scanning local companies…", flush=True)
-    lcur.execute(f"SELECT {', '.join(COLS)} FROM companies;")
+    lcur.execute(f"SELECT {', '.join(cols)} FROM companies;")
     to_insert = []
     seen_new_domains: set[str] = set()
     seen_new_names: set[str] = set()
@@ -102,7 +121,7 @@ def main() -> None:
             seen_new_names.add(norm)
         else:
             continue  # no key at all — skip
-        to_insert.append(tuple(row[c] for c in COLS))
+        to_insert.append(tuple(row[c] for c in cols))
 
     print(f"\nLocal-only companies to insert: {len(to_insert):,}")
     if not args.apply:
@@ -111,9 +130,9 @@ def main() -> None:
 
     # 3. Batched insert. ON CONFLICT (domain) DO NOTHING guards the UNIQUE
     #    domain constraint against any race / case we missed.
-    placeholders = "(" + ", ".join(["%s"] * len(COLS)) + ")"
+    placeholders = "(" + ", ".join(["%s"] * len(cols)) + ")"
     insert_sql = (
-        f"INSERT INTO companies ({', '.join(COLS)}) VALUES %s "
+        f"INSERT INTO companies ({', '.join(cols)}) VALUES %s "
         "ON CONFLICT (domain) DO NOTHING"
     )
     inserted = 0
