@@ -4377,11 +4377,21 @@ def page_landscape():
                "usable description yet — they join the map as enrichment fills their text.")
 
 
+# "Home V2" is the homepage redesign; it takes over the whole shell (its own
+# header and theme), leaving everything below untouched. Selecting any other
+# page returns here.
 _PUBLIC_PAGES = ["Overview", "Findings", "Landscape", "Companies", "GitHub Discovery", "About"]
 _INTERNAL_PAGES = ["AI Analysis", "Trends", "Pipeline Health", "Inventory", "Scraper"]
+_V2_PAGE = "Home V2"
 
 
 def main():
+    from frontend.v2 import shell as v2_shell
+
+    if v2_shell.is_active():
+        v2_shell.render()
+        return
+
     # ── Header: brand + primary nav on one row, hairline under both ──
     with st.container(key="header"):
         bcol, ncol = st.columns([1, 2.4], vertical_alignment="center")
@@ -4398,9 +4408,18 @@ def main():
             )
         with ncol:
             with st.container(key="lnav"):
-                section = st.radio("Navigation", _PUBLIC_PAGES + ["Internal"],
-                                   horizontal=True, label_visibility="collapsed")
+                nav_items = _PUBLIC_PAGES + ["Internal", _V2_PAGE]
+                # ?page=X lets V2 hand a route back to this shell.
+                requested = st.query_params.get("page")
+                default = (nav_items.index(requested)
+                           if requested in nav_items else 0)
+                section = st.radio("Navigation", nav_items, index=default,
+                                   horizontal=True, label_visibility="collapsed",
+                                   key="lnav_choice")
         st.markdown('<div class="header-rule"></div>', unsafe_allow_html=True)
+
+    if section == _V2_PAGE:
+        v2_shell.activate()
 
     page = section
     if section == "Internal":
