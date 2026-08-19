@@ -99,9 +99,13 @@ def init_db():
         ("companies", "founded_year", "ALTER TABLE companies ADD COLUMN founded_year INTEGER"),
         ("companies", "team_size", "ALTER TABLE companies ADD COLUMN team_size INTEGER"),
         ("companies", "stage", "ALTER TABLE companies ADD COLUMN stage VARCHAR(64)"),
+        ("companies", "total_raised", "ALTER TABLE companies ADD COLUMN total_raised DOUBLE PRECISION"),
         ("companies", "operating_status", "ALTER TABLE companies ADD COLUMN operating_status VARCHAR(64)"),
+        ("companies", "cb_ai_tagged", "ALTER TABLE companies ADD COLUMN cb_ai_tagged BOOLEAN NOT NULL DEFAULT FALSE"),
         ("companies", "ai_mentioned", "ALTER TABLE companies ADD COLUMN ai_mentioned BOOLEAN NOT NULL DEFAULT FALSE"),
         ("companies", "llm_ai_verified", "ALTER TABLE companies ADD COLUMN llm_ai_verified BOOLEAN"),
+        ("companies", "categories", "ALTER TABLE companies ADD COLUMN categories TEXT[]"),
+        ("companies", "source_domain", "ALTER TABLE companies ADD COLUMN source_domain VARCHAR(256)"),
     ]
     with engine.connect() as conn:
         for table, column, ddl in migrations:
@@ -112,6 +116,10 @@ def init_db():
             if result.fetchone() is None:
                 conn.execute(text(ddl))
                 print(f"  Added column {table}.{column}")
+        conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_companies_source_domain "
+            "ON companies (source_domain)"
+        ))
         conn.commit()
 
     print("Database tables created successfully.")

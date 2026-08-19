@@ -41,6 +41,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 import requests
 from dotenv import load_dotenv
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 
 from backend.db.connection import get_engine
 from backend.utils.country import GLOBE_COUNTRIES, normalize_country
@@ -311,7 +312,29 @@ def run(engine, limit: int, workers: int, dry_run: bool) -> None:
     print(f"✓ done ({done:,}) {stats}", flush=True)
 
 
-def flush(engine, buf: list) -> None:
+def flush(engine, buf: list, attempts: int = 4) -> None:
+    """Write a batch, retrying a dropped connection.
+
+    Railway closes idle proxy connections, and a run of this length will hit
+    that eventually. Losing hours of remaining work to one transient socket
+    error is not acceptable, and the write is safe to repeat: every statement
+    is an upsert or a guarded update.
+    """
+    for attempt in range(attempts):
+        try:
+            _flush_once(engine, buf)
+            return
+        except OperationalError as e:
+            if attempt == attempts - 1:
+                raise
+            wait = 5 * (2 ** attempt)
+            print(f"  · database connection lost ({e.__class__.__name__}) — "
+                  f"retrying in {wait}s", flush=True)
+            time.sleep(wait)
+            engine.dispose()      # drop the stale pool before reconnecting
+
+
+def _flush_once(engine, buf: list) -> None:
     """Write the profile rows, then propagate only what the company still lacks."""
     with engine.begin() as c:
         for b in buf:

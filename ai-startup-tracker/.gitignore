@@ -107,3 +107,6 @@ data/cordis/
 
 # SBIR bulk award file (350MB, re-downloadable)
 data/sbir/
+
+# empty scaffold - node_modules only, no sources
+react-frontend/
