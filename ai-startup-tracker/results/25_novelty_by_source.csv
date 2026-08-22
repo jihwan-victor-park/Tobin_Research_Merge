@@ -1,0 +1,13 @@
+source,n,novel,ai,tier,novelty_pct,ai_pct
+agentic_scrape,18140,10269,5102,lesser-known portfolio,56.6,28.1
+yc,5257,1266,2454,well-known VC / accelerator,24.1,46.7
+techstars,5072,1705,2098,well-known VC / accelerator,33.6,41.4
+stanford_startx,1255,501,375,university programme,39.9,29.9
+antler,1186,519,494,well-known VC / accelerator,43.8,41.7
+harvard_ilabs,814,648,199,university programme,79.6,24.4
+entrepreneur_first,467,345,206,well-known VC / accelerator,73.9,44.1
+berkeley_skydeck,355,110,148,university programme,31.0,41.7
+seedcamp,316,80,117,well-known VC / accelerator,25.3,37.0
+mit_engine,250,167,50,university programme,66.8,20.0
+rice_owlspark,112,93,14,university programme,83.0,12.5
+princeton_elab,108,94,15,university programme,87.0,13.9

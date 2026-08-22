@@ -1,0 +1,5 @@
+bucket,n,ai_canonical,ai_pre_llm,canonical_pct,pre_llm_pct
+Commercial A,650200,80528,70224,12.39,10.8
+Commercial B,281395,29986,3563,10.66,1.27
+Unlisted (strict),54526,12933,10014,23.72,18.37
+Unlisted but on employment DB,2455,646,640,26.31,26.07

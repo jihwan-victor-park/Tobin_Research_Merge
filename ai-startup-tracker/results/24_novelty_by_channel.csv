@@ -1,0 +1,5 @@
+channel,n,novel,ai,novelty_pct,lo,hi,ai_pct
+code-host scan,31909,31909,8039,100.0,100.0,100.0,25.2
+portfolio / accelerator,27330,14375,8366,52.6,52.0,53.2,30.6
+public funder records,9931,9931,2484,100.0,100.0,100.0,25.0
+general web scrape,1010,766,312,75.8,73.1,78.4,30.9

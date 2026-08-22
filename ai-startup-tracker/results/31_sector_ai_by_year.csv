@@ -1,0 +1,273 @@
+year,sector,n,ai,ai_share
+2010,Biotech & Pharma,6272,709,11.3
+2010,Consumer & Lifestyle,1738,46,2.65
+2010,Data & Analytics,4290,960,22.38
+2010,E-commerce & Retail,3932,115,2.92
+2010,Education,2189,96,4.39
+2010,Energy & CleanTech,1971,51,2.59
+2010,Financial Services,2623,129,4.92
+2010,Food & AgTech,755,20,2.65
+2010,Hardware & Manufacturing,7887,341,4.32
+2010,Healthcare,3410,163,4.78
+2010,Media & Marketing,5754,284,4.94
+2010,Professional Services,14138,449,3.18
+2010,Real Estate,1985,42,2.12
+2010,Security & Privacy,1833,77,4.2
+2010,Social Impact,306,6,1.96
+2010,Software & IT,25526,1398,5.48
+2010,Transportation,1617,70,4.33
+2011,Biotech & Pharma,5953,795,13.35
+2011,Consumer & Lifestyle,1845,58,3.14
+2011,Data & Analytics,4380,1114,25.43
+2011,E-commerce & Retail,4028,184,4.57
+2011,Education,2260,115,5.09
+2011,Energy & CleanTech,1826,64,3.5
+2011,Financial Services,2639,174,6.59
+2011,Food & AgTech,811,18,2.22
+2011,Hardware & Manufacturing,7388,390,5.28
+2011,Healthcare,3379,220,6.51
+2011,Media & Marketing,5658,291,5.14
+2011,Professional Services,13206,534,4.04
+2011,Real Estate,1800,41,2.28
+2011,Security & Privacy,1705,104,6.1
+2011,Social Impact,294,8,2.72
+2011,Software & IT,25534,1663,6.51
+2011,Transportation,1479,85,5.75
+2012,Biotech & Pharma,6631,1111,16.75
+2012,Consumer & Lifestyle,2119,60,2.83
+2012,Data & Analytics,5106,1490,29.18
+2012,E-commerce & Retail,4650,225,4.84
+2012,Education,2639,146,5.53
+2012,Energy & CleanTech,1863,67,3.6
+2012,Financial Services,2983,218,7.31
+2012,Food & AgTech,951,26,2.73
+2012,Hardware & Manufacturing,7900,475,6.01
+2012,Healthcare,3847,244,6.34
+2012,Media & Marketing,6392,379,5.93
+2012,Professional Services,14047,650,4.63
+2012,Real Estate,1942,65,3.35
+2012,Security & Privacy,1899,137,7.21
+2012,Social Impact,363,10,2.75
+2012,Software & IT,28870,2092,7.25
+2012,Transportation,1726,101,5.85
+2013,Biotech & Pharma,6968,1416,20.32
+2013,Consumer & Lifestyle,2301,88,3.82
+2013,Data & Analytics,5689,1876,32.98
+2013,E-commerce & Retail,4503,236,5.24
+2013,Education,2709,170,6.28
+2013,Energy & CleanTech,1789,108,6.04
+2013,Financial Services,3280,262,7.99
+2013,Food & AgTech,1051,22,2.09
+2013,Hardware & Manufacturing,8083,602,7.45
+2013,Healthcare,4080,338,8.28
+2013,Media & Marketing,6215,417,6.71
+2013,Professional Services,14047,714,5.08
+2013,Real Estate,2015,93,4.62
+2013,Security & Privacy,1968,160,8.13
+2013,Social Impact,328,6,1.83
+2013,Software & IT,29691,2552,8.6
+2013,Transportation,1734,115,6.63
+2014,Biotech & Pharma,7852,1908,24.3
+2014,Consumer & Lifestyle,2606,127,4.87
+2014,Data & Analytics,6672,2402,36.0
+2014,E-commerce & Retail,5169,345,6.67
+2014,Education,2965,208,7.02
+2014,Energy & CleanTech,1850,105,5.68
+2014,Financial Services,3936,360,9.15
+2014,Food & AgTech,1281,45,3.51
+2014,Hardware & Manufacturing,8882,820,9.23
+2014,Healthcare,4699,458,9.75
+2014,Media & Marketing,6841,475,6.94
+2014,Professional Services,15220,887,5.83
+2014,Real Estate,2225,128,5.75
+2014,Security & Privacy,2173,197,9.07
+2014,Social Impact,350,18,5.14
+2014,Software & IT,33690,3303,9.8
+2014,Transportation,2061,200,9.7
+2015,Biotech & Pharma,9102,2650,29.11
+2015,Consumer & Lifestyle,2947,191,6.48
+2015,Data & Analytics,7743,3198,41.3
+2015,E-commerce & Retail,5603,373,6.66
+2015,Education,3233,260,8.04
+2015,Energy & CleanTech,1979,122,6.16
+2015,Financial Services,4396,524,11.92
+2015,Food & AgTech,1347,71,5.27
+2015,Hardware & Manufacturing,9417,989,10.5
+2015,Healthcare,5348,560,10.47
+2015,Media & Marketing,7084,555,7.83
+2015,Professional Services,15867,1071,6.75
+2015,Real Estate,2457,158,6.43
+2015,Security & Privacy,2430,238,9.79
+2015,Social Impact,378,22,5.82
+2015,Software & IT,36711,4215,11.48
+2015,Transportation,2393,259,10.82
+2016,Biotech & Pharma,9641,3580,37.13
+2016,Consumer & Lifestyle,2596,187,7.2
+2016,Data & Analytics,8321,4127,49.6
+2016,E-commerce & Retail,5039,427,8.47
+2016,Education,3141,303,9.65
+2016,Energy & CleanTech,1870,166,8.88
+2016,Financial Services,4632,658,14.21
+2016,Food & AgTech,1231,76,6.17
+2016,Hardware & Manufacturing,9064,1237,13.65
+2016,Healthcare,5370,685,12.76
+2016,Media & Marketing,6583,604,9.18
+2016,Professional Services,15023,1236,8.23
+2016,Real Estate,2404,195,8.11
+2016,Security & Privacy,2307,247,10.71
+2016,Social Impact,381,36,9.45
+2016,Software & IT,35997,5198,14.44
+2016,Transportation,2334,312,13.37
+2017,Biotech & Pharma,10363,4358,42.05
+2017,Consumer & Lifestyle,2602,185,7.11
+2017,Data & Analytics,8999,4906,54.52
+2017,E-commerce & Retail,4992,432,8.65
+2017,Education,3160,358,11.33
+2017,Energy & CleanTech,1966,176,8.95
+2017,Financial Services,6081,831,13.67
+2017,Food & AgTech,1265,86,6.8
+2017,Hardware & Manufacturing,8565,1355,15.82
+2017,Healthcare,5359,813,15.17
+2017,Media & Marketing,6254,657,10.51
+2017,Professional Services,15094,1464,9.7
+2017,Real Estate,2257,199,8.82
+2017,Security & Privacy,2509,319,12.71
+2017,Social Impact,417,44,10.55
+2017,Software & IT,36921,6010,16.28
+2017,Transportation,2279,339,14.87
+2018,Biotech & Pharma,10120,4573,45.19
+2018,Consumer & Lifestyle,2438,199,8.16
+2018,Data & Analytics,9012,5172,57.39
+2018,E-commerce & Retail,4956,457,9.22
+2018,Education,2925,368,12.58
+2018,Energy & CleanTech,1871,194,10.37
+2018,Financial Services,5970,861,14.42
+2018,Food & AgTech,1338,122,9.12
+2018,Hardware & Manufacturing,7543,1272,16.86
+2018,Healthcare,5360,865,16.14
+2018,Media & Marketing,5720,625,10.93
+2018,Professional Services,14155,1507,10.65
+2018,Real Estate,2124,242,11.39
+2018,Security & Privacy,2348,291,12.39
+2018,Social Impact,339,27,7.96
+2018,Software & IT,35069,6284,17.92
+2018,Transportation,2189,319,14.57
+2019,Biotech & Pharma,9125,4358,47.76
+2019,Consumer & Lifestyle,2174,178,8.19
+2019,Data & Analytics,8087,4820,59.6
+2019,E-commerce & Retail,4222,460,10.9
+2019,Education,2767,379,13.7
+2019,Energy & CleanTech,1763,202,11.46
+2019,Financial Services,4883,702,14.38
+2019,Food & AgTech,1203,96,7.98
+2019,Hardware & Manufacturing,6385,1132,17.73
+2019,Healthcare,4905,883,18.0
+2019,Media & Marketing,4926,589,11.96
+2019,Professional Services,12261,1401,11.43
+2019,Real Estate,1850,232,12.54
+2019,Security & Privacy,2094,313,14.95
+2019,Social Impact,300,28,9.33
+2019,Software & IT,30993,6080,19.62
+2019,Transportation,1970,297,15.08
+2020,Biotech & Pharma,8466,4129,48.77
+2020,Consumer & Lifestyle,1937,157,8.11
+2020,Data & Analytics,7576,4623,61.02
+2020,E-commerce & Retail,4173,421,10.09
+2020,Education,3008,359,11.93
+2020,Energy & CleanTech,1715,207,12.07
+2020,Financial Services,5191,734,14.14
+2020,Food & AgTech,1072,93,8.68
+2020,Hardware & Manufacturing,5590,996,17.82
+2020,Healthcare,4734,906,19.14
+2020,Media & Marketing,4972,682,13.72
+2020,Professional Services,11379,1437,12.63
+2020,Real Estate,1626,214,13.16
+2020,Security & Privacy,1838,250,13.6
+2020,Social Impact,352,32,9.09
+2020,Software & IT,30225,5967,19.74
+2020,Transportation,1700,269,15.82
+2021,Biotech & Pharma,7071,3652,51.65
+2021,Consumer & Lifestyle,1535,162,10.55
+2021,Data & Analytics,6147,3942,64.13
+2021,E-commerce & Retail,3147,346,10.99
+2021,Education,2139,309,14.45
+2021,Energy & CleanTech,1645,188,11.43
+2021,Financial Services,6184,753,12.18
+2021,Food & AgTech,785,90,11.46
+2021,Hardware & Manufacturing,4415,881,19.95
+2021,Healthcare,3669,798,21.75
+2021,Media & Marketing,3993,575,14.4
+2021,Professional Services,8353,1153,13.8
+2021,Real Estate,1375,184,13.38
+2021,Security & Privacy,1393,252,18.09
+2021,Social Impact,239,24,10.04
+2021,Software & IT,25188,5408,21.47
+2021,Transportation,1441,221,15.34
+2022,Biotech & Pharma,4711,2934,62.28
+2022,Consumer & Lifestyle,963,146,15.16
+2022,Data & Analytics,4257,3114,73.15
+2022,E-commerce & Retail,1966,323,16.43
+2022,Education,1102,216,19.6
+2022,Energy & CleanTech,1004,149,14.84
+2022,Financial Services,3911,653,16.7
+2022,Food & AgTech,469,55,11.73
+2022,Hardware & Manufacturing,2610,645,24.71
+2022,Healthcare,2195,621,28.29
+2022,Media & Marketing,2277,479,21.04
+2022,Professional Services,4764,924,19.4
+2022,Real Estate,755,140,18.54
+2022,Security & Privacy,812,176,21.67
+2022,Social Impact,131,27,20.61
+2022,Software & IT,15784,4521,28.64
+2022,Transportation,898,169,18.82
+2023,Biotech & Pharma,4680,3712,79.32
+2023,Consumer & Lifestyle,644,160,24.84
+2023,Data & Analytics,4345,3806,87.59
+2023,E-commerce & Retail,1406,319,22.69
+2023,Education,688,280,40.7
+2023,Energy & CleanTech,633,133,21.01
+2023,Financial Services,2040,590,28.92
+2023,Food & AgTech,278,62,22.3
+2023,Hardware & Manufacturing,1793,605,33.74
+2023,Healthcare,1676,656,39.14
+2023,Media & Marketing,1412,530,37.54
+2023,Professional Services,3338,1183,35.44
+2023,Real Estate,461,147,31.89
+2023,Security & Privacy,516,198,38.37
+2023,Social Impact,68,23,33.82
+2023,Software & IT,11944,5892,49.33
+2023,Transportation,509,146,28.68
+2024,Biotech & Pharma,2430,1987,81.77
+2024,Consumer & Lifestyle,294,73,24.83
+2024,Data & Analytics,2194,1997,91.02
+2024,E-commerce & Retail,636,184,28.93
+2024,Education,289,144,49.83
+2024,Energy & CleanTech,312,75,24.04
+2024,Financial Services,1102,410,37.21
+2024,Food & AgTech,110,45,40.91
+2024,Hardware & Manufacturing,995,441,44.32
+2024,Healthcare,1011,489,48.37
+2024,Media & Marketing,632,254,40.19
+2024,Professional Services,1676,663,39.56
+2024,Real Estate,228,106,46.49
+2024,Security & Privacy,256,113,44.14
+2024,Social Impact,21,6,28.57
+2024,Software & IT,6539,3877,59.29
+2024,Transportation,285,99,34.74
+2025,Biotech & Pharma,182,113,62.09
+2025,Consumer & Lifestyle,41,11,26.83
+2025,Data & Analytics,107,99,92.52
+2025,E-commerce & Retail,99,21,21.21
+2025,Education,20,9,45.0
+2025,Energy & CleanTech,52,13,25.0
+2025,Financial Services,189,54,28.57
+2025,Food & AgTech,23,12,52.17
+2025,Hardware & Manufacturing,237,93,39.24
+2025,Healthcare,233,131,56.22
+2025,Media & Marketing,79,35,44.3
+2025,Professional Services,318,119,37.42
+2025,Real Estate,16,5,31.25
+2025,Security & Privacy,18,10,55.56
+2025,Social Impact,1,0,0.0
+2025,Software & IT,1277,1012,79.25
+2025,Transportation,38,15,39.47

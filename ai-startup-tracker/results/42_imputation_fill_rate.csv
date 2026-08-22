@@ -1,0 +1,9 @@
+mode,field,n,filled,fill_rate
+ESTIMATE,country,400,350,87.5
+ESTIMATE,city,400,255,63.8
+ESTIMATE,founded_year,400,399,99.8
+ESTIMATE,team_size,400,399,99.8
+GROUNDED,country,400,18,4.5
+GROUNDED,city,400,16,4.0
+GROUNDED,founded_year,400,0,0.0
+GROUNDED,team_size,400,1,0.2

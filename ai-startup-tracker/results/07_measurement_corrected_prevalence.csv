@@ -1,0 +1,4 @@
+bucket,val_n,sensitivity,specificity,pop_n,observed_ai_pct,corrected_ai_pct,corr_lo,corr_hi
+Commercial A,199,0.789,0.906,598084,12.3,4.11,0.0,9.68
+Commercial B,200,0.727,0.983,274793,10.45,12.33,8.35,17.46
+Unlisted,200,0.895,0.846,16815,28.88,18.16,10.62,24.79
