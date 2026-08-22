@@ -110,3 +110,14 @@ data/sbir/
 
 # empty scaffold - node_modules only, no sources
 react-frontend/
+
+# Analysis outputs that contain row-level company records drawn from the
+# licensed commercial databases (names, descriptions, verified locations).
+# Aggregates from these files ARE committed; the rows themselves are not.
+# They stay on disk for the authors' labelling work.
+results/40_imputation_estimate_mode.csv
+results/41_imputation_grounded_mode.csv
+results/52_name_variant_pairs.csv
+results/54_er_adjudication_sample.csv
+results/60_ai_label_sample.csv
+results/64_ai_gold_set_for_authors.csv

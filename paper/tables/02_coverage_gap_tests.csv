@@ -1,0 +1,11 @@
+ai_definition,comparison,diff_pp,diff_lo,diff_hi,odds_ratio,or_lo,or_hi
+canonical,Unlisted - Commercial A,11.45,11.09,11.81,2.213,2.168,2.259
+canonical,Unlisted - Commercial B,13.17,12.81,13.54,2.623,2.564,2.683
+no_mention,Unlisted - Commercial A,9.55,9.21,9.9,2.054,2.01,2.099
+no_mention,Unlisted - Commercial B,10.46,10.1,10.81,2.253,2.2,2.306
+pre_llm,Unlisted - Commercial A,7.9,7.57,8.23,1.899,1.857,1.942
+pre_llm,Unlisted - Commercial B,17.43,17.11,17.76,17.933,17.244,18.649
+mention,Unlisted - Commercial A,6.33,6.05,6.62,2.114,2.059,2.171
+mention,Unlisted - Commercial B,8.46,8.17,8.74,3.207,3.111,3.306
+evidence,Unlisted - Commercial A,-5.3,-5.44,-5.16,0.289,0.273,0.305
+evidence,Unlisted - Commercial B,-7.95,-8.12,-7.78,0.208,0.197,0.22

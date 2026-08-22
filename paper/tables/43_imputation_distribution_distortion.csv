@@ -1,0 +1,4 @@
+field,predicted_mode,predicted_mode_share,true_mode,true_mode_share,distinct_predicted,distinct_true,total_variation,jensen_shannon
+country,united states,52.9,united states,43.2,43,54,0.178,0.041
+city,san francisco,10.6,new york,3.5,100,291,0.693,0.39
+founded_year,2010,17.0,2017,7.2,28,28,0.447,0.158

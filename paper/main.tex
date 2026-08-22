@@ -1,7 +1,6 @@
 % ============================================================================
-%  Beyond the Listed Firm
-%  A working paper on data infrastructure for AI-entrepreneurship research.
-%  Compiles with pdflatex on Overleaf (standard packages only).
+%  Mapping the Global AI Startup Ecosystem
+%  Compiles with pdflatex + bibtex on Overleaf. Standard packages only.
 % ============================================================================
 \documentclass[11pt]{article}
 
@@ -10,27 +9,26 @@
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{array}
-\usepackage{longtable}
 \usepackage{caption}
+\usepackage{subcaption}
 \usepackage[hidelinks]{hyperref}
 \usepackage{natbib}
-\usepackage{setspace}
 \usepackage{enumitem}
-\usepackage{footmisc}
 
 \bibliographystyle{plainnat}
+\graphicspath{{figures/}}
 
 \newtheorem{definition}{Definition}
 \newtheorem{remark}{Remark}
 
-\title{\textbf{Beyond the Listed Firm:}\\[0.3em]
-\large A Data Infrastructure for Measuring the Global AI Startup Ecosystem,\\
-and What It Reveals About the Limits of Commercial Startup Data}
+\title{\textbf{Mapping the Global AI Startup Ecosystem:}\\[0.35em]
+\large A Multi-Source Measurement Approach}
 
 \author{Alastair Page \and Jihwan (Victor) Park\thanks{%
 Tobin Center for Economic Policy, Yale University. We thank Professor Song Ma
 for his guidance and for framing the broader research agenda on artificial
-intelligence and the global startup ecosystem. All errors are our own.
+intelligence and the global startup ecosystem. Professor Ma supervised this
+research; the data infrastructure, empirical design, and any errors are ours.
 Correspondence: \texttt{victorjhp11@gmail.com}.}}
 
 \date{August 2026}
@@ -40,48 +38,50 @@ Correspondence: \texttt{victorjhp11@gmail.com}.}}
 
 \begin{abstract}
 \noindent
-Empirical research on entrepreneurship runs almost entirely on a small number
-of commercial company databases. If those databases miss firms
-non-randomly---and if what they miss correlates with the technology under
-study---then the measured relationship between artificial intelligence and
-firm formation is contaminated at the source. We build a pipeline that
-collects, extracts, normalizes, resolves, and validates company records from
-two commercial databases, public funder registries in the United States and
-the European Union, an open-source code host, and 410 heterogeneous
-international web sources, and we use it to measure the part of the ecosystem
-the commercial databases do not cover. Three results follow. First, the
-uncovered layer is not a random remainder: $20.4\%$ of the $52{,}276$
-companies we observe that appear in neither commercial database are
-AI-related, against $12.3\%$ and $10.6\%$ in the two databases themselves.
-The firms that are hardest to see are disproportionately the firms the
-research agenda is about. Second, the cost of seeing them is not uniform---
-public funder records yield unlisted firms at a $100\%$ rate and cost
-nothing, whereas scraping the portfolio pages of well-known venture firms
-yields $23$--$30\%$ and costs the most per record. Third, and most
-consequential for practice, we document a failure mode of language-model
-enrichment: when permitted to estimate fields their input text did not state,
-the model filled $7{,}553$ values with its own prior---San Francisco, founded
-2020, 11--50 employees---producing a dataset whose descriptive statistics
-would have been publishable and wrong. Because every value was written with a
-source and a confidence, the imputed values were identified and withdrawn
-exactly. We argue that per-value provenance is not bookkeeping but the
-enabling condition for using language models in dataset construction at all.
-We close by demonstrating what the infrastructure supports: a panel of
-$641{,}442$ firms observed in 2021 and 2025, used to date and decompose the
-adoption of AI identity, and a set of research questions the resulting data
-can and cannot answer.
+We ask how artificial intelligence is reshaping startup formation across time,
+geography, and industry, and we confront the measurement problem that question
+runs into: almost all evidence on entrepreneurship comes from a handful of
+commercial company databases, and those databases do not observe firms at
+random. We build a multi-source measurement system --- two commercial
+databases, public funder registries, an open-source code host, and $410$
+heterogeneous international web sources --- covering $988{,}576$ firms, and use
+it to measure both the ecosystem and the gap in how it is normally observed.
+Three findings follow. First, AI's share of newly founded firms rises from
+$3.0\%$ in 2000 to $18.9\%$ in 2021 and $59.0\%$ in 2025, and the increase
+survives holding the selection rule fixed; but the \emph{count} of AI firms we
+observe peaks in 2018, because recent cohorts are thinly indexed --- a
+distinction that decides whether the finding is about entrepreneurship or about
+databases. Second, AI entrepreneurship became more globally dispersed through
+about 2017 and more concentrated thereafter, with the United States rising from
+$37\%$ of observed AI firms in the 2017 founding cohort to $85\%$ in the 2025
+cohort; we show most of that reversal is coverage, not economics. Sectoral ordering barely moves --- every
+sector became more AI-intensive, and the ones that led still lead --- while
+country-by-sector specialisation is sharp and recognisable (China in hardware,
+Israel in security, India in education). Third, the firms the commercial
+databases miss are roughly twice as likely to be AI-related: $23.8\%$ versus
+$12.4\%$ and $10.7\%$. That gap survives five definitions of the AI label,
+dropping any single discovery channel, an independently adjudicated label
+($19.0\%$ vs.\ $9.5\%$, $p=0.007$), and a correction for bucket-specific
+classification error. Along the way we report two measurement results that
+matter beyond this dataset: a language model told to estimate unstated company
+attributes fills $88\%$ of fields with its own prior --- predicting San
+Francisco at seven times its true rate --- against $2\%$ when told to answer
+only from the text; and the name-normalisation step of our entity resolver
+strips exactly the token (``AI'') that distinguishes new AI firms from older
+namesakes, an error no matching threshold can repair.
 \end{abstract}
 
 \medskip
-\noindent\textbf{Keywords:} entrepreneurship measurement, artificial
-intelligence, data infrastructure, coverage bias, entity resolution,
-LLM-assisted extraction
+\noindent\textbf{Keywords:} artificial intelligence, entrepreneurship,
+measurement, coverage bias, entity resolution, LLM-assisted data construction
 
-\vspace{1em}
-\noindent\textbf{Note on data.} This paper reports aggregates only. No
-row-level records from any licensed commercial dataset are reproduced or
-redistributed here. The two commercial startup databases used are referred to
-as \emph{Database~A} and \emph{Database~B} throughout.
+\vspace{0.8em}
+\noindent\textbf{Data statement.} Licensing prevents redistribution of
+proprietary company-level records. The two commercial startup databases are
+referred to as \emph{Database A} and \emph{Database B}. All code and all
+aggregate outputs behind every number in this paper are in the project
+repository; \texttt{paper/CLAIM\_EVIDENCE.md} maps each claim to the script and
+output file that produces it.
 
 \newpage
 \tableofcontents
@@ -91,1122 +91,1006 @@ as \emph{Database~A} and \emph{Database~B} throughout.
 \section{Introduction}
 % ============================================================================
 
-The question motivating the broader research program this paper belongs to is
-whether artificial intelligence is changing how firms are formed, financed,
-and staffed around the world---and whether it lowers the barriers to founding
-a company or entrenches the advantages of incumbents, elite founders, and
-established clusters. That question is empirical. Answering it requires
-observing the population of new firms.
+Artificial intelligence is changing how companies are built, funded, and
+staffed. The interesting question for economics is not whether this is
+happening but how it is distributed: which industries, which countries, which
+kinds of founders, and whether the technology lowers the barrier to starting a
+firm or deepens the advantages of places that already had one.
 
-The practical difficulty is that nobody observes that population. What
-researchers observe is a \emph{register}: a commercial database assembled by a
-vendor whose incentives are commercial rather than statistical. A firm enters
-such a register when someone has a reason to enter it---when it raises
-institutional capital, when it is acquired, when a journalist writes about it,
-when a founder submits a profile. A firm that has a product, a website, a
+Answering that requires observing new firms. And here the literature has a
+problem it mostly does not discuss. Empirical work on startups runs on a small
+number of commercial databases, and a firm enters such a database when someone
+has a commercial reason to record it --- a financing round, an acquisition, a
+press mention, a founder-submitted profile. A firm with a product, a website, a
 codebase, customers, and federal grant funding, but no venture round and no
-press coverage, may simply never appear.
+coverage, may simply never appear. The known weaknesses of these sources ---
+particularly their tilt toward the United States --- are documented
+\citep{dalle2017crunchbase}, but the consequence for studying AI specifically
+has not been measured.
 
-This is a familiar measurement problem, but AI gives it a specific and
-uncomfortable shape. The firms most likely to be missing are young, small,
-technical, software-first, and not yet venture-financed. Those are also, on
-priors, the firms most likely to be AI-native. If that is true, then the
+That consequence could be severe. The firms most likely to be missing are
+young, small, technical, software-first, and not yet venture-financed. Those
+are, on priors, exactly the firms most likely to be AI-native. If so, the
 measured share of AI among new firms is biased downward by an amount that is
-itself a function of the technology---and every downstream estimate of AI's
-effect on entrepreneurship inherits the bias.
+itself a function of the technology being studied, and every estimate built on
+it inherits the bias.
 
-\subsection{What this paper does}
+\subsection{What we do}
 
-We do not attempt to estimate the causal effect of AI on firm formation. We
-build the instrument that such an estimate would require, characterize what
-it can and cannot see, and use it to measure the coverage gap directly.
+We build a second observation channel and use it for two purposes: to describe
+the global AI startup ecosystem, and to measure how much the standard channel
+misses.
 
-Concretely, the paper makes four contributions.
+The measurement system combines two commercial databases with public funder
+registries in the United States and the European Union, an open-source code
+host, and $410$ heterogeneous international web sources reached by $36$
+deterministic scrapers and a bounded language-model agent. After entity
+resolution it holds $988{,}576$ firms across $280$ country values and
+$17$ industry verticals, with founding years for $93.9\%$ and industry
+classifications for $92.4\%$. Firms present in neither commercial database ---
+$56{,}981$ of them --- form what we call the \emph{unlisted layer}.
 
-\paragraph{1. A formalized, operating pipeline.}
-Section~\ref{sec:pipeline} specifies the system as a composition of stages---
-collection, extraction, normalization, entity resolution, validation---each
-with an explicit policy and an explicit failure mode. The system is not a
-prototype: it comprises roughly $43{,}000$ lines of Python across a collection
-backend, an analysis layer, and a public dashboard, developed over $189$
-commits between February and August 2026, and it holds on the order of
-$9.9\times10^{5}$ company records. What distinguishes it from a large scraper
-is that collection strategy is chosen \emph{per source} by a documented
-policy, and every stage writes an audit record.
+\subsection{What we find}
 
-\paragraph{2. A measurement of the observability frontier.}
-Section~\ref{sec:frontier} defines the \emph{unlisted layer}---firms our
-pipeline observes that appear in neither commercial database---and shows that
-it differs systematically from the covered population along AI intensity,
-sector, vintage, and geography. The AI-adoption gap ($20.4\%$ vs.\ $12.3\%$
-and $10.6\%$) is the paper's central empirical claim, and it is the one claim
-that requires no enrichment and no imputation: it is computable for
-$100\%$ of the population from data present at collection time.
+\paragraph{Time.} AI's share of newly founded firms rises from $3.0\%$ (2000)
+to $10.6\%$ (2015), $18.9\%$ (2021), $43.5\%$ (2023) and $59.0\%$ (2025). The
+increase is not an artifact of which firms get indexed: restricting to firms
+that recorded financing --- a selection rule that is stable over time --- the
+series still runs $5.9\%$ (2005) to $68.3\%$ (2025). But the \emph{number} of
+AI firms we observe peaks in 2018 and falls afterwards, because the observed
+denominator falls by a factor of twenty between 2015 and 2025. Rising share and
+falling count are both real statements about the data and they mean different
+things; we report both and treat the count series as uninformative about
+formation.
 
-\paragraph{3. A negative result about LLM enrichment, and the discipline that
-caught it.}
-Section~\ref{sec:enrichment} reports what happened when we allowed a language
-model to estimate company attributes its input text did not state. The model
-did not decline. It returned the modal startup---San Francisco, founded 2020,
-11--50 employees---for company after company, at rates ($33.7\%$, $19.1\%$,
-$70.6\%$) that would have plotted as findings. We report the episode in full
-because the recovery is the methodological point: since every field was
-written with a source tag and a confidence, all $7{,}553$ estimated values
-were located and removed without disturbing anything else. We state this as a
-design rule for LLM-assisted dataset construction: \emph{the model may read,
-but it may not recall}.
+\paragraph{Geography.} AI intensity rose in every country we can measure, but
+by very different amounts: $+20.4$ percentage points in the United States and
+$+18.1$ in Israel against $+5.8$ in Nigeria and $+6.1$ in Indonesia. Measured
+by concentration, AI entrepreneurship became \emph{more} globally dispersed
+through about 2017 --- the Herfindahl index across countries fell from $0.19$
+to $0.16$, and the number of countries with observed AI firms rose from $59$ to
+over $110$ --- and then sharply more concentrated, reaching $0.73$ by the 2025
+cohort. We show that the reversal is largely a coverage artifact: overall firm
+concentration rises almost as fast, and the recent cohorts are exactly the
+under-indexed ones. The dispersion result for 2000--2017 is the part we are
+willing to defend.
 
-\paragraph{4. A demonstration of what the infrastructure enables.}
-Section~\ref{sec:longitudinal} uses the assembled panels to date the adoption
-of AI identity among established firms, decompose genuine repositioning from
-relabeling, and link both to firm outcomes. We present these as descriptive
-demonstrations with their identification problems stated, not as causal
-estimates. Section~\ref{sec:limits} is a full accounting of what the data
-cannot support.
+\paragraph{Industry.} Every sector became more AI-intensive and the ordering
+barely changed. Data and analytics went from $35.9\%$ to $71.4\%$ AI, biotech
+from $23.2\%$ to $60.0\%$, software from $9.5\%$ to $29.3\%$; food and
+agriculture, consumer, and retail remain lowest at $13$--$14\%$. The sharper
+pattern is national specialisation \emph{within} AI: location quotients pick
+out China in hardware ($2.43$), Israel in security ($2.10$), India in education
+($2.04$), and a cluster of financial-services specialists in the United
+Kingdom, Singapore, Hong Kong, and the United Arab Emirates.
 
-\subsection{Relation to the broader research agenda}
+\paragraph{Measurement.} The unlisted layer is $23.8\%$ AI-related against
+$12.4\%$ and $10.7\%$ in the two commercial databases --- an odds ratio of
+$2.21$ ($95\%$ CI $[2.17, 2.26]$). The gap holds under every AI definition that
+is available to all three populations, under dropping any single discovery
+channel, under an independently adjudicated reference label on $599$
+hand-sampled firms ($19.0\%$ vs.\ $9.5\%$, $p=0.007$), and after correcting for
+the fact that our classifier is differently accurate in each population.
 
-This paper is one technical and empirical component of a larger program
-studying how artificial intelligence is reshaping global entrepreneurship,
-venture financing, and innovation. Its role in that program is to establish
-what can be measured, at what cost, with what error, and with what residual
-blind spots---so that later work on formation, financing, founder
-composition, and geographic clustering rests on a characterized instrument
-rather than an assumed one.
+\subsection{Contributions}
+
+\begin{itemize}[leftmargin=1.5em,itemsep=2pt]
+\item \textbf{A multi-source measurement system} for observing startups
+internationally, with per-value provenance, and a full accounting of what it
+can and cannot see (Section~\ref{sec:system}).
+\item \textbf{Validation of that system} against independently adjudicated
+labels: precision, recall, and $F_1$ for the AI classifier; a failure analysis
+of the entity resolver; and a controlled experiment on language-model
+imputation (Section~\ref{sec:validation}).
+\item \textbf{Descriptive evidence on the global AI startup ecosystem} across
+time, geography, and industry, with the coverage bias measured rather than
+assumed (Sections~\ref{sec:results} and~\ref{sec:coverage}).
+\end{itemize}
+
+We make no causal claims. Section~\ref{sec:limits} says why, and what a
+credible design would need.
 
 % ============================================================================
-\section{The Measurement Problem, Stated Formally}
+\section{Related Work}
+% ============================================================================
+
+\paragraph{AI and entrepreneurship.} A growing literature asks whether
+generative AI changes who starts firms and where. \citet{brynjolfsson2023genai}
+document large productivity effects of generative AI on individual workers.
+Closest to our question, \citet{bena2025prompted} construct an exposure measure
+from the task composition of generative-AI queries and find that entry rises in
+more exposed industries, that the new entrants are smaller, and --- notably ---
+that entry becomes \emph{more} geographically dispersed, occurring in places
+with less venture capital and less specialised labour.
+\citet{fossen2024ai} survey the area. Our dispersion result through 2017 points
+the same way as theirs, from a different measurement base; where we differ is
+that we can also say how much of the post-2020 reversal is a property of the
+data rather than of the economy.
+
+\paragraph{Measuring startup populations.} Researchers rely heavily on
+commercial startup databases, whose construction and known biases were
+characterised early by \citet{dalle2017crunchbase}. The standard responses are
+to caveat the U.S.\ tilt or to restrict to well-covered subsamples. We take a
+different route: build a second channel with a different inclusion mechanism
+and measure the difference directly. The result is a lower bound on what the
+standard channel misses, not a correction factor --- our channel has its own
+biases, which we document.
+
+\paragraph{Record linkage and LLM-assisted data construction.} Combining
+sources requires linking records that name the same firm; the economics
+literature on automated linkage is mature for historical census data
+\citep{abramitzky2021linking}, where the central lesson is that link rules must
+be evaluated, not assumed. \citet{dell2025deep} surveys deep-learning methods
+for building economic datasets from unstructured text, including extraction and
+linkage. Our contribution to this thread is negative and specific: we show a
+standard name normaliser silently deletes the token that identifies AI firms,
+and we show what a language model does when asked to supply a value it cannot
+know.
+
+\paragraph{The gap.} Existing work either studies AI entrepreneurship on a
+single commercial source, or studies data-construction methods without an
+economic question attached. We do both at once, because in this setting they
+are the same question: what you conclude about where AI entrepreneurship is
+happening depends on which firms you can see.
+
+% ============================================================================
+\section{Research Questions}
+% ============================================================================
+
+\begin{description}[leftmargin=3.2em,style=nextline,itemsep=1pt]
+\item[RQ1 (time)] How has the share, and separately the number, of AI-related
+new firms changed?
+\item[RQ2 (geography)] Where did AI entrepreneurship grow fastest, in intensity
+and in level?
+\item[RQ3 (industry)] Which sectors became AI-intensive, and do countries
+specialise within AI?
+\item[RQ4 (concentration)] Is AI entrepreneurship concentrating geographically
+or dispersing?
+\item[RQ5 (coverage)] How much do commercial databases under-observe AI firms?
+\item[RQ6 (sources)] Which data sources add the most previously unobserved
+firms, at what cost?
+\item[RQ7 (reliability)] What goes wrong when a language model is allowed to
+infer missing attributes, and what prevents it?
+\end{description}
+
+% ============================================================================
+\section{The Measurement Problem, Formally}
 \label{sec:problem}
 % ============================================================================
 
-Let $\mathcal{F}$ denote the true population of firms founded in some
-window---an object no one observes. A data source $s$ is a subset
-$\mathcal{O}_s \subseteq \mathcal{F}$ together with a map from firms to
-records. Research is conducted on $\mathcal{O}_s$ but reasons about
-$\mathcal{F}$.
-
-Define the \emph{inclusion propensity} of firm $i$ in source $s$:
+Let $\mathcal{F}$ be the population of firms founded in some window --- an
+object nobody observes. A source $s$ observes a subset $\mathcal{O}_s
+\subseteq \mathcal{F}$ with inclusion propensity
 \begin{equation}
-\pi_s(i) \;=\; \Pr\!\left[\, i \in \mathcal{O}_s \mid \mathbf{z}_i \,\right],
+\pi_s(i) = \Pr[\, i \in \mathcal{O}_s \mid \mathbf{z}_i \,],
 \end{equation}
-where $\mathbf{z}_i$ collects firm characteristics. The standard implicit
-assumption in empirical entrepreneurship is that $\pi_s(i)$ is either constant
-or independent of the outcome of interest. Write $y_i^{AI}\in\{0,1\}$ for
-whether firm $i$ is AI-related. The naive estimator of AI prevalence from
-source $s$ is
-\begin{equation}
-\widehat{p}_s \;=\; \frac{1}{|\mathcal{O}_s|}\sum_{i \in \mathcal{O}_s} y_i^{AI},
-\end{equation}
-and its bias relative to the population share $p = \mathbb{E}[y^{AI}]$ is
-governed by the covariance between inclusion and the outcome:
+where $\mathbf{z}_i$ are firm characteristics. Write $A_i \in \{0,1\}$ for
+whether firm $i$ is AI-related. The naive prevalence estimator from source $s$,
+$\widehat{p}_s = |\mathcal{O}_s|^{-1}\sum_{i \in \mathcal{O}_s} A_i$, has bias
+governed by
 \begin{equation}
 \label{eq:bias}
-\mathbb{E}[\widehat{p}_s] - p \;\;\propto\;\; \mathrm{Cov}\!\left(\pi_s(i),\, y_i^{AI}\right).
+\mathbb{E}[\widehat{p}_s] - p \;\;\propto\;\; \mathrm{Cov}\big(\pi_s(i),\, A_i\big).
 \end{equation}
 
-Equation~\eqref{eq:bias} is the object of this paper. It cannot be signed from
-theory, and it cannot be estimated from $\mathcal{O}_s$ alone---nothing inside
-a database reveals what the database omits. It can, however, be bounded from
-below by constructing a second observation channel $\mathcal{O}_{\text{web}}$
-with a different inclusion mechanism and comparing $y^{AI}$ across
-$\mathcal{O}_{\text{web}} \setminus \mathcal{O}_s$ and $\mathcal{O}_s$. That
-comparison is what Section~\ref{sec:frontier} reports, and building
-$\mathcal{O}_{\text{web}}$ is what Sections~\ref{sec:pipeline}--\ref{sec:enrichment}
-describe.
+Equation~\eqref{eq:bias} cannot be signed from theory and cannot be estimated
+inside $\mathcal{O}_s$ --- nothing in a database reveals what it omits. It can
+be bounded below by building a second channel $\mathcal{O}_w$ with a different
+inclusion mechanism and comparing $A$ across $\mathcal{O}_w \setminus
+\mathcal{O}_s$ and $\mathcal{O}_s$. That comparison is RQ5.
 
-\begin{remark}[What a coverage comparison can and cannot establish]
-Our web channel is a convenience sample, not a probability sample: there is no
-sampling frame and therefore no denominator. Consequently we make no claim
-about the level of $p$. The claim is about a \emph{difference} between
-populations we observe, which is identified without a denominator. This
-distinction recurs throughout the paper and disciplines which results we are
-willing to headline.
+\begin{remark}[What this identifies, and what it does not]
+Our web channel is a convenience sample with no sampling frame, so we never
+claim a level for $p$. Every claim is a \emph{difference} between observed
+populations, which needs no denominator. This distinction disciplines which
+results we headline throughout.
 \end{remark}
 
 % ============================================================================
-\section{The Pipeline}
-\label{sec:pipeline}
+\section{Data and Measurement System}
+\label{sec:system}
 % ============================================================================
 
-\subsection{Overview and notation}
+\subsection{Data sources}
 
-Let $S$ index sources. Source $s$ emits raw observations
-$R_s = \{r_{s1},\dots,r_{sn_s}\}$, where a raw observation may be an HTML
-listing row, a JSON object from a backend API, a row in a bulk file, or a code
-repository with its metadata. An extraction operator $E_s$ maps raw
-observations to a common record schema:
-\begin{equation}
-E_s(r_{sj}) \;\longmapsto\; \mathbf{x}_{sj} =
-\big(\text{name},\, \text{domain},\, \text{description},\,
-\text{country},\, \text{city},\, \text{founded},\, \text{batch},\, \dots\big).
-\end{equation}
-The pooled raw corpus is $\mathcal{R} = \bigcup_{s=1}^{S} R_s$, and the system
-implements
-\begin{equation}
-\mathcal{R}
-\;\xrightarrow{\;E\;}\; \mathcal{X}
-\;\xrightarrow{\;N\;}\; \tilde{\mathcal{X}}
-\;\xrightarrow{\;\rho\;}\; \mathcal{E}
-\;\xrightarrow{\;V\;}\; \mathcal{D},
-\end{equation}
-where $N$ normalizes, $\rho$ resolves records to entities, $V$ validates, and
-$\mathcal{D}$ is the analysis dataset. Each arrow is a place where records are
-lost or corrupted, and each is instrumented.
-
-\subsection{The source lattice}
-
-Sources differ along two axes that turn out to matter more than any other
-design consideration: \emph{marginal cost per record} and \emph{marginal
-novelty}---the probability that a record from that source is not already
-held. Table~\ref{tab:sources} summarizes the classes.
-
-\begin{table}[t]
-\centering
-\small
-\caption{Source classes and their role in the pipeline.}
+\begin{table}[htbp]
+\centering\small
+\caption{Sources and their contribution to the resolved dataset.}
 \label{tab:sources}
-\begin{tabular}{@{}p{3.4cm}p{4.5cm}rp{3.6cm}@{}}
+\begin{tabular}{@{}p{3.6cm}p{5.1cm}r@{}}
 \toprule
-\textbf{Class} & \textbf{Instances} & \textbf{Records} & \textbf{Access} \\
+\textbf{Source class} & \textbf{Content} & \textbf{Firms} \\
 \midrule
-Commercial database A & startup/company register & $650{,}200$ & licensed bulk file \\
-Commercial database B & venture-financing register & $281{,}395$ & licensed bulk files \\
-Public funder registries & U.S. federal small-business awards; national health and science agencies; E.U. framework programme & $\sim$$17{,}000$ firms & open bulk download \\
-Open-source code host & topic- and keyword-scoped repository search & $\sim$$8{,}000$ orgs & public API \\
-Heterogeneous web & accelerators, university venture programmes, venture portfolios, launch directories, national ecosystem sites & $410$ sites attempted & scraping / agentic \\
-Employment database & derived firm- and person-level aggregates & $335{,}842$ rows & licensed \\
+Commercial database A & startup / company register & $650{,}200$ \\
+Commercial database B & venture-financing register & $281{,}395$ \\
+Public funder registries & U.S.\ federal small-business awards; national health and science agencies; E.U.\ framework programme & $9{,}931$ \\
+Open-source code host & topic- and keyword-scoped organisation search & $31{,}909$ \\
+Portfolios and programmes & accelerators, university venture programmes, venture portfolios & $27{,}330$ \\
+General web collection & launch directories, national ecosystem sites & $1{,}010$ \\
+\midrule
+\textbf{Total resolved firms} & & $\mathbf{988{,}576}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The web tier is the most technically demanding and the least productive per
-unit of effort; the funder registries are the reverse. This asymmetry is a
-finding in its own right and is quantified in
-Section~\ref{sec:yield}.
+Counts in Table~\ref{tab:sources} overlap: portfolio-listed firms are often
+also in a commercial register. The union after entity resolution is
+$988{,}576$. Auxiliary tables hold $269{,}181$ financing records,
+$33{,}844$ portfolio listings, $111{,}678$ taxonomy assignments, and $53{,}480$
+enrichment records with per-value provenance.
 
-\subsection{Collection policy}
+\subsection{Collection architecture}
 
-For each source the system selects a collection strategy according to
-\eqref{eq:policy}:
+For each source the system selects a strategy
 \begin{equation}
 \label{eq:policy}
-C_s \;=\;
-\begin{cases}
-C^{\text{bulk}} & \text{licensed or open bulk file},\\[2pt]
-C^{\text{api}}  & \text{documented backend endpoint (search, REST, index API)},\\[2pt]
-C^{\text{rule}} & \text{stable DOM; a deterministic parser exists},\\[2pt]
-C^{\text{agent}} & \text{unknown, dynamic, or broken structure},\\[2pt]
-C^{\text{excl}} & \text{repeated failure; suspended}.
-\end{cases}
+C_s \in \{\,C^{\text{bulk}},\; C^{\text{api}},\; C^{\text{rule}},\;
+C^{\text{agent}},\; C^{\text{excl}}\,\},
 \end{equation}
+Equation~\eqref{eq:policy} corresponds to bulk file, documented backend endpoint, deterministic parser
+($36$ implemented), a bounded tool-using language-model agent, and suspension.
+The agent is capped at $10$ reasoning iterations, $12$ plain page fetches, and
+$8$ browser-rendered fetches per site; on success it writes a YAML instruction
+file so later runs take the cheap path. Strategy transitions are driven by
+observed outcomes: two consecutive failures escalate a deterministic scraper to
+the agent, three agent failures suspend the site for $90$ days, and a
+successful run triggers a $7$-day cooldown.
 
-$C^{\text{rule}}$ is implemented by $36$ deterministic scrapers, each a
-subclass of a common base that returns validated records and performs no
-database writes of its own; persistence, deduplication, and validation are
-handled once, in the base class, so that a scraper cannot corrupt the store by
-being written carelessly.
-
-$C^{\text{agent}}$ is a tool-using language-model agent with a bounded budget:
-at most $10$ reasoning iterations, $12$ plain page fetches, and $8$
-browser-rendered fetches per site. It is given three tools---a hosted
-extraction service that returns readable text from a URL, a plain HTTP
-fetcher, and a headless browser for client-rendered pages---and must decide
-which pages to visit, whether pagination exists, and when it has finished.
-
-The policy is not static. Transitions are driven by observed outcomes:
-
-\begin{equation}
-\label{eq:transitions}
-\begin{aligned}
-C^{\text{rule}} &\to C^{\text{agent}} && \text{after two consecutive failures or a zero-result run},\\
-C^{\text{agent}} &\to C^{\text{excl}} && \text{after three consecutive failures},\\
-C^{\text{excl}} &\to C^{\text{agent}} && \text{after } 90 \text{ days},\\
-\text{any} &\to \text{cooldown} && \text{for } 7 \text{ days after a successful run}.
-\end{aligned}
-\end{equation}
-
-This is what makes the system maintainable at $410$ sites by two people. Web
-sources break constantly and silently; the failure of a scraper is not an
-exception to be handled but the steady state to be budgeted for.
-
-\subsection{Instruction caching: the agent as a compiler}
-
-When the agent succeeds on a site it writes a YAML instruction file recording
-the seed URLs, the strategy that worked, pagination and subpage hints, and the
-quality statistics of the successful run. Subsequent runs read the file and
-attempt the cached strategy first, falling back to the full agentic path only
-if it fails. The agent thus amortizes: the expensive path is paid once per
-site, not once per run, and the artifact it produces is human-readable and
-editable.
-
-\begin{table}[t]
-\centering
-\small
-\caption{Agentic collection outcomes across all attempted sites
-($N=410$ instruction files, as committed).}
-\label{tab:agentic}
-\begin{tabular}{@{}lr@{}}
-\toprule
-Sites attempted (instruction file written) & $410$ \\
-Sites with at least one successful extraction & $220$ \quad ($53.7\%$) \\
-\midrule
-\multicolumn{2}{@{}l}{\emph{Successful strategy, conditional on success}}\\
-\quad single-page extraction & $193$ \quad ($87.7\%$) \\
-\quad subpage discovery & $15$ \quad ($6.8\%$) \\
-\quad pagination probe & $12$ \quad ($5.5\%$) \\
-\midrule
-\multicolumn{2}{@{}l}{\emph{Yield, conditional on success}}\\
-\quad total records & $5{,}040$ \\
-\quad mean per site & $22.9$ \\
-\quad median per site & $6$ \\
-\quad 90th percentile / maximum & $50$ \; / \; $814$ \\
-\midrule
-\multicolumn{2}{@{}l}{\emph{Validation statistics of the accepted runs}}\\
-\quad valid-name ratio (mean) & $1.000$ \\
-\quad duplicate ratio (mean) & $0.004$ \\
-\quad completeness score (mean) & $0.996$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Table~\ref{tab:agentic} reports the outcome. Three features deserve comment.
-
-First, the success rate is $53.7\%$. An instruction file is written on
-\emph{attempt}, not on success, so the file count is a record of what was
-tried rather than a library of what works---a distinction we initially got
-wrong, and which inflated our own internal projections of remaining yield by
-roughly an order of magnitude until the files were audited individually. We
-report it because it is the kind of error that is easy to make and invisible
-from aggregate counts.
-
-Second, the yield distribution is extremely skewed: mean $22.9$, median $6$.
-A small number of large directories dominate the total, and the typical
-international site contributes a handful of firms. Any plan that projects
-total yield from an average is wrong by a factor of roughly four.
-
-Third, conditional on acceptance, quality is high---near-zero duplicate rate
-and near-complete records---because the validator gates acceptance. This is
-selection, not accuracy: it tells us that what passes is clean, not that the
-extractor is correct on what it rejects. We return to this in
-Section~\ref{sec:limits}.
-
-\subsection{Normalization}
-
-$N$ applies deterministic transformations before any matching occurs:
-
-\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
-\item \textbf{Domain canonicalization.} URLs are lowercased, stripped of
-scheme, \texttt{www.}, path, and query, and reduced to the registrable domain
-via public-suffix extraction, so that \texttt{https://www.Example.co.uk/about}
-and \texttt{example.co.uk} resolve identically.
-\item \textbf{Product-domain filtering.} A blocklist of code hosts,
-documentation hosts, social platforms, package registries, and preprint
-servers prevents \texttt{github.io} or \texttt{medium.com} from being adopted
-as a company's identity---a failure that would silently merge thousands of
-distinct firms into one entity.
-\item \textbf{Name normalization.} Case folding, punctuation stripping, and
-removal of legal suffixes.
-\item \textbf{Country normalization.} A curated map to a fixed country list;
-values that are not countries (U.S. state names, bare city names, stray
-coordinates) resolve to \emph{no country} rather than being coerced. They are
-$0.8\%$ of rows with a country value and are excluded from regional counts.
-\item \textbf{Incumbent exclusion.} A shared denylist removes large
-technology incumbents at import time across every source, so that the largest
-firms in the world do not appear in a dataset of emerging startups.
-\end{itemize}
-
-\begin{remark}[Refusing to default]
-The system stores \texttt{NULL} rather than a plausible value wherever a value
-is unknown---no default country, no default city, no imputed founding year in
-the primary field. This costs coverage and is the correct trade: a defaulted
-value is indistinguishable from a measured one downstream, and defaults
-concentrate on exactly the modal category, manufacturing spurious
-concentration. Section~\ref{sec:prior} shows what happens when this rule is
-relaxed.
-\end{remark}
+Across all $410$ sites attempted, $220$ ($53.7\%$) ever produced a successful
+extraction. Yield is extremely skewed --- mean $22.9$ records per successful
+site, median $6$, maximum $814$ --- so projecting total yield from an average
+overstates it by roughly a factor of four. The instruction files are records of
+\emph{attempts}, not a library of working recipes; we mis-read them as the
+latter in our own planning and inflated a projection tenfold before auditing
+them individually.
 
 \subsection{Entity resolution}
 \label{sec:er}
 
-The same firm appears in a licensed bulk file, on an accelerator's portfolio
-page, in a federal award record, and as an organization on a code host, under
-four different names. Resolution (stage $\rho$, Section~\ref{sec:er}) proceeds by a strict, auditable
-rule rather than a learned score.
-
-Define the entity key
+Records naming the same firm arrive from several sources. The rule in production (Section~\ref{sec:er}) is exact-key matching:
 \begin{equation}
-\kappa(\mathbf{x}) =
+\label{eq:key}
+\kappa(x) =
 \begin{cases}
-\texttt{domain:}\,d(\mathbf{x}) & \text{if a canonical registrable domain } d(\mathbf{x}) \text{ exists},\\
-\texttt{name:}\,\nu(\mathbf{x}) & \text{otherwise, with } \nu \text{ the normalized name}.
+\texttt{domain:}\,d(x) & \text{if a canonical registrable domain } d(x)\text{ exists},\\[2pt]
+\texttt{name:}\,\nu(x) & \text{otherwise},
 \end{cases}
 \end{equation}
-Domain equality is treated as identity, enforced by a unique index. When no
-domain is available the system falls back to a similarity rule,
-\begin{equation}
-\label{eq:match}
-\mathrm{Match}(i,j) \;=\; \mathbb{1}\!\left[\, S_n(i,j) \ge \tau \;\wedge\; \Sigma(i,j) \,\right],
-\qquad
-\tau = 0.92 \;\; (\tau = 0.95 \text{ for database B}),
-\end{equation}
-where $S_n$ is a normalized string similarity and $\Sigma(i,j)$ requires a
-corroborating shared signal (a common organization login, a common outbound
-link, a common portfolio listing). Every accepted match is written to an audit
-table recording the method used, so that any downstream result can be
-recomputed under a stricter rule.
+with $\nu$ a name normaliser and matching by equality of $\kappa$. Domains are
+reduced to the registrable domain via public-suffix extraction, and a blocklist
+prevents code hosts, documentation sites, and social platforms from being
+adopted as a firm's identity.
 
-\begin{remark}[Why not a learned matcher]
-Equation~\eqref{eq:match} is deliberately conservative and deliberately
-unlearned. A probabilistic matcher of the form
-$M(i,j)=w_nS_n+w_dS_d+w_lS_l+w_gS_g$ with a fitted threshold would raise
-recall, and we sketch it in Section~\ref{sec:future} as the natural next
-step---but fitting it requires labeled match pairs we do not have, and the
-asymmetry of errors favors precision: a false merge destroys two firms and is
-nearly undetectable afterwards, while a false split leaves two recoverable
-records. We record the current rule honestly as a rule, and do not describe it
-as a model.
+\begin{remark}[On the threshold we do not use]
+The codebase also contains a fuzzy matcher scoring name similarity against
+$\tau = 0.92$ (or $0.95$ for database B) with a shared-signal requirement. It
+has no production caller, and its shared-signal branch returns the match
+either way. We report this because it appears in the project's own
+documentation as though it were live, and because Section~\ref{sec:er_eval}
+shows the real defect lies in $\nu$, where no threshold could reach it.
 \end{remark}
 
-\subsection{Validation and audit}
+\subsection{AI classification}
+\label{sec:aiclass}
 
-$V$ accepts a run only if the extracted batch passes a joint quality test on
-name validity, duplicate rate, and field completeness (the realized values
-appear in Table~\ref{tab:agentic}). Independently of acceptance, every scrape
-attempt writes a row recording source, tier, status, counts found and new,
-duration, and diagnosis. Per-domain health is tracked separately and drives
-the transitions in \eqref{eq:transitions}. The audit tables are what make
-statements like ``$53.7\%$ of attempted sites ever succeeded'' computable at
-all; a pipeline that logs only successes cannot measure its own coverage.
-
-% ============================================================================
-\section{Identifying AI Firms}
-\label{sec:classification}
-% ============================================================================
-
-Every claim in this paper depends on a binary label $y_i^{AI}$. We describe how
-it is produced, and---more usefully---the two ways our first attempts at it
-failed.
-
-\subsection{The cascade}
-
-Classification runs cheapest-first:
+The AI label unions four signals, computed cheapest-first:
 \begin{equation}
-y_i^{AI} =
-\begin{cases}
-1 & \text{strong AI term in name, description, or repository topics},\\
-0 & \text{no technology-adjacent term anywhere},\\
-f_\theta(d_i, p) & \text{otherwise (ambiguous): a language model reads the text}.
-\end{cases}
+\label{eq:ai}
+A_i = \mathbb{1}\big[\,\underbrace{t_i}_{\text{vendor tag}} \;\vee\;
+\underbrace{a_i \ge 0.5}_{\text{keyword score}} \;\vee\;
+\underbrace{m_i}_{\text{text mention}} \;\vee\;
+\underbrace{\ell_i}_{\text{model verdict}}\,\big],
 \end{equation}
-The first branch is high precision and free; the second is a cheap negative
-that removes the large majority of records from consideration; only the
-ambiguous residual reaches a model call. Terms are matched with word-boundary
-constraints, and the bare token ``ai'' is handled separately because it is a
-substring of ordinary English and of many proper nouns.
-
-A weighted score is also computed for firms with repository metadata:
+where the keyword score is
 \begin{equation}
-\label{eq:aiscore}
-a_i \;=\; \min\Big(1,\;
-0.3\,\mathbb{1}[\text{strong topic}] +
-0.2\,\mathbb{1}[\text{moderate topic}] +
-0.2\,\mathbb{1}[\text{strong text}] +
-0.1\,\mathbb{1}[\text{moderate text}] +
-0.2\,\mathbb{1}[\text{database-A AI tag}]\Big),
+a_i = \min\big(1,\; 0.3\,\mathbb{1}[\text{strong topic}] + 0.2\,\mathbb{1}[\text{moderate topic}]
++ 0.2\,\mathbb{1}[\text{strong text}] + 0.1\,\mathbb{1}[\text{moderate text}]
++ 0.2\,t_i\big).
 \end{equation}
-with the operative threshold $a_i \ge 0.5$.
 
-\subsection{Failure one: a score that does not transfer across sources}
+Two properties of \eqref{eq:ai} matter for everything downstream, and we
+quantify both. First, the components are \emph{not} symmetrically available.
+Vendor tags exist for $7.0\%$ of database-A firms and $0.7\%$ of database-B
+firms but $0.0\%$ of unlisted firms; model verdicts were run on $98.8\%$ of
+database B but $2.3\%$ of the unlisted layer. Only the description-derived
+signals ($a_i$, $m_i$) are computed identically for every firm. Any
+cross-population comparison must therefore either use the union and accept the
+asymmetry, or restrict to common support. We do both
+(Section~\ref{sec:coverage}).
 
-Equation~\eqref{eq:aiscore} was designed for repository data, where topics are
-developer-chosen, high-precision labels. Applied to the commercial databases it
-breaks in a specific and instructive way. Records from database~B have no
-topics and short descriptions; their attainable maximum is $0.2 + 0.1 = 0.3$,
-which is \emph{below the threshold by construction}. A scoring rule calibrated
-on one source had, in effect, silently excluded an entire other source of
-$281{,}395$ firms.
+Second, the score $a_i$ does not transfer across sources. Database-B records
+carry no topics and short descriptions, so their attainable maximum is
+$0.2 + 0.1 = 0.3$ --- below the $0.5$ threshold by construction. Under a
+tag-or-score definition, database B appears $1.3\%$ AI; under the full union it
+is $10.7\%$. A threshold calibrated on one source had silently excluded
+$281{,}395$ firms from another.
 
-The obvious repair---lower the threshold---fails a validity check. Setting
-$a_i \ge 0.1$ admits roughly $22{,}000$ additional firms, but their founding
-years are close to uniform at about $1{,}200$ per year from 2010 to 2025.
-Genuine AI-era formation is sharply increasing in time; a flat cohort profile
-is the signature of legacy analytics and machine-learning-adjacent firms for
-which AI is peripheral. We therefore retained the threshold and adopted an
-explicit disjunction over source-specific evidence,
-\begin{equation}
-y_i^{AI} = \mathbb{1}\big[\,a_i \ge 0.5 \;\vee\; \text{tag}^{A}_i \;\vee\; \ell_i \,\big],
-\end{equation}
-where $\text{tag}^A_i$ is database~A's own AI taxonomy flag and $\ell_i$ is a
-model verdict on the question ``is AI the core product of this company?''
-obtained for the ambiguous residual.
+\subsection{Enrichment and provenance}
 
-The general lesson is that a classifier's threshold is a property of the
-\emph{source}, not of the concept. Any cross-source AI indicator must either
-be recalibrated per source or defined on evidence that all sources actually
-carry.
-
-\subsection{Failure two: a category tag is not a description}
-\label{sec:tagtext}
-
-Commercial databases assign category tags. It is tempting to treat a vendor's
-``artificial intelligence'' tag as ground truth. We tested this by taking
-firms whose category tags changed to include AI between two vintages, and
-asking a model to compare their \emph{actual descriptions} across the same
-two vintages ($n=500$, complete parse rate). Table~\ref{tab:tagtext} reports the
-verdicts.
-
-\begin{table}[h]
-\centering
-\small
-\caption{Do firms newly tagged AI show AI in their own text?}
-\label{tab:tagtext}
-\begin{tabular}{@{}lrr@{}}
-\toprule
-Verdict from the description pair & Count & Share \\
-\midrule
-Genuine pivot to AI & $99$ & $19.8\%$ \\
-AI added as a feature & $74$ & $14.8\%$ \\
-Already AI in the earlier text & $63$ & $12.6\%$ \\
-Marketing language only & $4$ & $0.8\%$ \\
-\textbf{No AI in the text at all} & $\mathbf{260}$ & $\mathbf{52.0\%}$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Slightly over half of firms newly tagged as AI show no AI language in their own
-self-description in either vintage. Taken at face value, the tag overstates
-genuine AI adoption by roughly a factor of three ($34.6\%$ genuine versus
-$100\%$ implied by the tag). Explicit text-level ``AI-washing''---marketing
-claims with no substance behind them---is rare ($0.8\%$); the dominant error is
-not firms lying, but vendor tags moving for reasons unrelated to what the firm
-says it does.
-
-\begin{remark}
-The practical rule we adopt: \emph{always validate a category tag against
-description text before using it as a treatment or an outcome}. This is cheap
-and, in our data, changes the headline by a factor of three.
-\end{remark}
-
-% ============================================================================
-\section{Enrichment Under an Evidence Hierarchy}
-\label{sec:enrichment}
-% ============================================================================
-
-Collection yields sparse records: often a name and a URL. Enrichment fills
-fields. It is also where a pipeline built around language models can quietly
-destroy itself, so we specify the rule first and report the violation second.
-
-\subsection{The rule}
-
-Order evidence by whether it can be checked:
+Sparse records are enriched under the evidence hierarchy \eqref{eq:tiers},
+ordered by whether a value can be checked:
 \begin{equation}
 \label{eq:tiers}
-\underbrace{T_1: \text{official registries}}_{\$0}
+\underbrace{T_1:\ \text{official registries}}_{\$0}
 \;\succ\;
-\underbrace{T_2: \text{documents we fetch}}_{\sim\$0.003}
+\underbrace{T_2:\ \text{documents we fetch}}_{\sim\$0.003}
 \;\succ\;
-\underbrace{T_3: \text{model reads a text we hold}}_{\sim\$0.0007}
+\underbrace{T_3:\ \text{model reads a text we hold}}_{\sim\$0.0007}
 \;\succ\;
-\underbrace{T_4: \text{model recalls a fact}}_{\text{prohibited}}.
+\underbrace{T_4:\ \text{model recalls a fact}}_{\text{prohibited}}.
 \end{equation}
-
-$T_1$ comprises federal and national award records, an E.U. framework
-programme registry, domain registration records, and a code host's
-organization API. These are free, checkable, and---critically---were
-\emph{recorded for a reason unrelated to our study}. $T_2$ is the firm's own
-website, fetched and read. $T_3$ is a model performing an inference over text
-we possess and can re-read. $T_4$---asking a model what it knows about a
-company---is excluded by construction.
-
-The reason $T_4$ is excluded is not a general objection to language models. It
-is specific to this population. These firms are, by definition, the ones no
-index covers. A model asked to recall facts about them has nothing to recall,
-and a model asked a direct question answers it anyway.
-
-$T_1$ alone was decisive. Founding-year coverage on the unlisted population
-rose from $8.6\%$ to $59.5\%$ in a single day using domain-registration dates,
-first-award years, and code-host account-creation dates, at zero marginal
-cost; $7{,}420$ firms gained named executives from award records. These are
-facts a model would otherwise have been asked to supply, and would have
-supplied.
-
-\subsection{The violation, and what it produced}
-\label{sec:prior}
-
-We relaxed the rule once. In an early enrichment pass the model was permitted
-to \emph{estimate} location, founding year, team size, and stage when the
-source text did not state them, with the estimate flagged as inferred. It
-filled nearly everything. Table~\ref{tab:prior} reports the result.
-
-\begin{table}[h]
-\centering
-\small
-\caption{Output of permitting estimation of unstated fields.}
-\label{tab:prior}
-\begin{tabular}{@{}lllr@{}}
-\toprule
-Field & Modal value & Share at mode & Flagged inferred \\
-\midrule
-City & San Francisco & $33.7\%$ & --- \\
-Team size & 11--50 & $70.6\%$ & $99.8\%$ \\
-Country & United States & $46.1\%$ & $93.8\%$ \\
-Founding year & 2020 & $19.1\%$ & $95.9\%$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-This is not noise and it is not hallucination in the usual sense of a
-fabricated specific. It is the model's prior over ``startup''---the median
-startup, repeated. Plotted, it would have looked like a finding: a
-concentration of AI activity in San Francisco, a founding surge in 2020, a
-modal team size consistent with seed-stage firms. Each of those is a claim
-someone in this literature would want to make, and each would have been an
-artifact of the imputation step.
-
-Formally, permitting $T_4$ replaces the unknown quantity with a draw from the
-model's marginal:
+Every stored value is a triple
 \begin{equation}
-\hat{x}_{ik} \;\sim\; q_\theta(x_k) \quad \text{when } x_{ik} \text{ is unstated},
+v_{ik} = \big(x_{ik},\, s_{ik},\, c_{ik}\big), \qquad s_{ik} \in \{T_1,T_2,T_3\},
 \end{equation}
-independent of $i$. Any statistic computed over the filled column then
-converges to a functional of $q_\theta$ rather than of the data. Because
-$q_\theta$ is concentrated on the modal startup, the resulting distributions
-are \emph{more} concentrated and \emph{more} plausible than the truth, which
-is precisely why the error is hard to catch by inspection.
+of value, source tag, and confidence, held in a JSONB provenance map so any
+query can filter on origin. In the live data the tags are
+\texttt{llm\_from\_description}, \texttt{llm\_quoted\_from\_description},
+\texttt{website}, \texttt{whois}, \texttt{sbir\_award},
+\texttt{nih\_reporter}, \texttt{github\_profile}, and \texttt{tavily\_search}.
+Section~\ref{sec:imputation} shows what happens when $T_4$ is permitted, and
+why the provenance column is what made the damage reversible.
 
-\subsection{Why provenance is the enabling condition}
+\subsection{What the system can and cannot see}
 
-Every enriched value is written to a JSONB provenance map as
-$\{\text{field} \mapsto (\text{source}, \text{confidence})\}$. Formally each
-stored value is a triple
-\begin{equation}
-v_{ik} = \big(x_{ik},\; s_{ik},\; c_{ik}\big),
-\qquad s_{ik} \in \{T_1, T_2, T_3, T_4\},
-\end{equation}
-and a query may filter on $s_{ik}$. Because the estimated values carried
-$s_{ik} = T_4$, all $7{,}553$ of them were located and deleted exactly,
-together with their provenance entries, leaving every $T_1$--$T_3$ value
-untouched. Without per-value provenance the only remedies would have been to
-discard the entire enrichment pass or to keep a contaminated dataset; both
-were avoided at the cost of one JSONB column.
-
-We state the general principle plainly, because it generalizes well beyond
-this project: \textbf{if a pipeline writes model output into the same columns
-as measured values without recording which is which, the dataset cannot be
-repaired---only rebuilt.}
-
-\subsection{What honest coverage looks like}
-
-The result of enforcing \eqref{eq:tiers} is coverage that is high where records
-exist and low where they do not, rather than uniformly high and partly
-fictional. For field $k$, define
-\begin{equation}
-\mathrm{Cov}_k = \frac{1}{N}\sum_{i=1}^{N}\mathbb{1}\big[x_{ik} \ne \varnothing\big].
-\end{equation}
-
-\begin{table}[h]
-\centering
-\small
-\caption{Field coverage over $45{,}812$ verified unlisted entities.}
+\begin{table}[htbp]
+\centering\small
+\caption{Field coverage by coverage bucket. The unlisted layer is where the
+enrichment problem lives, and it constrains which analyses are possible.}
 \label{tab:coverage}
-\begin{tabular}{@{}lr@{\hskip 2.2em}lr@{}}
+\begin{tabular}{@{}lrrrrrr@{}}
 \toprule
-Field & $\mathrm{Cov}_k$ & Field & $\mathrm{Cov}_k$ \\
+Bucket & Firms & Founding yr & + proxies & Country & Domain & Industry \\
 \midrule
-Founding year (incl.\ proxies) & $73.8\%$ & City & $39.0\%$ \\
-Description & $65.8\%$ & Founders / executives & $16.2\%$ \\
-AI application, model, sector & $58.9\%$ & Product status & $9.2\%$ \\
-Country & $52.6\%$ & Team size & $5.8\%$ \\
-Domain & $47.5\%$ & & \\
+Commercial A & $650{,}200$ & $98.8\%$ & $98.8\%$ & $99.3\%$ & $99.7\%$ & $96.3\%$ \\
+Commercial B & $281{,}395$ & $100.0\%$ & $100.0\%$ & $100.0\%$ & $99.7\%$ & $99.9\%$ \\
+Unlisted     & $56{,}981$  & $8.0\%$   & $29.6\%$  & $48.4\%$ & $38.2\%$ & $9.4\%$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:coverage} is the number usually reported. It is also the number
-that misleads, because fields are not independent and a regression needs them
-jointly. Define the \emph{intersection coverage} over a required set $K$:
-\begin{equation}
-\mathrm{Cov}_K = \frac{1}{N}\sum_{i=1}^{N}\prod_{k \in K}\mathbb{1}\big[x_{ik} \ne \varnothing\big].
-\end{equation}
-Requiring description, domain, founding year, country, and AI classification
-\emph{together} leaves $5{,}778$ firms---$21.4\%$ of the $26{,}981$ classified
-AI firms, against per-field figures of $47$--$74\%$. Any specification needing
-all five runs on that subsample, and we report it up front rather than in a
-footnote.
-
-\subsection{Founding year is a proxy, and says so}
-
-For the unlisted population, a stated founding year is usually unavailable.
-The system stores an ordered set of proxies in separate columns, never
-overwriting the primary field:
-\begin{equation}
-\widehat{\text{founded}}_i = \mathrm{COALESCE}\big(
-\underbrace{\text{founded}_i}_{\text{stated}},\;
-\underbrace{\text{cohort}_i}_{\text{accelerator batch}},\;
-\underbrace{\text{grant}_i}_{\text{first award}},\;
-\underbrace{\text{web}_i}_{\text{first archived capture}}\big).
-\end{equation}
-Each successive term is a weaker upper bound on the true founding date: a firm
-is founded, then joins an accelerator; is founded, then wins a first federal
-award; registers a domain at or after founding, and a reused domain can
-predate the firm entirely. Decoding accelerator batch labels alone
-(``W26'', ``Spring 2026'', ``2019'') recovered $2{,}414$ years; first-award
-extraction recovered $7{,}681$. Because the terms are stored separately, any
-analysis can restrict to stated years and observe how much the result moves.
+Table~\ref{tab:coverage} determines the paper's structure. Time, geography, and
+industry analyses (Section~\ref{sec:results}) run on the commercial population,
+which has near-complete metadata. The unlisted layer supplies the coverage
+correction (Section~\ref{sec:coverage}), for which only the AI label is needed
+--- and that is available for $100\%$ of it.
 
 % ============================================================================
-\section{The Observability Frontier}
-\label{sec:frontier}
+\section{Results: The Changing AI Startup Ecosystem}
+\label{sec:results}
 % ============================================================================
 
-\subsection{Defining the unlisted layer}
+\subsection{RQ1 --- Time: share rises, observed count does not}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{fig1_ai_formation.pdf}
+\caption{AI startup formation over time. Panel A separates the AI count from
+the total; the observed denominator falls by a factor of twenty between the
+2015 and 2025 cohorts because registers index recent firms slowly. Panel B
+shows the AI share with $95\%$ Wilson intervals \citep{wilson1927interval}, alongside the same share
+computed only on firms that recorded financing --- a selection rule that does
+not loosen over time.}
+\label{fig:trend}
+\end{figure}
+
+Define, over the commercial population,
+\begin{equation}
+N_t = \sum_i \mathbb{1}[\text{Founded}_i = t], \qquad
+N_t^{AI} = \sum_i \mathbb{1}[\text{Founded}_i = t]\,A_i, \qquad
+\text{AIShare}_t = N_t^{AI}/N_t .
+\end{equation}
+
+$\text{AIShare}_t$ rises monotonically from $3.0\%$ (2000) to $4.8\%$ (2010),
+$10.6\%$ (2015), $17.3\%$ (2020), $18.9\%$ (2021), $25.5\%$ (2022), $43.5\%$
+(2023), $52.4\%$ (2024) and $59.0\%$ (2025). Wilson intervals
+\citep{wilson1927interval} are tight throughout ($\pm 0.3$pp or less until
+2022).
+
+$N_t^{AI}$ tells a different story: it peaks in 2018 at $8{,}038$ and declines
+thereafter. This is not a fall in AI entrepreneurship. It is the denominator:
+$N_t$ falls from $54{,}150$ (2015) to $2{,}531$ (2025) as recent cohorts wait
+to be indexed. \textbf{The count series is uninformative about formation and we
+do not interpret it}; the share series is the object of interest, and even it
+needs a selection check.
+
+\paragraph{Does selection manufacture the trend?} Recent cohorts are not merely
+smaller, they are differently selected: the fraction of firms with recorded
+financing rises from $17.3\%$ (2010) to $43.0\%$ (2025). If AI firms are more
+likely to clear whatever bar gets a firm indexed, the rising share is partly
+mechanical. Holding the selection rule fixed by conditioning on firms that
+recorded financing, the series still rises --- $5.9\%$ (2005), $15.6\%$ (2015),
+$22.0\%$ (2021), $68.3\%$ (2025) --- with a level uniformly above the
+unconditional series and the same shape (Figure~\ref{fig:trend}B). The trend
+is not an artifact of loosening selection.
+
+\paragraph{Is it one vendor?} No. Computed separately, database A runs
+$2.7\%$ (2000) to $63.7\%$ (2025) and database B runs $3.6\%$ to $58.3\%$.
+
+\paragraph{On the 2022--2023 discontinuity.} The share jumps from $25.5\%$ to
+$43.5\%$ between the 2022 and 2023 cohorts, immediately after the November 2022
+public release of consumer generative AI. We mark the date in
+Figure~\ref{fig:trend} because readers will look for it, and we say plainly
+that this is a description of a coincidence in time, not an estimate of an
+effect. The 2023 cohort is also among the most affected by indexing lag, and we
+have no design that separates the two.
+
+\subsection{RQ2 --- Geography}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.88\textwidth]{fig4_geography.pdf}
+\caption{AI intensity by country, early cohort (2010--2016) against recent
+cohort (2020--2025), for the $18$ countries with the most firms in the recent
+window. Every country rose; the spread widened.}
+\label{fig:geo}
+\end{figure}
+
+Size and intensity answer different questions and we keep them apart. By
+\emph{intensity} --- $\text{AIShare}_c$ --- Israel leads the recent cohort at $37.2\%$, followed by the United States at $29.4\%$; the lowest among countries
+with at least $200$ firms are Indonesia ($9.2\%$), Bangladesh ($10.3\%$), and
+Nigeria ($10.5\%$). By \emph{growth}, the United States gained the most
+($+20.4$pp, a $3.3\times$ rise), with Chile ($+19.7$), Israel ($+18.1$), and
+Canada ($+18.0$) close behind; the smallest gains are in Nigeria ($+5.8$),
+Indonesia ($+6.1$), and Malaysia ($+7.1$).
+
+The pattern (Figure~\ref{fig:geo}) is a rising tide with a widening spread. Regionally, North
+America's share of all observed AI firms rose from $45.0\%$ (2010--2016
+cohorts) to $57.6\%$ (2020--2025), while Europe fell from $22.1\%$ to $17.1\%$
+and East Asia from $10.6\%$ to $6.5\%$. Part of that shift is real and part is
+indexing speed; Section~\ref{sec:limits} explains why we cannot separate them
+and Section~\ref{sec:concentration} bounds the problem.
+
+\subsection{RQ3 --- Industry and specialisation}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.88\textwidth]{fig6_sectors.pdf}
+\caption{AI intensity by sector, early against recent cohort. The ordering is
+almost preserved: the sectors that led on AI still lead.}
+\label{fig:sector}
+\end{figure}
+
+With $\text{AIShare}_{k,t} = N^{AI}_{k,t}/N_{k,t}$ over the $17$-vertical
+taxonomy, every sector became more AI-intensive
+(Figure~\ref{fig:sector}). Data and analytics moved from $35.9\%$ to $71.4\%$,
+biotech and pharmaceuticals from $23.2\%$ to $60.0\%$, software from $9.5\%$ to
+$29.3\%$, healthcare from $8.9\%$ to $26.6\%$. Food and agriculture ($13.0\%$),
+consumer ($13.1\%$), and retail ($14.1\%$) remain lowest. Because the sectors
+that started highest also gained most in level, the ranking is nearly
+unchanged: AI diffused broadly without reshuffling which sectors are
+AI-intensive.
+
+\paragraph{National specialisation within AI.} Define the location quotient
+\begin{equation}
+LQ_{c,k} = \frac{N^{AI}_{c,k}/N^{AI}_{c}}{N^{AI}_{k}/N^{AI}},
+\end{equation}
+over firms founded 2015--2025, restricted to the $46$ countries with at least
+$400$ AI firms and cells with at least $40$. Values above one indicate a
+country is more specialised in that AI sector than the world is.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Strongest national specialisations within AI entrepreneurship
+($LQ_{c,k}$, founding cohorts 2015--2025).}
+\label{tab:lq}
+\begin{tabular}{@{}llrr@{}}
+\toprule
+Country & AI sector & Firms & $LQ$ \\
+\midrule
+China & Hardware \& manufacturing & $716$ & $2.43$ \\
+Mexico & Financial services & $64$ & $2.13$ \\
+Israel & Security \& privacy & $109$ & $2.10$ \\
+India & Education & $435$ & $2.04$ \\
+China & Transportation & $151$ & $2.02$ \\
+Hong Kong & Financial services & $75$ & $1.86$ \\
+Germany & Energy \& cleantech & $93$ & $1.76$ \\
+United Arab Emirates & Financial services & $110$ & $1.73$ \\
+Singapore & Financial services & $202$ & $1.66$ \\
+Japan & Professional services & $605$ & $1.53$ \\
+United Kingdom & Financial services & $631$ & $1.41$ \\
+United States & Healthcare & $4{,}037$ & $1.32$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:lq} is the paper's clearest external-validity check. These
+specialisations were not imposed --- they fall out of a location quotient over
+our own classifications --- and they match what is independently known about
+these ecosystems. A measurement system that recovers China in hardware, Israel
+in security, and a financial-services belt running through London, Singapore,
+Hong Kong, and the Emirates is measuring something real.
+
+\subsection{RQ4 --- Concentration: dispersion, then a reversal we do not trust}
+\label{sec:concentration}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{fig5_concentration.pdf}
+\caption{Concentration of AI entrepreneurship across countries by founding
+cohort. Panel A: Herfindahl index for AI firms and for all firms. Panel B: the
+difference, which nets out shared coverage dynamics. Shading marks cohorts
+where register coverage is visibly incomplete.}
+\label{fig:conc}
+\end{figure}
+
+With $s_{c,t} = N^{AI}_{c,t}/\sum_j N^{AI}_{j,t}$, we compute
+$HHI_t = \sum_c s_{c,t}^2$ and $H_t = -\sum_c s_{c,t}\log s_{c,t}$.
+
+Through 2017, AI entrepreneurship \emph{dispersed}: $HHI$ fell from $0.190$
+(2000 cohort) to $0.155$ (2017), entropy rose from $2.62$ to $2.87$, the number
+of countries with observed AI firms rose from $59$ to $103$, and the U.S.\
+share of AI firms fell from $41.3\%$ to $36.8\%$. In the same window,
+concentration among \emph{all} firms was flat ($0.149 \to 0.161$), so AI was
+dispersing faster than entrepreneurship generally --- indeed by 2017--2019 the
+two indices cross, and AI is no more concentrated than firms in general
+(Figure~\ref{fig:conc}B).
+
+After 2020 both indices rise steeply, and the AI index rises faster, reaching
+$0.726$ for the 2025 cohort with the U.S.\ at $85.0\%$ of observed AI firms.
+\textbf{We do not interpret this as concentration of AI entrepreneurship.}
+Three facts argue against it: all-firm concentration rises nearly as fast
+($0.609$), which no AI-specific story explains; the number of countries
+observed collapses from $114$ (2018) to $43$ (2025); and these are precisely
+the cohorts where the denominator has not filled in. U.S.\ firms are indexed
+fastest, so the most recent cohorts are mechanically most American. The honest
+statement is that AI entrepreneurship became more globally distributed through
+the late 2010s, and that our data cannot say what happened after 2020.
+
+% ============================================================================
+\section{The Unlisted Layer: Measuring What the Databases Miss}
+\label{sec:coverage}
+% ============================================================================
 
 \begin{definition}[Unlisted firm]
-A firm in our data is \emph{unlisted} if it appears in neither commercial
-database. The \emph{strict} definition additionally requires no match to the
-employment database, operationalized as the absence of the industry code that
-only that match can set.
+A firm is \emph{unlisted} if it appears in neither commercial database. The
+strict variant additionally requires no match to the employment database.
 \end{definition}
 
-Counting is not the first step; defining what counts is. Most unlisted records
-arrive from a code-host scan, where a bare name establishes nothing. Rather
-than assume, we asked the code host directly; Table~\ref{tab:funnel} reports the
-resulting funnel.
+\subsection{The headline gap}
 
-\begin{table}[h]
+\begin{figure}[htbp]
 \centering
-\small
-\caption{From raw records to an analyzable population.}
-\label{tab:funnel}
-\begin{tabular}{@{}lrp{6.1cm}@{}}
+\includegraphics[width=\textwidth]{fig2_coverage_bias.pdf}
+\caption{AI prevalence by coverage status under five definitions of the AI
+label, with $95\%$ Wilson intervals. The shaded definition is not comparable
+across buckets: it is built from vendor tags and model verdicts, which do not
+exist for unlisted firms.}
+\label{fig:coverage}
+\end{figure}
+
+Under the pipeline's own definition, the unlisted layer is $23.8\%$
+($13{,}579/56{,}981$) AI-related, against $12.4\%$ ($80{,}528/650{,}200$) in
+database A and $10.7\%$ ($29{,}986/281{,}395$) in database B. Using Newcombe's
+hybrid-score interval \citep{newcombe1998intervals} for the difference, the gap
+against database A is $+11.45$pp ($95\%$ CI $[11.09, 11.81]$), an odds ratio of
+$2.21$ ($[2.17, 2.26]$); against database B it is $+13.17$pp
+($[12.81, 13.54]$), odds ratio $2.62$ ($[2.56, 2.68]$). In the notation of
+Section~\ref{sec:problem}, $\mathrm{Cov}(\pi_s, A) < 0$.
+
+To put a magnitude on it: pooling our unlisted layer with database A raises the
+measured AI share of that combined population from $12.39\%$ to $13.31\%$ --- a
+$0.92$ percentage-point shift, or $7.4\%$ of the original estimate. That is the
+size of the correction a researcher would apply if they could see what we see,
+and it is a lower bound, because our channel misses firms too.
+
+\subsection{Four ways the result could be wrong}
+
+\paragraph{(i) It could be the AI definition.}
+Figure~\ref{fig:coverage} recomputes everything under five definitions. The gap
+persists under all four that are symmetrically available: $+11.4$pp
+(canonical), $+9.6$ (dropping the mention flag), $+7.9$ (pre-model), $+6.3$
+(mention only). It \emph{reverses} under the fifth --- vendor tag or model
+verdict --- where the unlisted layer is $2.3\%$ against database A's $7.6\%$.
+That reversal is not evidence against the finding; it is a direct consequence
+of the availability asymmetry in Section~\ref{sec:aiclass}: unlisted firms hold
+zero vendor tags by construction. We report it prominently because it is the
+kind of specification that could be quoted as a refutation, and it is instead a
+statement about which signals exist where.
+
+The \emph{mention-only} definition is the clean test: it is computed by the
+same code from name and description for every firm in every bucket. There the
+unlisted layer is $12.9\%$ against $6.5\%$ and $4.4\%$, odds ratios $2.11$
+($[2.06, 2.17]$) and $3.21$ ($[3.11, 3.31]$).
+
+\paragraph{(ii) It could be one source.}
+The unlisted layer enters through four channels: a code-host scan
+($31{,}909$), portfolios and accelerators ($14{,}375$), public funder records
+($9{,}931$), and general web scraping ($766$). Dropping each in turn under the
+common-support definition (Figure~\ref{fig:robust}A), the gap against database
+A ranges from $+3.8$pp to $+8.1$pp, with odds ratios from $1.64$ to $2.46$ and
+every interval excluding zero. The most influential single channel is public
+funder records, whose removal cuts the gap roughly in half --- and those firms
+are $100\%$ U.S.\ federal grant recipients, a specific population. The gap
+survives without them.
+
+\paragraph{(iii) It could be our label being wrong.}
+We adjudicated $599$ firms --- $200$ sampled identically from each bucket ---
+against a strict written rubric applied to the firm's own description
+(Section~\ref{sec:aieval}). On this independent label the unlisted layer is
+$19.0\%$ AI against database A's $9.5\%$ and database B's $11.0\%$: $+9.5$pp
+($z=2.70$, $p=0.007$) and $+8.0$pp ($z=2.24$, $p=0.025$). Same direction, same
+order of magnitude, no pipeline classifier involved.
+
+\paragraph{(iv) It could be that the label is differently wrong in each bucket.}
+This is the serious objection, and it is true: our classifier has sensitivity
+$0.79/0.73/0.90$ and specificity $0.91/0.98/0.85$ in databases A, B, and the
+unlisted layer respectively. A prevalence gap can be manufactured by an
+accuracy gap. We correct for this with the Rogan--Gladen estimator
+\citep{rogan1978prevalence},
+\begin{equation}
+\label{eq:rg}
+\hat{p}^{\,\text{true}} = \frac{\hat{p}^{\,\text{obs}} + \text{specificity} - 1}
+                               {\text{sensitivity} + \text{specificity} - 1},
+\end{equation}
+Equation~\eqref{eq:rg} is applied per bucket, with intervals from a parametric bootstrap
+($B = 20{,}000$) that resamples both the validation counts and the population
+prevalence.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Coverage gap before and after correcting for bucket-specific
+classification error. Both are computed on the described subpopulation
+(firms with a description of at least $80$ characters), which is the frame the
+validation sample was drawn from.}
+\label{tab:corrected}
+\begin{tabular}{@{}lrrrr@{}}
 \toprule
-Layer & Count & Basis \\
+& \multicolumn{2}{c}{Observed} & \multicolumn{2}{c}{Corrected} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Bucket & Firms & AI \% & AI \% & $95\%$ interval \\
 \midrule
-Everything found (unlisted) & $56{,}981$ & --- \\
-$-$ personal accounts & $-11{,}169$ & code-host API returned \texttt{type: User} \\
-\textbf{Verified entities} & $\mathbf{45{,}812}$ & organization, funder record, or portfolio listing \\
-\quad of which analyzable & $36{,}534$ & has a domain or a description \\
-\quad \textbf{of which AI firms} & $\mathbf{26{,}981}$ & classified from its own description \\
+Commercial A & $598{,}084$ & $12.30$ & $4.11$ & $[0.00,\ 9.68]$ \\
+Commercial B & $274{,}793$ & $10.45$ & $12.33$ & $[8.35,\ 17.46]$ \\
+Unlisted     & $16{,}815$  & $28.88$ & $18.16$ & $[10.62,\ 24.79]$ \\
+\midrule
+\multicolumn{5}{@{}l}{\emph{Gap, unlisted minus commercial}}\\
+vs.\ A & & $+16.58$ & $+14.16$ & $[4.80,\ 22.45]$ \quad $\Pr(>0)=0.998$ \\
+vs.\ B & & $+18.43$ & $+5.94$ & $[-3.08,\ 13.64]$ \quad $\Pr(>0)=0.914$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-A name containing a space or a period cannot be a code-host login, so $4{,}527$
-records were settled by rule at zero API cost---which also preserves the
-meaning of a negative lookup for the names that remained. The intermediate
-layers are reported as what they are rather than quietly dropped or quietly
-counted.
+The corrected gap against database A survives with $99.8\%$ of posterior mass
+above zero. The gap against database B does not clear the conventional bar:
+$+5.9$pp with an interval that includes zero. We therefore state the finding as
+holding firmly against database A and as suggestive but not established against
+database B. The intervals are dominated by the $200$-per-bucket validation
+sample, not by the population counts --- enlarging the labelled set is the
+single cheapest way to sharpen this result, and it is our top research gap.
 
-\subsection{The central result: coverage bias is AI-correlated}
-
-\begin{table}[h]
+\begin{figure}[htbp]
 \centering
-\small
-\caption{AI share by coverage status. Computable for $100\%$ of each
-population; requires no enrichment.}
-\label{tab:headline}
-\begin{tabular}{@{}lrrr@{}}
-\toprule
-Population & Firms & AI firms & AI share \\
-\midrule
-Unlisted, but present in the employment database & $2{,}455$ & $645$ & $26.3\%$ \\
-\textbf{Unlisted (strict)} & $\mathbf{52{,}276}$ & $\mathbf{10{,}675}$ & $\mathbf{20.4\%}$ \\
-Commercial database A & $650{,}200$ & $80{,}277$ & $12.3\%$ \\
-Commercial database B & $281{,}395$ & $29{,}953$ & $10.6\%$ \\
-\bottomrule
-\end{tabular}
-\end{table}
+\includegraphics[width=\textwidth]{fig3_gap_robustness.pdf}
+\caption{Robustness of the coverage gap. Panel A: leave-one-channel-out under
+the common-support label, with $95\%$ intervals. Panel B: raw against
+classification-error-corrected gaps.}
+\label{fig:robust}
+\end{figure}
 
-Table~\ref{tab:headline} is the paper's principal empirical claim. Firms that
-the commercial registers do not cover are AI-related at roughly $1.7$ to
-$1.9$ times the rate of firms they do cover. In the notation of
-Section~\ref{sec:problem}, $\mathrm{Cov}(\pi_s, y^{AI}) < 0$: inclusion
-propensity and AI status are negatively associated, so
-$\widehat{p}_s$ understates $p$.
+\paragraph{One bias runs the other way.} Section~\ref{sec:er_eval} shows our
+entity resolver merges AI-named startups into older namesakes, deleting the
+former. That error removes unlisted AI firms from the data, so it depresses the
+measured gap. To the extent it matters, the true gap is larger than reported.
 
-We emphasize what makes this specific comparison robust where other results in
-this paper are not. It requires no founding year, no country, no team size, no
-imputation, and no proxy. It is a relative comparison between observed
-populations, so the absence of a sampling frame---fatal for level
-estimates---does not bind. And it survives the composition problem discussed
-below, because AI classification is available for the whole population while
-the enriched fields are not.
+\subsection{RQ6 --- Which sources add unobserved firms, and at what cost}
 
-\subsection{Structure of the unlisted layer}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{fig8_novelty.pdf}
+\caption{Panel A: novelty --- the share of firms from a source class absent
+from both commercial registers --- with $95\%$ intervals. Panel B: run success
+rate and novel-record share by collection tier.}
+\label{fig:novelty}
+\end{figure}
 
-\paragraph{Sector.} The unlisted layer over-represents healthcare
-($10.1\%$ vs.\ $3.2\%$ in database~A), financial services ($9.5\%$ vs.\
-$3.3\%$), education, data and analytics, and energy; it under-represents
-professional services ($4.7\%$ vs.\ $13.8\%$) and biotechnology. The pattern
-is consistent with a simple mechanism: firms with a website and a public
-codebase but no financing event or filing history are visible to us and
-invisible to the registers, while professional-services and biotech firms
-generate exactly the paperwork the registers ingest.
+Define $\text{Novelty}_s = N_{\text{new},s}/N_{\text{collected},s}$
+(Figure~\ref{fig:novelty}). Public funder records and the code-host scan register
+as $100\%$ novel: not one of the $9{,}931$ grant recipients appears in either
+commercial register. The routing is genuine rather than definitional ---
+$1{,}289$ web-scraped firms did resolve into a commercial bucket --- but with no
+variation left in those two channels, the informative comparison is within the
+portfolio channel, where the same collection method meets sources of differing
+fame. There, lesser-known
+portfolios yield $56.6\%$ novel firms and university programmes $55.7\%$,
+against $31.8\%$ for well-known venture firms and accelerators
+($[31.0, 32.7]$). At the individual level the spread is wide and ordered by
+prominence: Y~Combinator $24.1\%$, Seedcamp $25.3\%$, Techstars $33.6\%$,
+against Princeton's programme $87.0\%$, Rice's $83.0\%$, and Harvard's
+$79.6\%$. A famous portfolio is already indexed everywhere.
 
-\paragraph{Vintage.} The unlisted layer skews sharply to 2019--2025, with
-$10$--$12\%$ of the bucket in each recent year, while database~A's cohort
-counts fall away after 2021. Part of this is genuine---the web channel sees
-firms before a register indexes them---and part is register entry lag, which
-we cannot separate.
+By collection tier, the deterministic scrapers succeed on $77.3\%$ of runs and
+return $4{,}084$ records per site, of which $24.5\%$ are new; the agent tier
+succeeds on $26.5\%$ of runs and returns $163$ records per site, of which
+$9.6\%$ are new. The expensive path is roughly $25\times$ less productive per
+site and half as novel per record.
 
-\paragraph{Geography.} Of $27{,}588$ unlisted firms with a usable country
-value, $57.9\%$ are in North America, $13.2\%$ Western Europe, $7.6\%$ East
-Asia, $4.2\%$ Southern Europe, $4.1\%$ South Asia, and $12.2\%$ across nine
-other regions; $0.8\%$ carry a value that is not a country and are excluded
-rather than assigned. By continent: Americas $59.5\%$, Europe $21.6\%$, Asia
-$15.1\%$, Africa $1.8\%$, Oceania $1.2\%$.
-
-\begin{remark}[The composition caveat, stated where it bites]
-The geographic and vintage figures are dominated by a specific
-sub-population. Of unlisted firms with an effective founding year, roughly
-$64\%$ are U.S.\ federal-grant recipients---firms that are $100\%$ U.S.\ by
-construction and entered our data through a bulk registry download rather than
-through web discovery. They pull the unlisted U.S.\ share from about $40\%$ to
-about $60\%$. Any geography or formation-timing result on the unlisted
-population is really a result about American deep-tech grant recipients. The
-AI-share result in Table~\ref{tab:headline} is the exception precisely because
-it needs neither year nor country.
+\begin{remark}[A claim we tested and did not confirm]
+It is tempting to conclude that harder sources are systematically less
+productive. Across the $156$ individual sites with usable audit records, the
+rank correlation between mean run duration and novel-record share is
+$-0.03$ ($95\%$ CI $[-0.19, +0.13]$) --- indistinguishable from zero. The
+cost--yield relationship holds \emph{between} collection tiers and between
+levels of source prominence; it does not hold across sites within the agent
+tier. We report the null rather than the headline.
 \end{remark}
 
-\paragraph{Activity mix.} A bottom-up taxonomy built from description
-embeddings rather than an imposed vertical scheme places the unlisted layer
-disproportionately in developer tools and infrastructure ($2{,}450$ of
-$31{,}377$ firms in that domain), with the covered population dominating
-customer-facing categories. This is the same story as the sector tilt, told
-from the product side: the unlisted layer is where the technical supply chain
-of AI sits.
+% ============================================================================
+\section{Validation}
+\label{sec:validation}
+% ============================================================================
 
-\subsection{Discovery yield: not all sources cost the same}
-\label{sec:yield}
+\subsection{RQ7 --- What a language model does when asked to infer}
+\label{sec:imputation}
 
-Because the pipeline records provenance per firm, we can measure each
-channel's \emph{novelty}: the share of firms from that channel that turn out
-to be in neither commercial register.
+An early enrichment pass permitted the model to estimate location, founding
+year, team size, and stage where the source text did not state them. It filled
+almost everything: San Francisco for $33.7\%$ of cities, 11--50 employees for
+$70.6\%$ of team sizes ($99.8\%$ flagged inferred), the United States for
+$46.1\%$ of countries, 2020 for $19.1\%$ of founding years. All $7{,}553$
+estimated values were later removed --- which was only possible because each
+carried a source tag.
 
-\begin{table}[h]
+Because those values no longer exist, the episode is not reproducible from the
+live database. We therefore reran it as a controlled experiment with ground
+truth. Figure~\ref{fig:imputation} reports the result. We sampled $400$ firms with
+verified country, city, and founding year,
+stripped every year and place name from their descriptions so the answer was
+genuinely absent, and asked the same model the same question under two
+instructions: \textsc{estimate} (``give your best estimate for every field'')
+and \textsc{grounded} (``report only what the text states, else null'').
+
+\begin{figure}[htbp]
 \centering
-\small
-\caption{Novelty and precision by discovery channel.}
-\label{tab:yield}
+\includegraphics[width=\textwidth]{fig7_imputation.pdf}
+\caption{The imputation experiment, $n=400$ firms with known answers.
+Panel A: predicted against true city distribution. Panel B: predicted against
+true founding-year distribution --- the model's estimates spike on round
+numbers. Panel C: fill rate under the two instructions, on identical inputs.}
+\label{fig:imputation}
+\end{figure}
+
+\paragraph{The instruction, not the input, determines whether it answers.}
+Mean fill rate is $87.7\%$ under \textsc{estimate} and $2.2\%$ under
+\textsc{grounded} --- an $86$-point swing on identical text. For founding year
+the contrast is total: $99.8\%$ against $0.0\%$.
+
+\paragraph{What it fills in is its prior.} It predicts San Francisco for
+$10.6\%$ of firms whose true rate is $1.5\%$, a factor of seven, and the United
+States for $52.9\%$ against a true $43.2\%$. Founding years cluster on round
+numbers --- 2010 ($17.0\%$), 2015 ($16.0\%$), 2018 ($11.0\%$) --- against a
+true distribution whose mode is 2017 at $7.2\%$. Formally, permitting $T_4$
+replaces the unknown with a draw from the model's marginal $q_\theta$,
+independent of $i$, so any statistic over the filled column converges to a
+functional of $q_\theta$. Measuring the distance between predicted and true
+distributions with total variation and Jensen--Shannon divergence,
+\begin{equation}
+TV(P,Q) = \tfrac{1}{2}\textstyle\sum_x |P(x)-Q(x)|, \qquad
+JSD(P\|Q) = \tfrac{1}{2}KL(P\|M) + \tfrac{1}{2}KL(Q\|M),\; M = \tfrac{1}{2}(P+Q),
+\end{equation}
+gives $TV = 0.69$, $JSD = 0.39$ for city and $TV = 0.45$, $JSD = 0.16$ for
+founding year. Country is closest ($TV = 0.18$) because the truth is itself
+concentrated on the United States.
+
+\paragraph{And it is wrong often enough to matter.} Conditional on answering,
+the model gets country right $66.0\%$ of the time --- against $43.2\%$ from
+always guessing ``United States'' --- city $14.1\%$, and founding year within
+two years $39.8\%$. Median founding-year error is three years and $31\%$ of
+answers are off by more than five.
+
+\begin{remark}[The general lesson]
+Nothing distinguishes an estimated value from a measured one once both sit in
+the same column. A dataset built this way produces distributions that are
+\emph{more} concentrated and \emph{more} plausible than the truth, which is
+precisely why the error survives inspection: a chart of it looks like a
+finding. If a pipeline writes model output into the same columns as measured
+values without recording which is which, it cannot be repaired --- only
+rebuilt.
+\end{remark}
+
+\subsection{Validating the AI label}
+\label{sec:aieval}
+
+\begin{table}[htbp]
+\centering\small
+\caption{AI classifier performance against an independently adjudicated
+reference label ($n=599$, $200$ per bucket). Intervals are bootstrap
+percentiles, $B=2{,}000$.}
+\label{tab:aieval}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Classifier & Precision & Recall & $F_1$ \\
+\midrule
+Keyword mention          & $0.61\ [0.50, 0.73]$ & $0.54\ [0.44, 0.65]$ & $0.58\ [0.48, 0.67]$ \\
+Weighted score $\ge 0.5$ & $0.66\ [0.51, 0.80]$ & $0.34\ [0.24, 0.45]$ & $0.45\ [0.33, 0.56]$ \\
+Vendor tag               & $0.56\ [0.36, 0.75]$ & $0.18\ [0.10, 0.27]$ & $0.27\ [0.15, 0.38]$ \\
+Model verdict (where run)& $0.78\ [0.61, 0.93]$ & $0.27\ [0.17, 0.37]$ & $0.40\ [0.27, 0.51]$ \\
+\textbf{Pipeline union}  & $0.59\ [0.50, 0.68]$ & $\mathbf{0.82}\ [0.74, 0.90]$ & $\mathbf{0.69}\ [0.61, 0.76]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:aieval} reports the comparison. The union buys recall at the
+cost of precision: it recovers $82\%$ of AI firms
+but $41\%$ of what it flags is not AI by the rubric. No single component is
+adequate --- the vendor tag alone recovers $18\%$. This is worth stating
+plainly because vendor category tags are routinely used as ground truth in this
+literature.
+
+Performance also differs by bucket, which is what motivates the correction in
+Table~\ref{tab:corrected}: precision is $0.47$ in database A, $0.84$ in
+database B, and $0.58$ in the unlisted layer; recall is $0.79$, $0.73$, and
+$0.90$.
+
+\begin{remark}[Status of the reference label]
+The reference is a model adjudication under a written rubric, not human ground
+truth. It is independent of the pipeline classifier --- different prompt,
+different decision rule, description text only --- which is what licenses its
+use as a comparison. A $150$-firm subset is exported for author labelling
+(\texttt{results/64\_ai\_gold\_set\_for\_authors.csv}); until that is returned,
+every precision and recall figure here should be read as measured against a
+model reference, and we mark it as such throughout.
+\end{remark}
+
+\subsection{Validating entity resolution}
+\label{sec:er_eval}
+
+The production rule is exact-key matching \eqref{eq:key}, so what needs
+validating is the normaliser $\nu$, not a threshold. In this codebase $\nu$
+lowercases, strips punctuation, and removes a suffix list that includes
+\texttt{inc}, \texttt{llc}, \texttt{ltd} --- and also \texttt{ai},
+\texttt{io}, \texttt{labs}, \texttt{tech}, \texttt{systems}.
+
+That last group is the problem. \texttt{Compose.ai} and \texttt{Compose} both
+normalise to \texttt{compose}; \texttt{Upsolve AI} and \texttt{Upsolve} to
+\texttt{upsolve}; \texttt{Apollo.io} and \texttt{Apollo} to \texttt{apollo}.
+The suffix list deletes precisely the token that distinguishes an AI-era
+startup from an older firm with the same stem.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Entity-resolution failure analysis. ``Exposed'' counts firms whose
+normalised name is shared by a firm with a different registrable domain ---
+i.e.\ firms that would be merged if either lacked a domain.}
+\label{tab:er}
 \begin{tabular}{@{}lrr@{}}
 \toprule
-Channel & Unlisted yield & Share that are real firms \\
+& Colliding keys & Firms exposed \\
 \midrule
-Public funder records (federal and E.U.) & $\mathbf{100\%}$ & $99.6\%$ \\
-Accelerators and university programmes & $96.5\%$ & --- \\
-Lesser-known venture portfolios & $76\%$ & $89.5\%$ \\
-Well-known venture portfolios & $23$--$30\%$ & --- \\
-Code-host scan & --- & $75.8\%$ \\
+Production normaliser   & $6{,}193$ & $15{,}945$ \\
+Conservative normaliser (keeps \texttt{ai}, \texttt{io}, \texttt{tech}, \dots) & $3{,}226$ & $7{,}245$ \\
+\midrule
+Attributable to the suffix list & & $8{,}700$ \quad ($54.6\%$) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The ordering in Table~\ref{tab:yield} is almost exactly inverse to the
-ordering of engineering effort. A famous venture firm's portfolio page is
-JavaScript-rendered, paginated, frequently redesigned, and requires the
-agentic tier---and three-quarters of what it returns is already held, because
-a famous firm's portfolio is indexed everywhere. Public funder records are
-static bulk downloads requiring no scraping at all, and every firm in them is
-new to us and almost certainly a real company.
+On a $300{,}000$-firm sample, the suffix list is responsible for $54.6\%$ of
+all collision exposure (Table~\ref{tab:er}). Across the whole database,
+$28{,}029$ normalised names are shared by more than one distinct registrable
+domain. And the damage is AI-correlated: $10.0\%$ of collision groups
+($618$ of $6{,}193$) mix an AI-marked with a non-AI-marked firm, putting $653$
+AI-named firms at risk of absorption in the sample alone.
 
-\begin{remark}[A practical prior for researchers building similar data]
-Prioritize bulk-downloadable administrative and funder records over web
-scraping. The scraping is more interesting and produces almost nothing that
-the registers do not already have. We spent a large share of our effort
-learning this.
-\end{remark}
+\paragraph{No threshold can fix this.} Among $1{,}857$ real name-variant pairs
+observed in the pipeline, $767$ ($41.3\%$) are \emph{identical} after
+normalisation and therefore score exactly $1.0$. Sweeping $\tau$ from $0.85$ to
+$1.00$ moves the number of accepted pairs from $784$ to $767$, and all $215$
+AI-asymmetric merges are accepted at every threshold including $1.00$. The
+defect is upstream of the comparison. The fix is to stop stripping brand-
+carrying tokens, which is a one-line change to the suffix list; we report the
+diagnosis here and leave the re-resolution of the database as future work,
+because rerunning it changes every count in this paper.
 
-\subsection{The formation trend, with its caveat attached}
-
-Across the pooled dataset, the AI share of newly founded firms rises from
-$3.0\%$ in 2000 to $9.1\%$ in 2014, $17.3\%$ in 2020, $43.4\%$ in 2023, and
-$58.3\%$ in 2025. The direction is unambiguous and consistent across
-subpopulations. The level in the final years is not trustworthy: register
-entry lag means recent cohorts are observed mainly through their most
-visible---and disproportionately AI---members, and the denominator for
-2024--2025 is small and still filling. We report the series as a description
-of what is observable over time, not as an estimate of AI's share of firm
-formation.
-
-% ============================================================================
-\section{What the Infrastructure Enables}
-\label{sec:longitudinal}
-% ============================================================================
-
-The preceding sections describe an instrument. This section demonstrates the
-class of question it makes answerable, using panels assembled from multiple
-vintages of the commercial registers. We label these demonstrations, not
-findings: each is descriptive, and each carries an identification problem we
-state rather than solve.
-
-\subsection{A firm-level panel}
-
-Joining a 2021 vintage of database~B to its 2025 vintage on a stable internal
-identifier---an exact join, no fuzzy matching---yields $641{,}442$ firms
-observed at both dates. AI language prevalence in self-descriptions rises from
-$3.8\%$ to $4.7\%$; $7{,}648$ firms add AI language, $2{,}206$ drop it.
-
-Applying a model as a \emph{difference} classifier---given the 2021 and 2025
-descriptions of the same firm, what changed?---on $n=2{,}000$ firms yields:
-genuine pivot $18.1\%$, AI added as a feature $34.5\%$, already AI in 2021
-$10.5\%$, marketing language only $3.4\%$, no real change $33.5\%$. The
-decomposition is stable from $n=150$ to $n=2{,}000$.
-
-\paragraph{Triangulating the marketing-only category.} Text alone cannot
-separate a firm that repositioned from a firm that rewrote its copy. Using
-headcount and financing changes over the same window as an independent
-signal, $28\%$ of firms that added AI language show no growth of either kind,
-against the $3.4\%$ the text classifier flags. Text \emph{under}-detects
-unsupported claims by roughly a factor of eight. Absence of growth is a strong
-signal, not proof---a genuine pivot may not yet have grown---but the gap
-between $3.4\%$ and $28\%$ is too large to attribute to timing.
-
-\paragraph{Heterogeneity.} Information technology repositions around AI most
-often ($2.5\%$ of firms add AI language); B2B services shows the highest
-unsupported-claim rate ($20\%$ of its additions). By vintage, the rate is
-monotone in recency: pre-2010 $0.7\%$, 2010--15 $1.6\%$, 2016--20 $3.0\%$,
-2021+ $4.0\%$. Younger firms reposition roughly four times as often as
-pre-2010 firms.
-
-\subsection{Dating AI identity, and a correction we had to make}
-
-Using four consecutive vintages of database~A, $21.3\%$ of firms holding an AI
-category tag in the latest vintage already held one in the earliest, $6.0\%$
-acquired it in between, and $57.5\%$ are new to the register in the latest
-vintage.
-
-The $6.0\%$ figure carries the tag-versus-text problem of
-Section~\ref{sec:tagtext} on top of everything below.
-The $57.5\%$ is largely an artifact: the latest export is substantially
-larger and uses an expanded taxonomy, so ``new to the register'' conflates
-formation with vendor coverage growth. More importantly, the $6.0\%$
-repackaging figure is a \emph{floor} produced by an inadequate baseline. The
-earliest available vintage of database~A postdates the public release of
-consumer generative AI, so firms that adopted an AI identity in the
-intervening period appear as ``always AI''. Two checks establish this: within
-the ``already AI'' pool only $0.3\%$ used generative-AI vocabulary in their
-earlier description---they were traditional machine-learning firms---and
-bridging to the 2021 vintage of database~B shows that roughly $50\%$ of
-today's AI-tagged firms were not AI in 2021.
-
-We report the correction rather than the original because the mechanism is
-general and easy to reproduce: \textbf{a panel's earliest vintage silently
-becomes the definition of ``always''}, and if that vintage postdates the
-treatment, the treatment becomes invisible.
-
-A second correction concerns vocabulary. An early count of firms adopting
-``agent'' language was restricted three ways at once---to firms with
-descriptions in both panel vintages, to newly added terms, and by a narrow
-pattern---returning $598$ firms. Counted across all $137{,}857$ AI firms with
-a description in the latest vintage, $13{,}906$ ($10.1\%$) mention agents and
-$8{,}257$ ($6.0\%$) use explicitly agentic language---more than mention
-generative AI ($3.9\%$), large language models ($2.5\%$), or specific model
-families ($1.3\%$). The direction of the original finding held; its magnitude
-was understated by more than an order of magnitude. Both corrections are
-recorded in the repository alongside the original numbers.
-
-\begin{remark}[On a substring bug]
-An earlier version of this analysis reported generative-AI vocabulary at
-$0.48\%$ in 2021. The pattern matched the substring \texttt{llm}, which occurs
-inside ordinary words such as \emph{enrollment}. Corrected, clean
-generative-AI phrasing moves $0.007\% \to 0.011\% \to 0.079\%$ across the three
-vintages---essentially zero before the technology existed, which is the
-expected result and a useful check that the corrected measure is measuring
-what it claims.
-\end{remark}
-
-\subsection{Outcomes}
-
-Matching to a register vintage carrying operating status yields $577{,}921$
-matched firms. Within founding cohort---which removes the age confound that
-makes older non-AI firms appear more successful---firms that added AI language
-close at substantially lower rates than same-vintage firms that never did:
-$6.5\%$ vs.\ $13.7\%$ (pre-2010), $3.5\%$ vs.\ $17.8\%$ (2010--15), $2.2\%$
-vs.\ $6.6\%$ (2016--21). Acquisition and public-listing rates are comparable
-within cohort.
-
-This association must not be read causally, for a reason internal to the
-measurement: \emph{to add AI language by 2025, a firm had to be alive enough
-in 2025 to update its profile}. Survival is partly built into the treatment
-definition, which mechanically depresses the closure rate of the treated
-group. A credible design needs the date AI was added and a baseline
-conditioned on being alive at the start. We report the association and the
-obstruction together.
-
-\subsection{Who founds AI firms, and one unreconciled contradiction}
-
-From register-derived founder records, founders of AI firms are more
-credentialed and more technical than founders of non-AI firms: $20.5\%$ hold
-doctorates versus $10.8\%$; $33.4\%$ hold only a bachelor's degree versus
-$47.1\%$; teams are larger ($1.72$ vs.\ $1.39$ founders). Fields concentrate in
-computer science, electrical engineering, physics, and mathematics. AI
-founders are markedly \emph{less} likely to be serial founders ($3.1\%$ vs.\
-$11.9\%$), consistent with a wave of first-time entrepreneurship.
-
-On financing progression, AI firms entering at seed reach the next round at
-$23.2\%$ versus $18.8\%$, and the gap persists in every founding cohort.
-
-One measure does not reconcile. The register-derived founder data show AI
-founders slightly less likely to be female ($10.0\%$ vs.\ $13.4\%$), while an
-employment-database-derived aggregate over a different population shows no
-gender difference. The two use different sources, different populations, and
-different definitions of ``founder''---the employment source has no founder
-role category at all, so its aggregate describes senior officers near
-founding, not verified founders. We report the discrepancy and decline to cite
-either figure until it is resolved.
-
-\subsection{An informative negative}
-
-For the unlisted population no register panel exists, so we attempted to
-reconstruct homepage text at two dates from a web archive. Roughly $88$--$90\%$
-of sampled unlisted AI firms have no archived 2021 homepage: they did not
-exist, were not online, or were not crawled. The measurement failed, and the
-failure is the result---the unlisted AI layer is predominantly born-AI rather
-than repositioned, which is consistent with its 2019--2025 vintage skew and its
-elevated AI share. Repositioning is a phenomenon of established, covered
-firms. We report this because a null that explains itself is worth more than a
-tool that quietly returns a biased $12\%$ subsample.
+We export the $215$ AI-asymmetric pairs for author adjudication
+(\texttt{results/54\_er\_adjudication\_sample.csv}). Until they are labelled we
+report exposure counts, which need no judgement, rather than a precision
+estimate, which does.
 
 % ============================================================================
 \section{Limitations}
 \label{sec:limits}
 % ============================================================================
 
-We state the limitations at length because the value of this paper is in the
-characterization of the instrument, and an instrument characterized only by
-its successes is not characterized.
+\paragraph{No sampling frame, so no levels.} The web channel is a convenience
+sample. Every defensible claim is a difference between observed populations.
 
-\paragraph{No sampling frame.} The web-discovered population is whatever the
-scrapers and scans found. There is no denominator, so no rate is ``per
-capita'' and no level is a population estimate. All defensible claims are
-relative comparisons between observed populations.
+\paragraph{Missingness is severe and correlated with the outcome.} Only $8.0\%$
+of unlisted firms have a stated founding year and $9.4\%$ an industry
+classification. Worse, enrichable firms differ on exactly what we measure:
+unlisted firms with a description are $32.7\%$ AI against $13.8\%$ for those
+without; with a domain, $27.7\%$ against $21.5\%$. Any statistic computed on
+the enriched unlisted subsample overstates AI adoption relative to the full
+layer. This is why Section~\ref{sec:results} runs on the commercial population
+and Section~\ref{sec:coverage} uses only the AI label.
 
-\paragraph{Missingness on the key variable is non-random, and correlated with
-the outcome.} Only $8.3\%$ of unlisted firms carry a stated founding year.
-Worse, the subsample that does is systematically different on exactly what we
-measure: unlisted firms with a founding year are $27.5\%$ AI versus $20.1\%$
-without; with a domain, $28.0\%$ versus $16.8\%$. Enrichable firms are more
-AI-intensive than unenrichable ones, so any statistic computed on the enriched
-subsample \emph{overstates} AI adoption. This is selection on observables and
-it biases the enrichment-dependent results in a known direction.
+\paragraph{Coverage differs by channel, so channel comparisons are unequal.}
+Founding-year coverage within the unlisted layer is $20.1\%$ for portfolio
+sources and $5.1\%$ for the code-host scan; public funder records have country
+and description for $100\%$ of firms but a founding year for none.
 
-\paragraph{Coverage is uneven across channels, confounding channel
-comparisons.} Founding-year coverage is $20.1\%$ for scraper-sourced firms and
-$4.1\%$ for code-host-sourced firms, while the code host contributes the
-larger population. Channel comparisons on enriched fields compare different
-things.
+\paragraph{Recent cohorts are not observable.} The denominator for 2023--2025
+is still filling. Every result touching those cohorts --- the top of the time
+series, the concentration reversal, the regional shift toward North America ---
+is confounded with indexing speed, and we have no instrument for it.
 
-\paragraph{Proxies are bounds, not measurements.} Domain registration and
-first award year bound founding from above and are not incorporation dates.
-Named people from award records are executives at award time; a principal
-investigator is not necessarily a founder, and the job title is stored with
-the name for that reason.
+\paragraph{The AI label is imperfect and unevenly imperfect.} Union precision
+is $0.59$ and varies from $0.47$ to $0.84$ across buckets. We correct the
+headline for this; we do not correct the time, geography, and industry series,
+which should be read as describing the labelled population.
 
-\paragraph{Survival is a proxy.} Domain liveness records whether a domain
-answered an HTTP request on a given day. Parked domains read as live, lapsed
-but operating firms read as dead, and the roughly two-thirds of the population
-with no domain cannot be checked. It is directional and is never reported as a
-survival rate.
+\paragraph{Entity resolution is known to be broken in an AI-correlated way.}
+Section~\ref{sec:er_eval}. The direction is conservative for our headline but
+it is a defect, not a feature.
 
-\paragraph{No economic depth for the unlisted layer.} There is no financing,
-headcount, or verified exit data for these firms. ``Economic analysis'' of the
-unlisted layer means formation timing, sector mix, a survival proxy, and an AI
-flag---structure, not performance.
+\paragraph{Proxies are bounds.} Where a founding year is imputed for the
+unlisted layer it comes from an accelerator cohort label, a first grant award,
+or a domain registration date --- each an upper bound on the founding date, not
+a measurement. Proxy-derived years are held in separate columns and are never
+mixed into the primary field.
 
-\paragraph{Composition.} The federal-grant sub-population is $100\%$ U.S.\ and
-dominates the enriched unlisted subsample; healthcare is likely overstated at
-$20.8\%$ of classified firms because a national health agency is one of our
-largest registry sources. Activity mix should be read by channel.
+\paragraph{Reference labels are model-generated.} See
+Section~\ref{sec:aieval}. Human adjudication is pending.
 
-\paragraph{Extraction accuracy is not measured against a labeled gold
-standard.} We report validation statistics conditional on acceptance and a
-small hand-built regression suite for the difference classifier, but we do not
-have manually labeled ground truth for field-level extraction. Precision,
-recall, and $F_1$ per field are therefore \emph{not} reported, and we decline
-to estimate them from the pipeline's own outputs. Building that labeled set is
-the highest-value next step and is described below.
-
-\paragraph{Classifier granularity.} The technique sub-classification returns
-``other'' for $63.7\%$ of firms; the descriptions are frequently too thin to
-identify a method, and the taxonomy likely needs revision.
-
-\paragraph{Operational fragility.} The system depends on third-party APIs with
-rate limits, credit exhaustion, and unstable connections; one month's run log
-shows a $73\%$ error rate driven overwhelmingly by upstream extraction
-failures and rate limiting rather than by parsing errors. Pipelines of this
-kind are not run-and-forget, and effort estimates should assume they are not.
+\paragraph{No causal claims.} We observe that AI's share of new firms jumped
+between the 2022 and 2023 cohorts, immediately after a salient technology
+release. We have no design that separates that from contemporaneous indexing
+dynamics, and we do not assert an effect. A credible design would need
+treatment timing defined before the outcome, examinable pre-trends, and a
+control group whose observability is not itself a function of the treatment ---
+the last being the hard one here. \citet{bena2025prompted} show one route,
+using cross-industry exposure variation; applying an exposure design to our
+data is the natural next step and is not attempted here.
 
 % ============================================================================
-\section{Next Steps}
-\label{sec:future}
+\section{Discussion and Conclusion}
 % ============================================================================
 
-\paragraph{A labeled evaluation set.} Hand-label a stratified sample of a few
-hundred firms across sources and fields, and report per-field precision,
-recall, and $F_1$ for the extraction operator $E$, along with a comparison of
-classification strategies---keyword, embedding similarity, model, and
-hybrid---on the same labels:
-\begin{equation}
-\text{Accuracy} = \frac{1}{N}\sum_{i=1}^N \mathbb{1}\big[\hat{y}_i = y_i\big],
-\qquad
-F_1^{(k)} = \frac{2 \,\mathrm{Prec}_k \mathrm{Rec}_k}{\mathrm{Prec}_k + \mathrm{Rec}_k}.
-\end{equation}
-This is the single largest gap between what the system does and what the paper
-can claim about it.
+Three things are worth carrying away.
 
-\paragraph{A learned entity resolver.} Replace \eqref{eq:match} with
-$M(i,j) = w_n S_n + w_d S_d + w_l S_l + w_g S_g$ over name, domain, location,
-and description similarity, with weights fitted on the labeled pairs above and
-$\tau$ chosen on a precision-constrained frontier. The audit table already
-stores the method used for every existing match, so the current rule can serve
-as a weak-supervision seed and any change can be evaluated against it.
+\textbf{AI entrepreneurship grew and spread, and then our ability to see it
+deteriorated.} The share of new firms that are AI-related rose roughly
+twentyfold between 2000 and 2025, and the increase is robust to holding the
+selection rule fixed. Through the late 2010s that growth was geographically
+dispersing --- more countries, falling concentration, AI no more concentrated
+than entrepreneurship generally. What happened after 2020 we cannot say,
+because the cohorts in question are exactly the ones the registers have not
+finished indexing. That is not a hedge; it is the finding. Anyone reading a
+post-2020 concentration statistic off a commercial database is reading indexing
+speed.
 
-\paragraph{A source-reliability model.} With multiple sources per firm, source
-quality can be learned from observed agreement rather than assumed:
-$R_s = \alpha C_s + \beta A_s + \gamma U_s$ over completeness, cross-source
-agreement, and update reliability. We flag this explicitly as \emph{not
-implemented}.
+\textbf{The firms that are hardest to see are disproportionately the firms the
+research agenda is about.} Roughly twice as AI-intensive, robustly across
+definitions, channels, an independent label, and a correction for our own
+classifier's errors. This is a lower bound on what one commercial source
+misses, and it means published estimates of AI's share of entrepreneurship are
+biased downward by a mechanism nobody can see from inside a single database.
 
-\paragraph{Event-study timing.} The repositioning results need the date AI was
-added, not two endpoints. A mid-window register vintage plus the archive-based
-month-dating already prototyped would support an event study with a
-still-alive-at-baseline sample, which is the minimum for a credible design.
+\textbf{Two measurement failures generalise beyond this project.} A language
+model told to estimate what it cannot know does not decline --- it returns the
+modal startup, at rates that plot as findings, and the values are
+indistinguishable from measured ones unless provenance is recorded at write
+time. And a name normaliser tuned for legal suffixes will happily delete
+``AI'', merging exactly the firms an AI study is trying to count, at a rate no
+matching threshold can touch. Both were caught only because we looked for them;
+neither would have shown up in any aggregate.
 
-\paragraph{Coverage against an external reference.} Where a national business
-register provides counts by country and year, the coverage ratio
-\begin{equation}
-\mathrm{CoverageRatio}_c = \frac{P_{\text{ours}}(c)}{P_{\text{reference}}(c)}
-\end{equation}
-would convert our relative statements into calibrated ones for those
-countries, and would let us reweight toward a population quantity rather than
-only comparing observed groups.
-
-% ============================================================================
-\section{Conclusion}
-% ============================================================================
-
-Empirical work on AI and entrepreneurship inherits the coverage properties of
-whatever database it runs on. We built a second observation channel and used
-it to measure those properties directly. The firms the commercial registers
-miss are AI-related at roughly $1.7$--$1.9$ times the rate of the firms they
-cover; the cheapest way to see those firms is administrative funder records
-rather than the web scraping that consumed most of our engineering effort; and
-the most dangerous step in a modern data pipeline is the one where a language
-model is asked to supply a value rather than to read one, because it will
-comply, plausibly, at scale, and in a direction that looks like a result.
-
-None of this settles whether AI lowers the barriers to founding a firm or
-raises them. It establishes that the question cannot be answered from a single
-commercial register without a correction whose sign we can now state and whose
-rough magnitude we can now bound, and it provides an instrument, a provenance
-discipline, and an honest account of the instrument's blind spots for the work
-that follows.
+None of this settles whether AI lowers the barrier to founding a firm. It
+establishes what can currently be measured, how much the standard instrument
+misses, and in which direction --- which is the prerequisite for the causal
+work the broader research agenda is aiming at.
 
 \vspace{1em}
-\noindent\textbf{Reproducibility.} The pipeline, analysis scripts, and
-aggregate outputs are in the project repository. Licensed row-level data are
-excluded by configuration; only aggregates are committed. Every figure in this
-paper is regenerable from a committed script against the production database,
-and each enriched value carries its source and confidence in the store.
+\noindent\textbf{Reproducibility.} Analysis scripts live in
+\texttt{ai-startup-tracker/analysis/} and \texttt{experiments/}, and write to
+\texttt{results/}. Each is run against the production database with
+\texttt{railway run -s Postgres -- .venv/bin/python <script>}.
+\texttt{paper/CLAIM\_EVIDENCE.md} maps every number in this paper to its script
+and output file; \texttt{paper/RESEARCH\_GAPS.md} lists what must be done before
+the paper is final. Licensed row-level records are excluded by configuration;
+only aggregates are committed.
+
+\newpage
+\bibliography{references}
 
 \end{document}
