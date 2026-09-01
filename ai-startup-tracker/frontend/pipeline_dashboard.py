@@ -684,7 +684,17 @@ def load_startups() -> pd.DataFrame:
             tr.forks AS github_forks,
             ls.llm_classification,
             ls.llm_confidence,
-            ls.startup_likelihood
+            ls.startup_likelihood,
+            -- github_signals/github_repo_snapshots are empty in production (the
+            -- repo linkage was lost), so the two joins above yield NULL for every
+            -- row. These two tables are what survived, and they still carry the
+            -- GitHub identity: the account login and whether it is an
+            -- organisation or a person.
+            COALESCE(ge.login, gp.login) AS github_owner,
+            ge.entity_type              AS github_entity_type,
+            gp.public_repos             AS github_public_repos,
+            gp.followers                AS github_followers,
+            gp.created_year             AS github_created_year
         FROM companies c
         LEFT JOIN LATERAL (
             SELECT deal_date, deal_size, round_type
@@ -702,6 +712,14 @@ def load_startups() -> pd.DataFrame:
             WHERE s.repo_full_name = tr.repo_full_name
             ORDER BY s.collected_at DESC LIMIT 1
         ) ls ON TRUE
+        LEFT JOIN LATERAL (
+            SELECT login, entity_type FROM github_entity_check e
+            WHERE e.company_id = c.id LIMIT 1
+        ) ge ON TRUE
+        LEFT JOIN LATERAL (
+            SELECT login, public_repos, followers, created_year FROM github_profile g2
+            WHERE g2.company_id = c.id LIMIT 1
+        ) gp ON TRUE
         ORDER BY lf.deal_date DESC NULLS LAST, c.first_seen_at DESC NULLS LAST
         LIMIT 15000
     """
@@ -2100,32 +2118,61 @@ def page_health(health_df: pd.DataFrame, runs_df: pd.DataFrame):
 # ── Page: GitHub Discovery ───────────────────────────────────────────
 
 def page_github(df: pd.DataFrame, df_all: pd.DataFrame):
-    """GitHub-sourced companies only, filtered by LLM = 'startup'."""
+    """GitHub-sourced companies, filtered by whatever verdict actually exists.
+
+    Two regimes, because the LLM repo classification was lost when
+    github_repo_snapshots emptied:
+      * llm_classification present -> filter to 'startup', the original design
+      * otherwise                  -> fall back to the GitHub entity check,
+                                      which survived, and label the page for it
+    The page never implies a classification that did not run.
+    """
+    has_llm = (not df_all.empty and "llm_classification" in df_all.columns
+               and df_all["llm_classification"].notna().any())
+
+    subtitle = ("Repos found via GitHub scan and classified as startups by the LLM filter"
+                if has_llm else
+                "Companies discovered via the GitHub scan, excluding accounts the "
+                "GitHub API confirmed are individuals")
     st.markdown(
         f'<div class="section-header">GitHub Discovery</div>'
-        f'<div class="section-sub">Repos found via GitHub scan and classified as startups by the LLM filter</div>',
+        f'<div class="section-sub">{subtitle}</div>',
         unsafe_allow_html=True,
     )
 
     total_all = len(df_all)
     total_kept = len(df)
 
-    cls_counts = (
-        df_all["llm_classification"].fillna("unclassified").value_counts().to_dict()
-        if not df_all.empty and "llm_classification" in df_all.columns
-        else {}
-    )
-
-    m1, m2, m3, m4, m5 = st.columns(5)
-    m1.metric("GitHub repos (raw)", f"{total_all:,}")
-    m2.metric("Classified as startup", f"{total_kept:,}")
-    m3.metric("Personal projects", f"{cls_counts.get('personal_project', 0):,}")
-    m4.metric("Research", f"{cls_counts.get('research', 0):,}")
-    m5.metric("Community tools", f"{cls_counts.get('community_tool', 0):,}")
+    if has_llm:
+        cls_counts = df_all["llm_classification"].fillna("unclassified").value_counts().to_dict()
+        m1, m2, m3, m4, m5 = st.columns(5)
+        m1.metric("GitHub repos (raw)", f"{total_all:,}")
+        m2.metric("Classified as startup", f"{total_kept:,}")
+        m3.metric("Personal projects", f"{cls_counts.get('personal_project', 0):,}")
+        m4.metric("Research", f"{cls_counts.get('research', 0):,}")
+        m5.metric("Community tools", f"{cls_counts.get('community_tool', 0):,}")
+    else:
+        ent = (df_all["github_entity_type"].fillna("not checked").value_counts().to_dict()
+               if "github_entity_type" in df_all.columns else {})
+        m1, m2, m3, m4, m5 = st.columns(5)
+        m1.metric("GitHub-sourced companies", f"{total_all:,}")
+        m2.metric("Shown here", f"{total_kept:,}")
+        m3.metric("Confirmed organisations", f"{ent.get('Organization', 0):,}")
+        m4.metric("Confirmed individuals (excluded)", f"{ent.get('User', 0):,}")
+        m5.metric("Not checked", f"{ent.get('not checked', 0):,}")
+        st.caption(
+            "The per-repo LLM classification is unavailable: `github_signals` and "
+            "`github_repo_snapshots` are empty, so the repo-to-company linkage and "
+            "the startup/personal verdict are both gone. This page therefore uses "
+            "the GitHub entity check, which did survive, and only tells us whether "
+            "an account is an organisation or a person. Star counts and repo names "
+            "are unavailable for the same reason."
+        )
 
     if df.empty:
-        st.info("No GitHub repos pass the LLM startup filter yet. "
-                "Run `python scripts/github_weekly_discover.py` or `scripts/run_llm_classify.py`.")
+        st.info("No GitHub-sourced companies to show. "
+                "`companies.verification_status = 'emerging_github'` is empty, which "
+                "would mean the GitHub scan has never run against this database.")
         return
 
     # Filters
@@ -2172,10 +2219,15 @@ def page_github(df: pd.DataFrame, df_all: pd.DataFrame):
 
     disp = f.sort_values("github_stars", ascending=False, na_position="last").copy()
     cols = [c for c in [
-        "name", "github_repo", "github_stars", "github_forks", "github_url",
+        "name", "github_owner", "github_entity_type", "github_repo",
+        "github_stars", "github_forks", "github_url",
+        "github_public_repos", "github_followers", "github_created_year",
         "ai_tags", "llm_confidence", "country", "city",
         "first_seen_at", "domain", "description",
     ] if c in disp.columns]
+    # Drop columns that are entirely empty rather than showing a wall of blanks
+    # (github_repo/stars/forks are all NULL while the linkage is missing).
+    cols = [c for c in cols if c in ("name", "description") or disp[c].notna().any()]
     disp = disp[cols]
 
     if "ai_tags" in disp.columns:
@@ -2194,6 +2246,9 @@ def page_github(df: pd.DataFrame, df_all: pd.DataFrame):
             lambda v: f"{v:.2f}" if pd.notna(v) else "auto")
 
     disp = disp.rename(columns={
+        "github_owner": "GitHub account", "github_entity_type": "Account type",
+        "github_public_repos": "Public repos", "github_followers": "Followers",
+        "github_created_year": "Account created",
         "name": "Owner", "github_repo": "Repo", "github_stars": "Stars",
         "github_forks": "Forks", "github_url": "Link",
         "ai_tags": "AI Category", "llm_confidence": "LLM Conf",
@@ -3890,6 +3945,90 @@ def _info_sources_section():
 
 # ── Main ─────────────────────────────────────────────────────────────
 
+@st.cache_data(ttl=300)
+def load_github_companies(limit: int = 5000) -> pd.DataFrame:
+    """GitHub-discovered companies, queried directly rather than filtered out of
+    load_startups().
+
+    load_startups() takes the newest 15,000 rows for container-memory reasons,
+    and that window is dominated by commercial-database companies with funding
+    dates -- only 59 of the 56,981 GitHub-sourced companies survive it. Filtering
+    that frame made the page look almost empty for a reason that had nothing to
+    do with GitHub.
+
+    Rows that still carry the surviving enrichment are ordered first, so the
+    informative ones are the ones that fit inside the limit.
+    """
+    engine = get_engine()
+    query = """
+        SELECT
+            c.id, c.name, c.domain,
+            LEFT(c.description, 240) AS description,
+            c.country, c.city, c.founded_year, c.ai_tags, c.categories,
+            c.ai_score, c.cb_ai_tagged, c.ai_mentioned, c.llm_ai_verified,
+            c.first_seen_at, c.incubator_source, c.verification_status,
+            COALESCE(ge.login, gp.login) AS github_owner,
+            ge.entity_type              AS github_entity_type,
+            gp.public_repos             AS github_public_repos,
+            gp.followers                AS github_followers,
+            gp.created_year             AS github_created_year
+        FROM companies c
+        LEFT JOIN LATERAL (
+            SELECT login, entity_type FROM github_entity_check e
+            WHERE e.company_id = c.id LIMIT 1
+        ) ge ON TRUE
+        LEFT JOIN LATERAL (
+            SELECT login, public_repos, followers, created_year FROM github_profile g2
+            WHERE g2.company_id = c.id LIMIT 1
+        ) gp ON TRUE
+        WHERE c.verification_status::text = 'emerging_github'
+        -- Confirmed organisations first. Ordering by follower count alone put
+        -- famous individual developers at the top of a company table: they have
+        -- no entity_check row, so they are "not checked" rather than "confirmed
+        -- a person", and the exclusion filter cannot catch them. Only 3,056
+        -- accounts are confirmed organisations, so they lead.
+        ORDER BY (ge.entity_type = 'Organization') DESC NULLS LAST,
+                 gp.followers DESC NULLS LAST,
+                 gp.public_repos DESC NULLS LAST,
+                 c.first_seen_at DESC NULLS LAST
+        LIMIT :limit
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(query), {"limit": limit}).mappings().all()
+    df = pd.DataFrame(rows)
+    if df.empty:
+        return df
+
+    # Same big-tech filter load_startups() applies. A dedicated query bypasses
+    # it, which is how Google, Ethereum and Bitcoin surfaced at the top of a
+    # table of "discovered startups" -- they are real GitHub organisations, just
+    # not the thing this page is about. Matched on the account login too, since
+    # for these rows the login IS the identity.
+    name_l = df["name"].fillna("").str.strip().str.lower()
+    owner_l = df["github_owner"].fillna("").str.strip().str.lower()
+    dom = df["domain"].fillna("").str.strip().str.lower().str.replace(r"^www\.", "", regex=True)
+    dom_root = dom.str.split(".").str[0]
+    is_big = (name_l.isin(BIG_TECH_DENYLIST) | owner_l.isin(BIG_TECH_DENYLIST)
+              | dom_root.isin(BIG_TECH_DENYLIST))
+    df = df[~is_big].reset_index(drop=True)
+
+    # 98 GitHub logins map to more than one `companies` row -- duplicates the
+    # entity resolver never merged, because both rows lack a domain and the
+    # name-only fallback did not fire. Collapsed for display only; the
+    # underlying rows are left alone, since merging company records on
+    # production is a separate operation from rendering a table.
+    if "github_owner" in df.columns:
+        has_owner = df["github_owner"].notna()
+        df = pd.concat([
+            df[has_owner].drop_duplicates(subset=["github_owner"], keep="first"),
+            df[~has_owner],
+        ]).reset_index(drop=True)
+
+    if "first_seen_at" in df.columns:
+        df["first_seen_at"] = pd.to_datetime(df["first_seen_at"], errors="coerce")
+    return df
+
+
 def _company_frames():
     """Load companies and split by source.
 
@@ -3898,9 +4037,15 @@ def _company_frames():
     """
     df = load_startups()
     if not df.empty:
-        inc = df["incubator_source"].astype("string")
-        has_repo = df["github_repo"].notna() if "github_repo" in df.columns else pd.Series([False] * len(df))
-        is_gh = inc.isna() & has_repo
+        # verification_status is the authoritative marker for "came in via the
+        # GitHub scan" -- it is set at import and 56,981 companies carry it.
+        # This used to key off github_repo instead, which silently emptied the
+        # page when github_signals lost its rows: every company looked
+        # non-GitHub because the linkage table it read was gone.
+        vs = df["verification_status"].astype("string")
+        is_gh = vs.eq("emerging_github")
+        if not is_gh.any() and "github_repo" in df.columns:
+            is_gh = df["incubator_source"].astype("string").isna() & df["github_repo"].notna()
     else:
         is_gh = pd.Series([], dtype=bool)
 
@@ -4089,12 +4234,22 @@ def main():
         elif page == "Companies":
             page_companies()
         elif page == "GitHub Discovery":
-            _sc, github_df_all = _company_frames()
-            # LLM filter: only keep repos classified as 'startup' by the LLM
-            if "llm_classification" in github_df_all.columns:
+            github_df_all = load_github_companies()
+            # The LLM 'startup' verdict lived in github_repo_snapshots, which is
+            # empty -- that classification is gone and is NOT reconstructed here.
+            # What survived is the GitHub entity check, which answered a narrower
+            # but real question: is this login an organisation or a person? So
+            # the page now excludes accounts confirmed to be individuals, which
+            # is the same first cut the paper's funnel makes (-11,169 personal
+            # accounts), and says so rather than implying an LLM ran.
+            if ("llm_classification" in github_df_all.columns
+                    and github_df_all["llm_classification"].notna().any()):
                 github_df = github_df_all[github_df_all["llm_classification"] == "startup"].copy()
+            elif "github_entity_type" in github_df_all.columns:
+                github_df = github_df_all[
+                    github_df_all["github_entity_type"].fillna("unknown") != "User"].copy()
             else:
-                github_df = github_df_all.iloc[0:0].copy()
+                github_df = github_df_all.copy()
             page_github(github_df, github_df_all)
         elif page == "About":
             page_about()
