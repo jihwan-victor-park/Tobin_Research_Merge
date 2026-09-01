@@ -1,9 +1,9 @@
 version: 1
-domain: naver.com
-created_at: '2026-06-12T14:02:06.520938Z'
-updated_at: '2026-07-09T11:08:38.558018Z'
+domain: industrifonden.se
+created_at: '2026-07-09T10:18:35.974200Z'
+updated_at: '2026-07-09T10:18:35.974200Z'
 seed_urls:
-- https://d2sf.naver.com/en/portfolio
+- https://www.industrifonden.se/portfolio
 preferred_strategy: single_page_extract
 fallback_order:
 - single_page_extract
@@ -14,11 +14,11 @@ subpage_hints: []
 pagination_hints: []
 quality_expectation_min_records: 1
 last_success:
-  run_id: agentic_run_20260709_110821
-  at: '2026-07-09T11:08:38.558018Z'
-  input_url: https://d2sf.naver.com/en/portfolio
+  run_id: agentic_run_20260709_101539
+  at: '2026-07-09T10:18:35.974200Z'
+  input_url: https://www.industrifonden.se/portfolio
   strategy: single_page_extract
-  record_count: 1
+  record_count: 65
   valid_name_ratio: 1.0
   duplicate_ratio: 0.0
   completeness_score: 1.0

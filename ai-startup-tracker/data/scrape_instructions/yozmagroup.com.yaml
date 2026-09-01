@@ -1,7 +1,7 @@
 version: 1
 domain: yozmagroup.com
 created_at: '2026-06-13T14:01:30.569820Z'
-updated_at: '2026-06-13T14:01:30.569820Z'
+updated_at: '2026-07-09T10:34:28.700471Z'
 seed_urls:
 - https://www.yozmagroup.com/overview
 preferred_strategy: single_page_extract
@@ -14,8 +14,8 @@ subpage_hints: []
 pagination_hints: []
 quality_expectation_min_records: 1
 last_success:
-  run_id: agentic_run_20260613_140128
-  at: '2026-06-13T14:01:30.569820Z'
+  run_id: agentic_run_20260709_103424
+  at: '2026-07-09T10:34:28.700471Z'
   input_url: https://www.yozmagroup.com/overview
   strategy: single_page_extract
   record_count: 1

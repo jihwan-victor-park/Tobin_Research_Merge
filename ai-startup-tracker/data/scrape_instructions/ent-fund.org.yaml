@@ -1,7 +1,7 @@
 version: 1
 domain: ent-fund.org
 created_at: '2026-06-13T14:04:11.904925Z'
-updated_at: '2026-06-13T14:04:11.904925Z'
+updated_at: '2026-07-09T10:55:42.956306Z'
 seed_urls:
 - https://www.ent-fund.org/uploads/doc/aef_portfolio_factsheet.pdf?v=20240521
 preferred_strategy: single_page_extract
@@ -14,8 +14,8 @@ subpage_hints: []
 pagination_hints: []
 quality_expectation_min_records: 1
 last_success:
-  run_id: agentic_run_20260613_140223
-  at: '2026-06-13T14:04:11.904925Z'
+  run_id: agentic_run_20260709_105322
+  at: '2026-07-09T10:55:42.956306Z'
   input_url: https://www.ent-fund.org/uploads/doc/aef_portfolio_factsheet.pdf?v=20240521
   strategy: single_page_extract
   record_count: 68

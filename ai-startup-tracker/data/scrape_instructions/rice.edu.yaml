@@ -1,5 +1,26 @@
 version: 1
 domain: rice.edu
+created_at: '2026-07-09T09:49:03.666154Z'
+updated_at: '2026-07-09T09:49:03.666154Z'
 seed_urls:
+- https://alliance.rice.edu/owlspark/ventures
 - https://research.rice.edu/ott/startups
-updated_at: '2026-05-15T16:18:25Z'
+preferred_strategy: single_page_extract
+fallback_order:
+- single_page_extract
+- subpage_discovery
+- pagination_probe
+- search_probe
+subpage_hints: []
+pagination_hints: []
+quality_expectation_min_records: 1
+last_success:
+  run_id: agentic_run_20260709_094327
+  at: '2026-07-09T09:49:03.666154Z'
+  input_url: https://alliance.rice.edu/owlspark/ventures
+  strategy: single_page_extract
+  record_count: 1
+  valid_name_ratio: 1.0
+  duplicate_ratio: 0.0
+  completeness_score: 1.0
+notes: null

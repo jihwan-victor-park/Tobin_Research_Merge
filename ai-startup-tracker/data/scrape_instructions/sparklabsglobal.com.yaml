@@ -1,7 +1,7 @@
 version: 1
 domain: sparklabsglobal.com
 created_at: '2026-06-12T14:17:41.066205Z'
-updated_at: '2026-06-12T14:17:41.066205Z'
+updated_at: '2026-07-09T11:08:36.834955Z'
 seed_urls:
 - https://www.sparklabsglobal.com
 preferred_strategy: single_page_extract
@@ -14,8 +14,8 @@ subpage_hints: []
 pagination_hints: []
 quality_expectation_min_records: 1
 last_success:
-  run_id: agentic_run_20260612_141729
-  at: '2026-06-12T14:17:41.066205Z'
+  run_id: agentic_run_20260709_110827
+  at: '2026-07-09T11:08:36.834955Z'
   input_url: https://www.sparklabsglobal.com
   strategy: single_page_extract
   record_count: 3

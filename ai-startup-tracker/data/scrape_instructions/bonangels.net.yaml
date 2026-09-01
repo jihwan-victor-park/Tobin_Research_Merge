@@ -1,7 +1,7 @@
 version: 1
 domain: bonangels.net
 created_at: '2026-06-12T13:53:07.391784Z'
-updated_at: '2026-06-12T13:53:07.391784Z'
+updated_at: '2026-07-09T11:04:09.357031Z'
 seed_urls:
 - https://www.bonangels.net/en/enportfolio
 preferred_strategy: single_page_extract
@@ -14,8 +14,8 @@ subpage_hints: []
 pagination_hints: []
 quality_expectation_min_records: 1
 last_success:
-  run_id: agentic_run_20260612_135244
-  at: '2026-06-12T13:53:07.391784Z'
+  run_id: agentic_run_20260709_110351
+  at: '2026-07-09T11:04:09.357031Z'
   input_url: https://www.bonangels.net/en/enportfolio
   strategy: single_page_extract
   record_count: 1

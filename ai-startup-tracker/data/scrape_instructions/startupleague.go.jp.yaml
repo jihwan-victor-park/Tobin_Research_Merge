@@ -1,7 +1,7 @@
 version: 1
 domain: startupleague.go.jp
 created_at: '2026-06-13T14:05:36.355153Z'
-updated_at: '2026-06-13T14:05:36.355153Z'
+updated_at: '2026-07-09T10:57:34.896264Z'
 seed_urls:
 - https://ict.startupleague.go.jp/member
 preferred_strategy: single_page_extract
@@ -14,8 +14,8 @@ subpage_hints: []
 pagination_hints: []
 quality_expectation_min_records: 1
 last_success:
-  run_id: agentic_run_20260613_140444
-  at: '2026-06-13T14:05:36.355153Z'
+  run_id: agentic_run_20260709_105614
+  at: '2026-07-09T10:57:34.896264Z'
   input_url: https://ict.startupleague.go.jp/member
   strategy: single_page_extract
   record_count: 1

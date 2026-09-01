@@ -1,7 +1,7 @@
 version: 1
 domain: notioncapital.com
 created_at: '2026-06-12T13:52:41.007887Z'
-updated_at: '2026-06-12T13:52:41.007887Z'
+updated_at: '2026-07-09T11:03:01.394174Z'
 seed_urls:
 - https://www.notioncapital.com/portfolio
 preferred_strategy: single_page_extract
@@ -14,11 +14,11 @@ subpage_hints: []
 pagination_hints: []
 quality_expectation_min_records: 1
 last_success:
-  run_id: agentic_run_20260612_135117
-  at: '2026-06-12T13:52:41.007887Z'
+  run_id: agentic_run_20260709_110040
+  at: '2026-07-09T11:03:01.394174Z'
   input_url: https://www.notioncapital.com/portfolio
   strategy: single_page_extract
-  record_count: 100
+  record_count: 2
   valid_name_ratio: 1.0
   duplicate_ratio: 0.0
   completeness_score: 1.0

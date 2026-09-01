@@ -1,7 +1,7 @@
 version: 1
 domain: webflow.io
 created_at: '2026-06-13T15:14:33.243428Z'
-updated_at: '2026-06-13T15:14:33.243428Z'
+updated_at: '2026-07-09T11:00:37.718224Z'
 seed_urls:
 - https://t-hubs-stellar-site-aic.webflow.io/programs
 preferred_strategy: pagination_probe
@@ -14,8 +14,8 @@ subpage_hints: []
 pagination_hints: []
 quality_expectation_min_records: 1
 last_success:
-  run_id: agentic_run_20260613_151357
-  at: '2026-06-13T15:14:33.243428Z'
+  run_id: agentic_run_20260709_110024
+  at: '2026-07-09T11:00:37.718224Z'
   input_url: https://t-hubs-stellar-site-aic.webflow.io/programs
   strategy: pagination_probe
   record_count: 1
