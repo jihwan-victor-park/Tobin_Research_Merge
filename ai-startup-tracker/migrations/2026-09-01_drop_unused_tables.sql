@@ -1,0 +1,50 @@
+-- Drop two tables that were never used.
+--
+-- Both had 0 rows and ZERO references anywhere in backend/, scripts/,
+-- frontend/ or analysis/. Neither is declared in backend/db/models.py, so
+-- init_db() does not recreate them -- unlike the other empty tables, dropping
+-- these actually sticks.
+--
+-- Checked before dropping (2026-09-01, production):
+--   trend_clusters    0 rows, 0 code references
+--   weekly_analytics  0 rows, 0 code references
+--
+-- NOT dropped, and why -- see docs note in the same commit:
+--   source_matches         declared in models.py; run_dedup.py UPDATEs it
+--   github_signals         the live dashboard JOINs and COUNTs it
+--   github_repo_snapshots  the live dashboard reads it
+-- Those three are empty because of a wiring bug, not because they are surplus.
+
+DROP TABLE IF EXISTS trend_clusters;
+DROP TABLE IF EXISTS weekly_analytics;
+
+-- ---------------------------------------------------------------------------
+-- ROLLBACK. Reconstructed from information_schema on 2026-09-01, before the
+-- drop. `centroid_embedding` is pgvector (extension is installed); its
+-- dimension was not recorded in the catalog because the column was never used,
+-- so it is restored untyped-dimension.
+-- ---------------------------------------------------------------------------
+-- CREATE TABLE trend_clusters (
+--     id                 SERIAL PRIMARY KEY,
+--     cluster_name       VARCHAR NOT NULL UNIQUE,
+--     description        TEXT,
+--     created_at         TIMESTAMP,
+--     startup_count      INTEGER,
+--     centroid_embedding vector,
+--     keywords           TEXT[],
+--     is_emerging        BOOLEAN
+-- );
+-- CREATE INDEX ix_trend_clusters_id ON trend_clusters (id);
+--
+-- CREATE TABLE weekly_analytics (
+--     id                     SERIAL PRIMARY KEY,
+--     week_start_date        DATE NOT NULL UNIQUE,
+--     week_end_date          DATE NOT NULL,
+--     total_new_startups     INTEGER,
+--     total_stealth_startups INTEGER,
+--     top_vertical           VARCHAR,
+--     top_region             VARCHAR,
+--     emerging_trends        TEXT[],
+--     metadata               JSONB
+-- );
+-- CREATE INDEX ix_weekly_analytics_id ON weekly_analytics (id);

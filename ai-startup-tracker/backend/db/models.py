@@ -241,6 +241,11 @@ class Company(Base):
 # ── GitHub Signals ─────────────────────────────────────────────────────
 
 class GithubSignal(Base):
+    # EMPTY IN PRODUCTION (0 rows) -- and must not be dropped.
+# The repo -> company linkage was lost; scripts/github_weekly_discover.py is
+# the writer and has not run since June 2026. The dashboard JOINs and COUNTs
+# this table, so dropping it breaks the live site. Empty here is a wiring
+# bug to fix, not a surplus table to remove.
     __tablename__ = "github_signals"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -276,6 +281,8 @@ class GithubSignal(Base):
 
 # ── GitHub Repo Snapshots (time-series metrics) ───────────────────────
 
+# EMPTY IN PRODUCTION (0 rows). Read by the dashboard; same story as
+# GithubSignal above.
 class GithubRepoSnapshot(Base):
     """Point-in-time snapshot of a repo's metrics for trend analysis."""
     __tablename__ = "github_repo_snapshots"
@@ -397,6 +404,10 @@ class IncubatorSignal(Base):
 
 # ── Source Matches (audit trail) ───────────────────────────────────────
 
+# EMPTY IN PRODUCTION (0 rows). The README describes this as the audit trail
+# for entity matching, but nothing INSERTs -- scripts/run_dedup.py only
+# UPDATEs it during merges. Until a writer exists, match decisions are not
+# individually auditable, and that gap is recorded in the paper corrections.
 class SourceMatch(Base):
     __tablename__ = "source_matches"
 
