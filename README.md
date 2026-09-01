@@ -211,6 +211,12 @@ Kept here rather than discovered later:
   runs on every boot. Append-only: no renames, no type changes, no rollback.
 - **The multi-vintage panel results are not currently reproducible** — the
   snapshot files were deleted to free disk. See `paper/RESEARCH_GAPS.md` §2.1.
+- **`backend/main.py` and `agent/` are an un-deployed pair.** `main.py` is a
+  FastAPI service whose `/api/scout` endpoint shells out to `agent/agent.py`;
+  `entrypoint.sh` runs only Streamlit, so neither is live. They are kept because
+  the dependency is real — `agent/` looks unused until you notice it is invoked
+  by subprocess rather than imported — and removing an API surface is a decision
+  for whoever owns the roadmap.
 
 ---
 
