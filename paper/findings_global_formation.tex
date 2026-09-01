@@ -1,0 +1,129 @@
+% ============================================================================
+%  Findings section for short.tex
+%  This file is a TeX fragment, intended to be included with:
+%  \input{findings_global_formation}
+% ============================================================================
+
+\section{Findings: Global AI Startup Formation}
+\label{sec:findings_global_formation}
+
+The main descriptive pattern is simple: AI has become a much larger share of
+new startup formation. The harder part is interpretation. Recent founding
+cohorts are still being indexed, so raw counts understate recent formation.
+For that reason, the formation result is stated primarily as a \emph{share of
+observed firms founded in the same year}, not as the raw number of AI firms.
+
+\subsection{AI's share of new firms rises sharply}
+
+In the commercial population, where founding years are nearly complete, the AI
+share rises from $3.0\%$ in 2000 to $10.6\%$ in 2015, $18.9\%$ in 2021, and
+$59.0\%$ in 2025 (Table~\ref{tab:formation_selected_years}). The largest break
+in the series is between the 2022 and 2023 founding cohorts, when the AI share
+jumps from $25.5\%$ to $43.5\%$. That timing is consistent with the public
+release of consumer generative AI in late 2022, but we do not interpret the
+jump causally. The same cohorts are also affected by indexing lag, and the
+paper does not have a design that separates the technology shock from the
+change in observability.
+
+\begin{table}[htbp]
+\centering\small
+\caption{AI share of observed startup formation, selected founding cohorts.
+The sample is the commercial population, where founding years are nearly
+complete.}
+\label{tab:formation_selected_years}
+\begin{tabular}{@{}rrrr@{}}
+\toprule
+\textbf{Founded year} & \textbf{Observed firms} & \textbf{AI firms} &
+\textbf{AI share} \\
+\midrule
+2000 & $28{,}963$ & $874$ & $3.0\%$ \\
+2010 & $41{,}513$ & $1{,}996$ & $4.8\%$ \\
+2015 & $54{,}150$ & $5{,}764$ & $10.6\%$ \\
+2018 & $50{,}542$ & $8{,}038$ & $15.9\%$ \\
+2021 & $35{,}978$ & $6{,}812$ & $18.9\%$ \\
+2022 & $22{,}800$ & $5{,}818$ & $25.5\%$ \\
+2023 & $17{,}947$ & $7{,}812$ & $43.5\%$ \\
+2024 & $10{,}562$ & $5{,}534$ & $52.4\%$ \\
+2025 & $2{,}531$ & $1{,}492$ & $59.0\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The count series tells a different story. The observed number of AI firms peaks
+in 2018 at $8{,}038$ and falls after that. We do not read this as a decline in
+AI entrepreneurship. The total observed denominator falls from $54{,}150$ firms
+in the 2015 cohort to $2{,}531$ in 2025, because recent firms have not yet had
+time to enter commercial registers. The useful fact is therefore not that
+observed AI counts fall after 2018, but that AI's share continues to rise even
+as the recent denominator becomes incomplete.
+
+\subsection{The trend is not driven by one source}
+
+The rise appears in both commercial databases. Database A rises from $2.7\%$
+AI in the 2000 cohort to $63.7\%$ in 2025. Database B rises from $3.6\%$ to
+$58.3\%$ over the same window. The levels differ somewhat, but the direction
+does not. This matters because a trend visible in only one database could
+reflect a vendor-specific tagging or coverage decision. Here, both sources
+show the same broad movement.
+
+\subsection{The trend survives a stricter selection rule}
+
+Recent cohorts are not only smaller; they are also more selected. A young firm
+is especially likely to appear in a commercial database if it has already done
+something visible, such as raising financing. If AI firms are more likely to be
+visible early, the rising AI share could partly reflect selection into the
+database rather than startup formation itself.
+
+We check this by holding the selection rule fixed: among firms with recorded
+financing, the AI share still rises from $5.9\%$ in 2005 to $15.6\%$ in 2015,
+$22.0\%$ in 2021, and $68.3\%$ in 2025. The level is higher because financed
+firms are more AI-intensive, but the time pattern remains. This does not solve
+all selection problems, but it rules out the simplest concern that the trend is
+only an artifact of looser recent coverage.
+
+\subsection{Commercial databases miss AI-heavy firms}
+
+The formation series above uses the commercial population because it has the
+founding-year metadata needed for a time trend. The broader dataset also
+reveals what those commercial sources miss. Firms found outside both
+commercial databases are $23.8\%$ AI-related, compared with $12.4\%$ in
+database A and $10.7\%$ in database B. The unlisted layer is therefore roughly
+twice as AI-intensive as the conventional evidence base.
+
+We do not use the unlisted layer to extend the time series, because its
+founding-year coverage is thin. Its value is different: it shows the direction
+of coverage bias. If the firms missing from commercial databases are more
+likely to be AI-related, then commercial-only studies will understate AI entry.
+Section~\ref{sec:checks} tests whether that gap survives alternative AI
+definitions, source exclusions, independent labels, and classifier-error
+correction.
+
+\subsection{The global pattern is broad growth with cautious geography}
+
+AI intensity rises across every major region we can measure. Between the
+2010--2016 and 2020--2025 cohorts, North America's AI share rises from $9.1\%$
+to $29.2\%$, Europe's from $7.3\%$ to $21.4\%$, East Asia's from $12.3\%$ to
+$25.1\%$, and South and Southeast Asia's from $7.2\%$ to $18.2\%$. Among large
+country samples, recent AI intensity is highest in Israel ($37.2\%$), the
+United States ($29.4\%$), China ($28.5\%$), Canada ($27.3\%$), and South Korea
+($26.1\%$).
+
+The concentration series is more delicate. Through 2017, AI entrepreneurship
+appears to become more geographically dispersed: the number of observed
+countries with AI firms rises from $59$ in 2000 to $103$ in 2017, and the U.S.\
+share of observed AI firms falls from $41.3\%$ to $36.8\%$. After 2020 the
+series reverses sharply, with the U.S.\ reaching $85.0\%$ of observed AI firms
+in the 2025 cohort. We treat that reversal as a coverage warning rather than a
+substantive geography result, because the newest non-U.S.\ firms are indexed
+more slowly.
+
+\subsection{AI growth is broad across sectors}
+
+The sector pattern is also one of broad intensification rather than a single
+vertical driving the result. Data and analytics rises from $35.9\%$ AI in the
+2010--2016 cohort to $71.4\%$ in 2020--2025. Biotech and pharma rises from
+$23.2\%$ to $60.0\%$, software and IT from $9.5\%$ to $29.3\%$, and healthcare
+from $8.9\%$ to $26.6\%$. Lower-intensity sectors also rise: food and agtech,
+consumer and lifestyle, and e-commerce and retail all more than double their
+AI shares. The ordering changes less than the levels. Sectors that were already
+AI-intensive remain near the top, while nearly every sector moves upward.

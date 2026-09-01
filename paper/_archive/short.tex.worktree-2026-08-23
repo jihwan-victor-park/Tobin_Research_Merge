@@ -1,0 +1,418 @@
+% ============================================================================
+%  Measuring the Global AI Startup Ecosystem -- a short methods paper
+%
+%  Self-contained: compiles with pdflatex alone (no bibtex, no figures).
+%  This is the plain-language companion to main.tex. Every number here is
+%  carried over from that paper; nothing new is claimed.
+% ============================================================================
+\documentclass[11pt]{article}
+
+\usepackage[margin=1.15in]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage[hidelinks]{hyperref}
+\usepackage{natbib}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, calc}
+
+\title{\textbf{Measuring the Global AI Startup Ecosystem}\\[0.35em]
+\large How We Built the Dataset, and What It Can and Cannot Show}
+
+\author{Alastair Page \and Jihwan (Victor) Park\thanks{%
+Tobin Center for Economic Policy, Yale University. We thank Professor Song Ma
+for supervising this research and for framing the broader agenda on artificial
+intelligence and the global startup ecosystem. Errors are ours.
+Correspondence: \texttt{victorjhp11@gmail.com}.}}
+
+\date{August 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+We want to know how artificial intelligence is changing which companies get
+founded, where, and in what industries. The obstacle is that almost everything
+we know about startups comes from a few commercial company databases, and those
+databases do not record firms at random. This paper explains, in plain terms,
+how we built a dataset of $988{,}576$ firms from six kinds of source, how we
+decided which of them count as ``AI,'' and what we checked before believing our
+own numbers. Three results follow. AI's share of newly founded firms rises from
+$3.0\%$ in 2000 to $59.0\%$ in 2025. The firms the commercial databases miss are
+about twice as likely to be AI-related. And a language model asked to guess
+missing company details will readily invent them---which is why we forbade it
+from doing so.
+\end{abstract}
+
+\medskip
+\noindent\textbf{Keywords:} artificial intelligence, entrepreneurship,
+measurement, coverage bias
+
+% ============================================================================
+\section{The question, and why it is hard}
+% ============================================================================
+
+Artificial intelligence is widely expected to change who starts companies and
+what those companies do \citep{fossen2024ai}. There is early evidence that
+generative AI raises productivity for existing workers
+\citep{brynjolfsson2023genai} and that it is already shifting entry decisions
+\citep{bena2025prompted}. To study this at the level of the firm, we need to
+observe firms.
+
+That is the problem. Research on entrepreneurship almost always runs on
+commercial startup databases, and those databases are assembled by companies
+with commercial priorities. A firm enters them when someone has a reason to
+record it: it raised money, it was covered by the press, or it registered
+itself. \citet{dalle2017crunchbase} document this for one widely used database
+and warn that coverage is uneven in ways that matter for research conclusions.
+
+So a rise in ``AI firms founded'' can mean two very different things:
+
+\begin{enumerate}[leftmargin=1.4em, itemsep=2pt]
+  \item more AI firms are actually being founded, or
+  \item the databases got better at noticing them.
+\end{enumerate}
+
+\noindent
+Our approach is to collect firms from sources with \emph{different} reasons for
+recording a company---funders, code hosts, accelerator pages---so that we can
+compare what the commercial databases hold against firms they never picked up.
+The gap between the two is itself a measurement.
+
+% ============================================================================
+\section{Where the firms come from}
+% ============================================================================
+
+We combine six classes of source (Table~\ref{tab:sources}). They differ in why
+a firm appears in them, which is the point.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Sources and their contribution. Counts overlap; the union after
+merging duplicates is $988{,}576$.}
+\label{tab:sources}
+\begin{tabular}{@{}p{3.5cm}p{5.4cm}r@{}}
+\toprule
+\textbf{Source} & \textbf{What it records} & \textbf{Firms} \\
+\midrule
+Commercial database A & general startup register & $650{,}200$ \\
+Commercial database B & venture-financing register & $281{,}395$ \\
+Public funder registries & U.S.\ federal small-business awards; national
+health and science agencies; E.U.\ framework programme & $9{,}931$ \\
+Open-source code host & organisations found by topic and keyword search &
+$31{,}909$ \\
+Portfolios and programmes & accelerators, university venture programmes,
+venture portfolios & $27{,}330$ \\
+General web collection & launch directories, national ecosystem sites &
+$1{,}010$ \\
+\midrule
+\textbf{Total (after merging)} & & $\mathbf{988{,}576}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The first two rows are the conventional evidence base. The remaining four exist
+so that we can see firms the first two never had a reason to record. A company
+that won a federal research award appears in a public registry whether or not
+any journalist wrote about it.
+
+% ============================================================================
+\section{How we built the dataset}
+% ============================================================================
+
+\subsection{Collecting}
+
+Sources arrive in different shapes, so the system picks one of five strategies
+per source: download a bulk file, call a documented endpoint, run a
+purpose-written parser ($36$ of these are implemented), hand the page to a
+tool-using language-model agent, or suspend the source. The agent is capped at
+$10$ reasoning steps, $12$ plain page fetches, and $8$ browser-rendered fetches
+per site; when it succeeds it writes down the extraction rule it found, so the
+next run takes the cheap path.
+
+Strategies change based on what actually happens, and the transitions are
+driven by observed outcomes rather than set by hand
+(Figure~\ref{fig:collection}).
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  box/.style   = {draw, align=center, font=\small, rounded corners=1.5pt,
+                  minimum height=12mm, inner xsep=3mm},
+  cheap/.style = {box, fill=black!3},
+  work/.style  = {box, fill=black!6},
+  stop/.style  = {box, fill=black!12},
+  flow/.style  = {-{Stealth[length=2.4mm]}, thick},
+  back/.style  = {-{Stealth[length=2.4mm]}, thick, densely dashed},
+  lbl/.style   = {font=\scriptsize, align=center, inner sep=2.5pt},
+]
+
+% --- nodes ---------------------------------------------------------------
+\node[box]   (src)   at (0,0)       {New\\source};
+\node[cheap] (api)   at (4.4,1.8)   {Bulk file or documented API};
+\node[work]  (rule)  at (4.4,-1.1)  {Rule parser\\{\scriptsize 36 written}};
+\node[work]  (agent) at (10.0,-1.1) {Model agent\\{\scriptsize 10 steps, 12 fetches, 8 rendered}};
+\node[stop]  (susp)  at (15.2,-1.1) {Suspended\\{\scriptsize 90 days}};
+
+% --- entry ---------------------------------------------------------------
+\draw[flow] (src.north east) to[out=30,in=180]
+     node[lbl,above,pos=0.6] {source offers one} (api.west);
+\draw[flow] (src.south east) to[out=-30,in=180] (rule.west);
+
+% --- escalation ----------------------------------------------------------
+\draw[flow] (rule) -- node[lbl,above] {2 consecutive\\failures} (agent);
+\draw[flow] (agent) -- node[lbl,above] {3 consecutive\\failures} (susp);
+
+% --- feedback ------------------------------------------------------------
+\coordinate (a1) at ($(agent.south)+(0,-1.3)$);
+\coordinate (r1) at ($(rule.south)+(0,-1.3)$);
+\draw[back] (agent.south) -- (a1)
+     -- node[lbl,below] {on success the agent writes a reusable rule file} (r1)
+     -- (rule.south);
+
+\coordinate (s2) at ($(susp.south)+(0,-2.7)$);
+\coordinate (r2) at ($(rule.south)+(0,-2.7)$);
+\draw[back] (susp.south) -- (s2)
+     -- node[lbl,below] {re-evaluated after the exclusion window} (r2)
+     -- (rule.south);
+
+\end{tikzpicture}}
+\caption{How one source gets collected. Cost rises from left to right, so the
+expensive strategy is reached only where the cheap ones have already failed, and
+a successful agent run leaves behind a rule file that returns the source to the
+cheap path. A parser is also escalated when it returns fewer than $20$ records
+from a page that shows pagination controls, which catches a scraper that is
+technically succeeding while reading only the first page. A run returning zero
+records counts as a failure, so a silently broken parser cannot look healthy.
+Sources that succeed are not revisited for seven days.}
+\label{fig:collection}
+\end{figure}
+
+We report the yield plainly because it is unflattering. Of $410$ sites
+attempted, $220$ ($53.7\%$) ever produced a successful extraction. Yield is very
+skewed: a successful site returns $22.9$ records on average, but the median is
+$6$ and the maximum is $814$. Estimating the total from the average overstates
+it roughly fourfold. We made exactly this mistake in our own planning before
+auditing the sites one by one.
+
+\subsection{Merging records that name the same firm}
+
+The same company arrives from several sources under slightly different names.
+Deciding when two records are one firm is record linkage, a problem with a long
+methodological literature \citep{abramitzky2021linking}.
+
+Our production rule is deliberately conservative. Each record gets one key: its
+web domain, reduced to the registrable part, if it has one; otherwise a
+normalised version of its name. Two records are the same firm when the keys are
+equal. A blocklist stops code hosts, documentation sites, and social platforms
+from being treated as a company's own domain, which would otherwise merge
+unrelated firms that share a hosting provider.
+
+We found one defect worth stating plainly, because it cannot be fixed by tuning.
+The name normaliser strips common corporate tokens---and it strips ``AI'' along
+with them. For this dataset that is precisely the token separating a new AI firm
+from an older company of the same name. No matching threshold can repair a
+normaliser that deletes the distinguishing word before matching begins.
+
+\subsection{Deciding whether a firm is ``AI''}
+
+A firm is labelled AI if \emph{any} of four signals fires:
+
+\begin{equation}
+\label{eq:ai}
+A_i \;=\; \mathbb{1}\big[\,
+\underbrace{t_i}_{\text{vendor tag}} \;\vee\;
+\underbrace{a_i \ge 0.5}_{\text{keyword score}} \;\vee\;
+\underbrace{m_i}_{\text{AI mentioned in text}} \;\vee\;
+\underbrace{\ell_i}_{\text{model verdict}}
+\,\big].
+\end{equation}
+
+The signals are ordered cheapest-first, so the expensive one runs only on
+records the cheap ones cannot settle. Using a language model for this kind of
+classification is now standard practice in economics \citep{dell2025deep}; the
+caution we add is about \emph{where} the signals exist, not about whether the
+model is accurate.
+
+Two properties of \eqref{eq:ai} shape everything downstream.
+
+\textbf{The signals are not equally available.} Vendor tags cover $7.0\%$ of
+database-A firms, $0.7\%$ of database-B firms, and $0.0\%$ of firms found
+outside both. Model verdicts were run on $98.8\%$ of database B but only
+$2.3\%$ of the unlisted layer. Only the two description-derived signals are
+computed identically for every firm. Any comparison across populations must
+therefore either accept that asymmetry or restrict to the signals all firms
+share. We report both.
+
+\textbf{The keyword score does not transfer across sources.} Database-B records
+carry no topic tags and short descriptions, so the highest score they can reach
+is $0.3$---below the $0.5$ threshold by construction. Under a tag-or-score
+definition database B looks $1.3\%$ AI; under the full union it is $10.7\%$. A
+threshold calibrated on one source had silently excluded $281{,}395$ firms in
+another. We only noticed by checking the score's attainable maximum per source,
+which we recommend as routine practice.
+
+\subsection{Filling in missing fields}
+
+Many firms are missing a founding year, a country, or an industry. We fill these
+under a strict rule about \emph{where a value may come from}:
+
+\begin{enumerate}[leftmargin=2.2em, itemsep=2pt]
+  \item[$T_1$] an official registry (free, checkable);
+  \item[$T_2$] a document we fetched ourselves;
+  \item[$T_3$] a language model reading a text we already hold;
+  \item[$T_4$] a language model recalling a fact from its own memory ---
+        \textbf{prohibited}.
+\end{enumerate}
+
+Every stored value keeps its tier and its source alongside it, so any analysis
+can filter by origin. Section~\ref{sec:checks} explains what happened when we
+briefly allowed $T_4$, and why recording provenance is what let us undo it.
+
+% ============================================================================
+\section{What we find}
+% ============================================================================
+
+\paragraph{AI's share of new firms rises; the observed count does not.}
+Among firms founded in a given year, the AI share climbs from $3.0\%$ in 2000
+to $18.9\%$ in 2021 and $59.0\%$ in 2025. The rise survives holding the
+selection rule fixed. But the raw \emph{number} of AI firms we observe peaks in
+2018 and falls afterwards. That fall is not a decline in entrepreneurship; it is
+that recent founding cohorts are thinly indexed---databases take years to catch
+up with young firms. Reporting the count without the share would have produced a
+headline the data cannot support.
+
+\paragraph{The firms the databases miss are about twice as AI-heavy.}
+Firms discovered outside the two commercial databases are $23.8\%$ AI, against
+$12.4\%$ and $10.7\%$ for the two databases. This is the central finding, and
+the one we tried hardest to break (Section~\ref{sec:checks}).
+
+\paragraph{Geographic concentration reverses, and mostly should not be
+believed.} The United States rises from $37\%$ of observed AI firms in the 2017
+founding cohort to $85\%$ in the 2025 cohort. We show most of that reversal is
+coverage rather than economics: recent non-U.S.\ firms are simply indexed later.
+We report it as a caution, not as a finding.
+
+% ============================================================================
+\section{What we checked}
+\label{sec:checks}
+% ============================================================================
+
+A result this convenient to our own argument deserves adversarial testing, so we
+attacked the coverage gap four ways. It survives (i) five different definitions
+of the AI label; (ii) dropping any single discovery channel; (iii) an
+independently adjudicated label on a subsample, where the gap is $19.0\%$ versus
+$9.5\%$ ($p = 0.007$); and (iv) a correction for the fact that our classifier is
+imperfect, and imperfect in different ways across buckets. For (iv) we use the
+standard adjustment for prevalence estimated from a screening test of known
+sensitivity and specificity \citep{rogan1978prevalence}. Proportions are
+reported with Wilson intervals \citep{wilson1927interval} and differences
+between proportions with the method recommended by \citet{newcombe1998intervals}.
+
+The most useful negative result concerns the language model. When we asked it to
+\emph{estimate} unstated company attributes, it filled $88\%$ of fields---and
+filled them from its own prior, predicting San Francisco at roughly seven times
+its true rate in the data. When instructed to answer only from text we supplied,
+the fill rate dropped to $2\%$. The model was not malfunctioning; it was doing
+what it had been asked. The lesson is that the instruction, not the model, is
+the research design decision. Because every value carried its provenance tag,
+the contaminated fields could be identified and removed rather than silently
+entering the results.
+
+% ============================================================================
+\section{What this dataset cannot show}
+% ============================================================================
+
+We are explicit about the limits, because the coverage argument cuts both ways.
+
+\begin{enumerate}[leftmargin=1.4em, itemsep=3pt]
+  \item \textbf{Our own coverage is not random either.} We find firms that leave
+        a public trace---a repository, an award, a portfolio page. Firms with no
+        online footprint are missing from our data exactly as they are missing
+        from the commercial ones.
+  \item \textbf{Metadata is thin outside the commercial databases.} Founding
+        year is present for $98.8\%$ and $100.0\%$ of the two commercial
+        populations, but for only $8.0\%$ of the unlisted layer (rising to
+        $29.6\%$ with proxies). Country is present for $48.4\%$. This is why the
+        time, geography, and industry analyses run on the commercial population,
+        while the unlisted layer is used for the coverage comparison, which needs
+        only the AI label.
+  \item \textbf{``AI firm'' is a label, not a fact.} It is a decision rule
+        applied to noisy text. We report what the rule does rather than claiming
+        it identifies a natural category.
+  \item \textbf{Recent years are incomplete.} Any statement about the last two or
+        three founding cohorts is a statement about indexing speed as much as
+        about entrepreneurship.
+\end{enumerate}
+
+% ============================================================================
+\section{Conclusion}
+% ============================================================================
+
+The substantive finding is that AI entrepreneurship is growing quickly and that
+the firms conventional databases miss are disproportionately AI-related---so
+studies built only on those databases will understate AI entry.
+
+The methodological finding is smaller but more portable. Three of the errors we
+document---a threshold that could not be reached in one source, a normaliser
+that deleted the token carrying the signal, and a model that answered from
+memory when asked to estimate---were invisible in aggregate output and appeared
+only when we checked a mechanism directly. None would have shown up in a
+robustness table. We report them because the same three are easy to reproduce in
+any project that assembles firm data from heterogeneous sources with model
+assistance.
+
+% ============================================================================
+\begin{thebibliography}{9}
+\setlength{\itemsep}{3pt}
+
+\bibitem[Abramitzky et al.(2021)]{abramitzky2021linking}
+Abramitzky, R., L. Boustan, K. Eriksson, J. Feigenbaum, and S. P\'erez (2021).
+``Automated Linking of Historical Data.''
+\emph{Journal of Economic Literature} 59(3), 865--918.
+
+\bibitem[Bena et al.(2025)]{bena2025prompted}
+Bena, J., B. Bian, and M. Giannetti (2025).
+``Prompted to Start: How Generative AI is Transforming Entrepreneurship.''
+HKU Jockey Club Enterprise Sustainability Global Research Institute
+Working Paper 2025/182 (SSRN 5749564).
+
+\bibitem[Brynjolfsson et al.(2023)]{brynjolfsson2023genai}
+Brynjolfsson, E., D. Li, and L. R. Raymond (2023).
+``Generative AI at Work.'' NBER Working Paper 31161.
+
+\bibitem[Dalle et al.(2017)]{dalle2017crunchbase}
+Dalle, J.-M., M. den Besten, and C. Menon (2017).
+``Using Crunchbase for Economic and Managerial Research.''
+OECD Science, Technology and Industry Working Papers 2017/08.
+
+\bibitem[Dell(2025)]{dell2025deep}
+Dell, M. (2025). ``Deep Learning for Economists.''
+\emph{Journal of Economic Literature} 63(1).
+Earlier version: NBER Working Paper 32768.
+
+\bibitem[Fossen et al.(2024)]{fossen2024ai}
+Fossen, F. M., T. McLemore, and A. Sorgner (2024).
+``Artificial Intelligence and Entrepreneurship.''
+\emph{Foundations and Trends in Entrepreneurship}.
+
+\bibitem[Newcombe(1998)]{newcombe1998intervals}
+Newcombe, R. G. (1998). ``Interval Estimation for the Difference between
+Independent Proportions: Comparison of Eleven Methods.''
+\emph{Statistics in Medicine} 17(8), 873--890.
+
+\bibitem[Rogan and Gladen(1978)]{rogan1978prevalence}
+Rogan, W. J. and B. Gladen (1978). ``Estimating Prevalence from the Results of
+a Screening Test.'' \emph{American Journal of Epidemiology} 107(1), 71--76.
+
+\bibitem[Wilson(1927)]{wilson1927interval}
+Wilson, E. B. (1927). ``Probable Inference, the Law of Succession, and
+Statistical Inference.'' \emph{Journal of the American Statistical
+Association} 22(158), 209--212.
+
+\end{thebibliography}
+
+\end{document}
