@@ -1,232 +1,231 @@
 # AI Startup Tracker
 
-A research platform for tracking emerging AI startups. Built at the Tobin Center for Economic Policy, Yale University.
+**Data infrastructure for studying how artificial intelligence is reshaping the
+global startup ecosystem.** Built at the Tobin Center for Economic Policy, Yale
+University, supporting research supervised by Professor Song Ma.
 
-The system continuously discovers new AI companies from GitHub, VC portfolios, accelerators, and incubators; classifies and enriches them with Crunchbase and PitchBook data; and surfaces trends through an internal Streamlit dashboard.
+The system collects company records from commercial databases, public funder
+registries, an open-source code host and hundreds of international web sources;
+resolves them into one company table; classifies which are AI-related; and
+serves the result through a public dashboard.
+
+**Live dashboard:** https://tobinresearchmerge-production-dfda.up.railway.app
 
 ---
 
-## System Architecture
+## Current state
 
-The tracker runs three continuous loops.
+| | |
+|---|---|
+| Companies | **988,576** |
+| Database size | 1,067 MB (Railway Postgres) |
+| Countries represented | 280 values, 954,370 companies with a country |
+| Deterministic scrapers | 36 |
+| Web sources attempted | 410 |
+| Commits | 196, Feb – Sep 2026 |
 
+**The collection pipeline is currently idle.** Last scrape run 2026-07-09; the
+newest company row is 2026-08-13. Railway serves the dashboard only — there is
+no cron or scheduled scraping. The dataset is a snapshot, not a live feed.
+
+---
+
+## Architecture
+
+```mermaid
+flowchart TB
+    subgraph SRC["Sources"]
+        CB["Commercial databases<br/>parquet bulk import"]
+        GOV["Public funders<br/>NIH · NSF · SBIR · EU CORDIS"]
+        GH["GitHub scan"]
+        WEB["410 web sources<br/>accelerators · VC portfolios"]
+    end
+
+    subgraph COLLECT["Collection"]
+        EASY["36 deterministic scrapers"]
+        AGENT["Agentic tier<br/>Claude + Tavily + Playwright"]
+        ORCH["Orchestrator<br/>health, escalation, retry"]
+        EASY --> ORCH
+        AGENT --> ORCH
+    end
+
+    RES["Entity resolution<br/>domain first, then normalized name"]
+    DB[("PostgreSQL on Railway<br/>988,576 companies")]
+    CLS["AI classification<br/>4-signal union"]
+    ENR["Enrichment<br/>every value carries source + confidence"]
+    DASH["Streamlit dashboard"]
+    PAPER["paper/<br/>working paper + evidence trail"]
+
+    CB --> RES
+    GOV --> RES
+    GH --> RES
+    WEB --> EASY
+    WEB --> AGENT
+    ORCH --> RES
+    RES --> DB
+    DB --> CLS --> DB
+    DB --> ENR --> DB
+    DB --> DASH
+    DB --> PAPER
 ```
-                          +------------------------------+
-                          |       LOOP 1: DISCOVERY      |
-                          |     (find new sources)       |
-                          +------------------------------+
-                                        |
-                  +---------------------+---------------------+
-                  |                     |                     |
-          GitHub Search            Feed Loader            Scout Agent
-          (26 topics x 25 kw)      (CSV / markdown /      (Claude investigates
-          6 strategies             instruction library)    unknown URLs)
-                  |                     |                     |
-                  +---------------------+---------------------+
-                                        |
-                                        v
-                          +------------------------------+
-                          |       LOOP 2: SCRAPING       |
-                          |  (collect data from sources) |
-                          +------------------------------+
-                                        |
-                              Orchestrator (registry)
-                                  /              \
-                                 /                \
-                                v                  v
-                    +-------------------+   +-------------------+
-                    |    EASY TIER      |   |    HARD TIER      |
-                    |  Hardcoded        |   |  Agentic engine   |
-                    |  scrapers         |   |  (Claude + Tavily |
-                    |  (14 sites)       |   |   + Playwright)   |
-                    +-------------------+   +-------------------+
-                                 \                /
-                                  \              /
-                                   v            v
-                           +---------------------------+
-                           |    PostgreSQL database    |
-                           |  companies / signals /    |
-                           |  snapshots / funding /    |
-                           |  scrape_runs / site_health|
-                           +---------------------------+
-                                        |
-                                        v
-                          +------------------------------+
-                          |     LOOP 3: SELF-HEALING     |
-                          |  (keep the system running)   |
-                          +------------------------------+
-                                        |
-          easy fails 2x -> auto-escalate to hard tier
-          hard fails 3x -> exclude site for 90 days
-          zero-result     -> retry via hard tier within 48h
-          excluded site   -> re-evaluated after 90 days
-                                        |
-                                        v
-                               Streamlit dashboard
+
+### Two-tier collection
+
+Deterministic scrapers handle sites with stable structure. When one fails twice,
+the orchestrator escalates that domain to an agentic tier (Claude deciding which
+pages to fetch, Tavily extracting, Playwright for JavaScript-heavy pages). On
+success the agent writes a YAML instruction file so the next run takes the cheap
+path. Three failures suspend a site for 90 days.
+
+Of 410 sites attempted, 220 ever produced a successful extraction. The
+instruction files are a record of **attempts**, not a library of working recipes.
+
+### Entity resolution
+
+Domain is the primary key: URLs are reduced to the registrable domain and a
+blocklist stops code hosts and social platforms being adopted as a company's
+identity. Where there is no domain, matching falls back to exact normalized-name
+equality.
+
+**Known defect:** the name normalizer strips `ai`, `io`, `labs` and `tech` as
+company suffixes, so `Compose.ai` and `Compose` collapse to the same key. This
+accounts for 54.6% of name-collision exposure and is AI-correlated. Documented in
+`paper/main.tex` §8.3; not yet fixed because re-resolving changes every count in
+the paper.
+
+### AI classification
+
+Four signals unioned — vendor taxonomy tag, keyword score, free-text mention, and
+an LLM verdict. The canonical predicate is `backend/utils/ai_filter.py`; import
+it rather than hand-writing the SQL, because an earlier duplicate-SQL era had the
+threshold inconsistent across the dashboard and the analysis scripts.
+
+Validated against 599 independently adjudicated firms: precision 0.59, recall
+0.82, F1 0.69. Per-bucket precision varies from 0.47 to 0.84, which is why the
+paper's headline is corrected for classification error.
+
+### Enrichment under an evidence hierarchy
+
+Registries (free, checkable) before fetched documents, before a model reading a
+text we hold. A model is never asked to recall a fact. Every stored value carries
+its source and confidence in `company_enrichment.sources`.
+
+That provenance column is what made one mistake recoverable: an early pass let
+the model *estimate* unstated fields, and it filled 7,553 values with its own
+prior — San Francisco for 33.7% of cities, 2020 for 19.1% of founding years.
+Because each value was tagged at write time, all of them were removed exactly.
+
+---
+
+## Where the data lives
+
+| Layer | What | Size |
+|---|---|---|
+| **Railway Postgres** | The source of truth. 16 tables; `companies` is 940 MB of the 1,067 MB | 1,067 MB |
+| **`data/`** (git-ignored) | Raw source files the importers read: Crunchbase, PitchBook, SBIR, CORDIS, employment data | ~7 GB |
+| **`output/`, `results/`** | Committed aggregate CSVs. **Not leftovers** — the dashboard's Findings page reads `output/*.csv` at runtime | ~1 MB |
+
+Two ways to reach the database:
+
+- **From inside Railway** (the dashboard): `postgres.railway.internal`, private network
+- **From a laptop:** `DATABASE_PUBLIC_URL` via `viaduct.proxy.rlwy.net`, a TCP proxy that drops idle connections
+
+```bash
+# Correct — every analysis script needs this
+railway run -s Postgres -- .venv/bin/python scripts/<name>.py
 ```
 
----
-
-## Scraper Tiers
-
-### Easy Tier (Hardcoded)
-
-Deterministic scrapers for sites with known, stable structure. Each one is a subclass of `BaseScraper` that returns a list of `ScrapedCompany` Pydantic models. No DB writes happen inside the scraper; the base class handles validation, deduplication, and persistence.
-
-| Scraper               | Source                          | Pattern            |
-|-----------------------|---------------------------------|--------------------|
-| `yc_scraper`          | Y Combinator                    | api_direct (Algolia) |
-| `techstars_scraper`   | Techstars portfolio             | api_direct         |
-| `seedcamp_scraper`    | Seedcamp portfolio              | bs_single          |
-| `antler_scraper`      | Antler                          | bs_paginated       |
-| `ef_scraper`          | Entrepreneur First              | wp_ajax            |
-| `skydeck_scraper`     | Berkeley SkyDeck                | wp_ajax            |
-| `harvard_scraper`     | Harvard iLab                    | bs_paginated       |
-| `startx_scraper`      | Stanford StartX                 | bs_paginated       |
-| `princeton_scraper`   | Princeton eLab                  | bs_paginated       |
-| `columbia_scraper`    | Columbia Entrepreneurship       | rest_api           |
-| `rice_owlspark_scraper` | Rice OwlSpark                 | bs_single          |
-| `mit_deltav_scraper`  | MIT delta v                     | claude_extraction  |
-| `capitalfactory_scraper`, `alchemist_scraper`, `eranyc_scraper`, `villageglobal_scraper` | VC / accelerator portfolios | bs_paginated |
-| `crunchbase_import`   | Crunchbase `organizations.parquet` | parquet bulk    |
-
-Pattern key:
-- **api_direct** — call a backend JSON API (Algolia / Typesense / REST) and parse the response.
-- **wp_ajax** — paginate a WordPress site via `admin-ajax.php`.
-- **bs_single / bs_paginated** — BeautifulSoup on a static or paginated HTML page.
-- **claude_extraction** — fetch page, ask Claude to extract rows when the DOM is messy.
-- **parquet** — filter a bulk parquet dump locally (no HTTP).
-
-### Hard Tier (Agentic Fallback)
-
-For unknown, complex, or JavaScript-heavy sites — and for any easy-tier scraper that breaks. The hard tier is an agentic engine in `backend/scrapers/hard/engine.py` that combines three tools:
-
-1. **Tavily** — extracts page content from URLs, including JS-rendered pages, without maintaining a browser.
-2. **Claude tool use** — plans the extraction: which pages to fetch, how to parse the text, when to paginate. The agent can call `fetch_page`, `fetch_page_rendered`, and `tavily_extract` tools in a loop (budget: 10 iterations, 6 rendered fetches).
-3. **Playwright** — last-resort browser rendering for SPAs where Tavily and plain HTTP fail.
-
-When the agent finds a reliable pattern, it saves a YAML instruction file under `data/scrape_instructions/` so the next run can use a cheaper path.
+> **`.env` points at a local Postgres that is empty.** Running a script without
+> `railway run` connects to nothing useful. This is the single most common way to
+> get confusing results here.
 
 ---
 
-## Self-Healing
-
-The orchestrator (`backend/orchestrator/orchestrator.py`) routes every scrape through a registry (`backend/scrapers/registry.py`) and tracks per-domain health in the `site_health` table.
-
-| Trigger                            | Action                                           |
-|-----------------------------------|--------------------------------------------------|
-| Easy scraper returns zero or errors | Auto-escalate to hard tier                      |
-| Hard tier fails 3 times in a row  | Mark site `excluded` for 90 days                 |
-| Site returned zero results        | Retry via hard tier within 48 hours              |
-| Site marked excluded              | Auto-revisit after 90 days                       |
-| Site scraped successfully         | 7-day cooldown before next scrape                |
-
-Every run writes a row to `scrape_runs` (status, records found / new / updated, duration), giving the dashboard a full audit trail of scraper health.
-
-Big-tech and incumbent names are excluded across all sources via a shared denylist (`backend/utils/denylist.py`), applied at import time in the Crunchbase scraper, in the HN Who-is-Hiring scraper, and in the dashboard view — so Google, OpenAI, Alibaba, and similar companies never surface as "emerging AI startups."
-
----
-
-## Project Layout
+## Repository layout
 
 ```
 ai-startup-tracker/
   backend/
-    agentic/          hard-tier engine, instruction YAML, Pydantic schemas
-    db/               SQLAlchemy models, session management
-    discovery/        Loop 1: feed loader, (scout agent)
-    orchestrator/     Loop 2 + 3: router, health monitor
-    scrapers/
-      base.py         BaseScraper ABC + template method
-      registry.py     domain -> scraper class
-      easy/           14 hardcoded scrapers (see table above)
-      hard/           agentic engine wrapper
-    utils/            denylist, domain canonicalization, LLM filter,
-                      scoring, classification, dedup
-  data/
-    scrape_instructions/     100+ YAML instructions for the agentic engine
-    scrape_schedule/         registered_sites.yaml (targets + difficulty)
-    instruction_library.json reference documentation
-  frontend/
-    pipeline_dashboard.py    Streamlit dashboard (5 tabs)
-  scripts/
-    run_orchestrator.py      unified daily runner
-    run_weekly_update.py     weekly: GitHub -> Crunchbase -> PitchBook
-    github_weekly_discover.py GitHub discovery
-    import_crunchbase.py     Crunchbase parquet import
-    import_pitchbook.py      PitchBook parquet import
-    run_llm_classify.py      standalone LLM classifier
-    scrape_incubators.py     multi-source incubator batch
-  tests/                     pytest unit tests
+    db/            SQLAlchemy models, connection, migrations
+    scrapers/      36 deterministic scrapers + agentic wrapper
+    agentic/       Claude + Tavily engine, instruction YAML cache
+    orchestrator/  routing, health, escalation
+    utils/         ai_filter, scoring, dedup, domain, country, industry
+  scripts/         83 scripts — see scripts/README.md for the map
+  analysis/        paper analyses (run against Railway)
+  experiments/     validation: classifier eval, entity resolution, imputation
+  frontend/        Streamlit dashboard (deployed)
+  results/         analysis outputs, one CSV per finding
+  output/          older analysis CSVs the dashboard reads at runtime
+  reports/         dated working notes
+paper/             working paper, figures, tables, evidence trail
+docs/archive/      superseded handoffs, kept for the record
 ```
 
----
-
-## Dashboard
-
-Launch with `streamlit run ai-startup-tracker/frontend/pipeline_dashboard.py`.
-
-Five tabs:
-
-1. **Overview** — newly discovered startups, geographic map, verification breakdown.
-2. **GitHub Discovery** — GitHub-sourced companies filtered to `llm_classification == "startup"`.
-3. **Trends** — AI subdomain treemap, category emergence curves, funding scatter.
-4. **Pipeline Health** — per-site scraper status, data freshness, coverage gaps.
-5. **Scraper** — manual scrape trigger with easy/hard tier routing.
+Start with **`scripts/README.md`** — 83 scripts grouped by purpose, with the ones
+that are one-time or superseded marked as such.
 
 ---
 
-## Quick Start
+## Deployment
+
+Railway project `zestful-truth`, two services:
+
+- **`Tobin_Research_Merge`** — the dashboard. Builds from the GitHub repo of the
+  same name via `Dockerfile` → `entrypoint.sh`, which runs `init_db()` then
+  Streamlit on Railway's injected `$PORT`. Healthcheck `/_stcore/health`.
+  Push to that repo's `main` and it redeploys.
+- **`Postgres`** — the database.
+
+---
+
+## The research output
+
+`paper/` holds a working paper on what this infrastructure makes measurable. Its
+central finding is that companies absent from the commercial databases are about
+twice as likely to be AI-related (23.8% against 12.4% and 10.7%), which means
+studies built on those databases alone understate AI entry.
+
+- `paper/main.tex` — the paper
+- `paper/CLAIM_EVIDENCE.md` — every number mapped to the script and output that produces it
+- `paper/RESEARCH_GAPS.md` — what must be done before it is final
+- `paper/SOURCES.md` — code map, and a list of corrections where the repo's own docs were wrong
+
+---
+
+## Known issues
+
+Kept here rather than discovered later:
+
+- **`github_signals` and `github_repo_snapshots` are empty.** The repo-to-company
+  linkage was lost. 56,981 GitHub-sourced companies survive as `companies` rows,
+  but their repo names, star counts and the per-repo LLM classification are gone.
+  The GitHub Discovery page falls back to the account-level entity check, which
+  did survive, and says so.
+- **`source_matches` is empty.** It is described as the entity-matching audit
+  trail but nothing INSERTs into it, so match decisions are not individually
+  auditable.
+- **98 GitHub logins map to more than one `companies` row** — duplicates the
+  resolver never merged because neither row has a domain.
+- **Migrations are hand-rolled.** A guarded `ALTER TABLE` list in `init_db()`
+  runs on every boot. Append-only: no renames, no type changes, no rollback.
+- **The multi-vintage panel results are not currently reproducible** — the
+  snapshot files were deleted to free disk. See `paper/RESEARCH_GAPS.md` §2.1.
+
+---
+
+## Setup
 
 ```bash
 cd ai-startup-tracker
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-cp .env.example .env
-# Set DATABASE_URL, GITHUB_TOKEN, ANTHROPIC_API_KEY, TAVILY_API_KEY,
-#     TOGETHER_API_KEY (optional)
+cp .env.example .env     # GITHUB_TOKEN, ANTHROPIC_API_KEY, TAVILY_API_KEY
 
-createdb ai_startup_tracker
-python -c "from backend.db.connection import init_db; init_db()"
+# Read from production
+railway run -s Postgres -- .venv/bin/python analysis/inventory.py
 
-# Discover + classify + import (weekly)
-python scripts/run_weekly_update.py --init-db
-
-# Scrape a specific source (daily)
-python scripts/run_orchestrator.py --url https://seedcamp.com/companies/
-
-# Run the batch of due sites
-python scripts/run_orchestrator.py --run-all-due
-
-# Launch the dashboard
-streamlit run frontend/pipeline_dashboard.py
+# Dashboard locally
+railway run -s Postgres -- .venv/bin/streamlit run frontend/pipeline_dashboard.py
 ```
-
----
-
-## Environment Variables
-
-| Variable                     | Required | Description                                      |
-|------------------------------|----------|--------------------------------------------------|
-| `DATABASE_URL`               | yes      | PostgreSQL connection string                     |
-| `GITHUB_TOKEN`               | yes      | GitHub personal access token                     |
-| `ANTHROPIC_API_KEY`          | yes      | Claude API key (hard-tier agent + MIT extraction) |
-| `TAVILY_API_KEY`             | yes      | Tavily content extraction                        |
-| `TOGETHER_API_KEY`           | opt.     | Together.ai LLM classifier (default backend)     |
-| `GROQ_API_KEY`               | opt.     | Alternative LLM backend                          |
-| `LLM_BACKEND`                | opt.     | `together` (default), `groq`, or `ollama`        |
-| `CB_ORGANIZATIONS_PATH`      | opt.     | Path to Crunchbase `organizations.parquet`       |
-| `PB_DEAL_PATH`               | opt.     | Path to PitchBook deal parquet                   |
-| `PB_RELATION_PATH`           | opt.     | Path to PitchBook investor-relation parquet     |
-
----
-
-## Design Notes
-
-- **Domain is the primary key.** Companies are matched first by canonical domain, then by normalized name.
-- **DB-first pipeline.** All GitHub repos are persisted before LLM classification, so no work is lost if the classifier stops.
-- **Idempotent ingests.** Running any import script twice produces the same result (upserts, not inserts).
-- **Two Pydantic schemas, one model.** Both easy and hard tiers emit `ScrapedCompany`; the base class handles the rest.
-- **Instruction YAML as cache.** The hard-tier agent saves successful patterns as YAML so future runs can skip the agentic path.
-- **No defaulted locations.** Unknown locations remain `NULL` rather than collapsing to a single city.
