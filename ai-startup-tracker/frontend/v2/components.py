@@ -16,6 +16,8 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+from backend.utils.anonymize import stealth_label, strip_provenance
+
 from . import data as D
 from .intelligence import Answer
 from .theme import PLOT_CONFIG, Palette, plot_layout
@@ -89,16 +91,37 @@ def topbar(nav_items: list[str], mode: str) -> tuple[str, str | None]:
 
 
 def status_line(snap: D.Snapshot) -> None:
-    """The thin live-dataset rule under the nav. Information, not a badge."""
+    """The thin dataset rule under the nav. Information, not a badge.
+
+    The lead segment reports collection state rather than always reading
+    "LIVE DATASET": the figures below it are a snapshot, and calling a
+    month-old snapshot live is the one claim on this rule that could mislead.
+    """
     as_of = snap.as_of.strftime("%b %d, %Y").upper() if snap.as_of else "—"
+    lead = ('<span class="live">LIVE DATASET</span>' if not snap.is_stale
+            else f'<span class="stale">SNAPSHOT · {snap.stale_days} DAYS OLD</span>')
     segs = [
-        '<span class="seg"><span class="live">LIVE DATASET</span></span>',
+        f'<span class="seg">{lead}</span>',
         f'<span class="seg"><b>{snap.total:,}</b> COMPANIES</span>',
         f'<span class="seg"><b>{snap.hidden:,}</b> NOT IN CRUNCHBASE OR PITCHBOOK</span>',
         f'<span class="seg"><b>{snap.countries:,}</b> COUNTRIES</span>',
         f'<span class="seg">UPDATED {as_of}</span>',
     ]
     _md(f'<div class="v2-status">{"".join(segs)}</div>')
+
+
+def freshness_notice(act: D.Activity) -> None:
+    """Say when the window shown is not the window the reader assumes.
+
+    Collection has been paused since mid-August; without this the 30-day
+    section reads as the last 30 days.
+    """
+    end = act.end.strftime("%B %d, %Y") if act.end else "—"
+    _md('<div class="v2-notice">'
+        f'No companies have been recorded since {escape(end)} '
+        f'({act.stale_days} days ago). The window below is the 30 days ending '
+        'then, not the 30 days ending today.'
+        '</div>')
 
 
 def hero() -> None:
@@ -110,12 +133,15 @@ def hero() -> None:
         '</div>')
 
 
-def hero_map(df: pd.DataFrame, p: Palette, height: int = 268) -> None:
+def hero_map(df: pd.DataFrame, p: Palette, height: int = 268,
+             caption: str = "") -> None:
     """A quiet density map beside the headline.
 
     Low-contrast and non-interactive: it anchors the opening band and shows the
     coverage the page is about, without competing with the ask panel or
-    duplicating the detailed map further down.
+    duplicating the detailed map further down. `caption` names what is being
+    shaded — the panel otherwise reads as a different dataset from the headline
+    beside it.
     """
     if df.empty:
         return
@@ -145,6 +171,11 @@ def hero_map(df: pd.DataFrame, p: Palette, height: int = 268) -> None:
     with st.container(key="v2heromap"):
         st.plotly_chart(fig, use_container_width=True,
                         config={"displayModeBar": False, "staticPlot": True})
+        if caption:
+            # Without this the map reads as a second, unrelated dataset sitting
+            # beside the headline. It is the same one, shaded by how many
+            # companies each country holds.
+            _md(f'<p class="v2-small" style="margin-top:-4px">{escape(caption)}</p>')
 
 
 # ── Ask bar ──────────────────────────────────────────────────────────────
@@ -298,14 +329,34 @@ def metrics_strip(items: list[tuple[str, str, str | None, str]]) -> None:
 
 def rank_rows(df: pd.DataFrame, unit: str = "%", signed: bool = False,
               show_bar: bool = False, rank: bool = False,
-              count: bool = False) -> None:
-    """A ranked list on hairlines. Expects columns label, value, and optional sub."""
+              count: bool = False, total: float | None = None,
+              note: str | None = None) -> None:
+    """A ranked list on hairlines. Expects columns label, value, and optional sub.
+
+    `total` and `note` exist because every list here is a top-N slice of a much
+    larger set, so the percentages never summed to 100 and readers reasonably
+    took that for an error. Pass `total` (the full denominator, in the same
+    unit as `value`) and the remainder is drawn as an explicit "Other" row
+    rather than left missing; pass `note` to name the denominator in words.
+    A residual under half a unit is dropped -- an "Other 0.0%" row is noise.
+    """
     if df.empty:
         empty_state("No ranking available for this scope.")
         return
+
+    df = df.reset_index(drop=True)
+    if total is not None:
+        residual = float(total) - float(df["value"].sum())
+        if residual >= (0.5 if not count else 1):
+            df = pd.concat([df, pd.DataFrame([{
+                "label": "Other",
+                "value": residual,
+                **({"sub": ""} if "sub" in df.columns else {}),
+            }])], ignore_index=True)
+
     peak = float(df["value"].abs().max()) or 1.0
     rows = []
-    for i, r in df.reset_index(drop=True).iterrows():
+    for i, r in df.iterrows():
         val = float(r["value"])
         if signed:
             value_html = _signed(val, unit)
@@ -325,6 +376,8 @@ def rank_rows(df: pd.DataFrame, unit: str = "%", signed: bool = False,
         parts.append(f'<span class="val">{value_html}</span>')
         rows.append(f'<div class="row">{"".join(parts)}</div>')
     _md(f'<div class="v2-rows">{"".join(rows)}</div>')
+    if note:
+        _md(f'<p class="v2-small" style="margin-top:8px">{escape(note)}</p>')
 
 
 def _text(value) -> str:
@@ -351,34 +404,44 @@ def _company_table(df: pd.DataFrame) -> None:
     cols = ('<colgroup><col class="c-name"><col class="c-desc">'
             '<col class="c-place"><col class="c-chan"></colgroup>')
     head = ("<tr><th>Company</th><th>What it does</th>"
-            "<th>Location</th><th>Discovered</th></tr>")
+            "<th>Location</th><th>First recorded</th></tr>")
     body = []
-    for _, r in df.iterrows():
-        name = escape(_text(r.get("name")) or "—")
-        domain = _text(r.get("domain"))
-        if domain:
-            url = domain if domain.startswith("http") else f"https://{domain}"
-            name = f'<a href="{escape(url)}" target="_blank" rel="noopener">{name}</a>'
-        desc = escape(_clip(_text(r.get("description")), 132)) or "—"
+    for i, (_, r) in enumerate(df.iterrows()):
+        # Identity withheld -- see backend/utils/anonymize. The label is
+        # derived from the surrogate key so the same company reads the same on
+        # every render; `name` and `domain` are never emitted.
+        key = r.get("id", r.get("domain", f"row-{i}"))
+        name = escape(stealth_label(key))
+        # The last column used to name the channel a company arrived through
+        # (a grant portal, a named portfolio page), and grant-sourced
+        # descriptions open with the award programme. Both state the
+        # collection method once per row; the date says as much without it.
+        desc = escape(_clip(strip_provenance(r.get("description")), 132)) or "—"
         place = " · ".join(x for x in [_text(r.get("city")) or None,
                                        _text(r.get("country")) or None] if x) or "—"
+        seen = _text(r.get("first_seen")) or "—"
         body.append(
             f'<tr><td class="name">{name}</td><td>{desc}</td>'
             f'<td class="mut">{escape(place)}</td>'
-            f'<td class="mut">{escape(D.discovery_channel(r))}</td></tr>'
+            f'<td class="mut">{escape(seen)}</td></tr>'
         )
     _md(f'<div class="v2-tablewrap"><table class="v2-table">{cols}'
         f"<thead>{head}</thead><tbody>{''.join(body)}</tbody></table></div>")
 
 
 def coverage(links: list[tuple[str, str]]) -> None:
-    """External outlets, framed as searches because no article feed is connected."""
+    """Where in our own research the figure above was computed.
+
+    Internal routes, not outlet searches: a link out to whatever a newsroom
+    happens to have published is not support for a number we derived here.
+    """
+    if not links:
+        return
     items = "".join(
-        f'<a href="{escape(url)}" target="_blank" rel="noopener">{escape(name)}</a>'
-        for name, url in links
+        f'<a href="{escape(url)}">{escape(name)}</a>' for name, url in links
     )
     _md('<div class="v2-coverage">'
-        '<div class="head">Related coverage · outlet search</div>'
+        '<div class="head">Related analysis · this dataset</div>'
         f'<div class="links">{items}</div></div>')
 
 
@@ -389,35 +452,50 @@ def empty_state(message: str) -> None:
 # ── Charts ───────────────────────────────────────────────────────────────
 
 def _line_chart(df: pd.DataFrame, p: Palette, height: int = 300,
-                provisional_from: int | None = None) -> None:
+                provisional_from: int | None = None, value_col: str = "n",
+                unit: str = "", tickformat: str = ",.0f",
+                hover: str = "%{y:,} companies",
+                customdata: str | None = None) -> None:
     """One series, thin stroke. Years still filling in continue as a dashed
-    context-colored segment so the coverage cliff is never read as a real drop."""
+    context-colored segment so the coverage cliff is never read as a real drop.
+
+    `value_col` exists so the same chart can plot a share instead of a count;
+    `customdata` names a second column carried into the hover, which lets a
+    share label the base it was computed on.
+    """
     complete = df if provisional_from is None else df[df["year"] <= provisional_from]
+
+    def _cd(frame):
+        return frame[[customdata]].to_numpy() if customdata else None
+
     fig = go.Figure()
     fig.add_trace(go.Scatter(
-        x=complete["year"], y=complete["n"], mode="lines",
+        x=complete["year"], y=complete[value_col], mode="lines",
         line=dict(color=p.accent, width=2, shape="linear"),
-        hovertemplate="%{y:,} companies<extra></extra>", name="Founded",
+        customdata=_cd(complete),
+        hovertemplate=f"{hover}<extra></extra>", name="Founded",
     ))
     if provisional_from is not None:
         tail = df[df["year"] >= provisional_from]
         if len(tail) > 1:
             fig.add_trace(go.Scatter(
-                x=tail["year"], y=tail["n"], mode="lines",
+                x=tail["year"], y=tail[value_col], mode="lines",
                 line=dict(color=p.context, width=2, dash="dot"),
-                hovertemplate="%{y:,} companies (partial)<extra></extra>",
+                customdata=_cd(tail),
+                hovertemplate=f"{hover} (partial)<extra></extra>",
                 name="Partial",
             ))
     if not complete.empty:
         last = complete.iloc[-1]
         fig.add_trace(go.Scatter(
-            x=[last["year"]], y=[last["n"]], mode="markers",
+            x=[last["year"]], y=[last[value_col]], mode="markers",
             marker=dict(color=p.accent, size=8), hoverinfo="skip", showlegend=False,
         ))
     fig.update_layout(**plot_layout(
         p, height=height,
         yaxis=dict(gridcolor=p.border_soft, zeroline=False, rangemode="tozero",
-                   tickformat=",.0f", linecolor="rgba(0,0,0,0)",
+                   tickformat=tickformat, ticksuffix=unit,
+                   linecolor="rgba(0,0,0,0)",
                    tickfont=dict(size=11, color=p.text3, family="IBM Plex Mono")),
         xaxis=dict(showgrid=False, zeroline=False, linecolor=p.border, dtick=2,
                    ticks="outside", tickcolor=p.border, ticklen=4,
@@ -427,14 +505,35 @@ def _line_chart(df: pd.DataFrame, p: Palette, height: int = 300,
 
 
 def formation_chart(f: D.Formation, p: Palette) -> None:
+    """AI's share of company formation by founding year.
+
+    Share rather than count, deliberately — see `D.Formation`. Plotting the
+    count here drew a line falling from 2018 onward, which is the shape of our
+    coverage, not of the world.
+    """
     if f.series.empty:
         empty_state("Formation history is not available for this dataset yet.")
         return
-    _line_chart(f.series, p, height=316, provisional_from=f.last_complete)
+    _line_chart(f.series, p, height=316, provisional_from=f.last_complete,
+                value_col="share", unit="%", tickformat=".0f",
+                hover="%{y:.1f}% of %{customdata[0]:,} companies founded",
+                customdata="total")
+
+    notes = ["Each point is AI companies as a share of all companies founded "
+             "that year. Share rather than count: the most recent founding "
+             "years are still filling in, and in the ratio that incomplete "
+             "coverage largely cancels."]
     if f.last_complete:
-        note = (f"Founding years after {f.last_complete} are still filling in and appear "
-                "as a dotted continuation — that decline is coverage, not formation.")
-        _md(f'<p class="v2-small" style="margin-top:10px">{escape(note)}</p>')
+        # Stating the direction of the residual bias matters more than the
+        # dotting. The ratio is robust to coverage falling evenly; it is not
+        # robust to AI companies surfacing faster than the rest, which the
+        # discovery channels make likely.
+        notes.append(f"Years after {f.last_complete} appear as a dotted "
+                     "continuation: coverage there is thin enough that the "
+                     "share is indicative only, and it likely leans high, "
+                     "because the channels that find companies quickly are "
+                     "themselves AI-tilted.")
+    _md(f'<p class="v2-small" style="margin-top:10px">{escape(" ".join(notes))}</p>')
 
 
 # ── Weekly briefing ──────────────────────────────────────────────────────
@@ -475,6 +574,20 @@ def briefing(briefs: list) -> None:
     _md("".join(blocks))
 
 
+def _momentum_note() -> str:
+    """Why the momentum lists do not add up, said once.
+
+    These are rates of change, not a partition, so a reader looking for 100%
+    will not find it. Naming the two cohorts being compared is what makes the
+    figure interpretable at all.
+    """
+    (r0, r1), (p0, p1) = D.cohorts()
+    return (f"Change in each category's share of AI company formation, "
+            f"{r0}–{r1} against {p0}–{p1}. These are rates of change, not a "
+            f"breakdown, so they do not sum to 100%. The figures beside each "
+            f"name are its current share and company count.")
+
+
 def market_signals(cats: pd.DataFrame) -> None:
     if cats.empty:
         empty_state("Category momentum needs more founding-year coverage.")
@@ -486,11 +599,15 @@ def market_signals(cats: pd.DataFrame) -> None:
         "value": cats["growth"].astype(float),
         "sub": [f"{s:.1f}% · {int(n):,}" for s, n in zip(cats["share"], cats["recent"])],
     })
-    rank_rows(df, unit="%", signed=True)
+    rank_rows(df, unit="%", signed=True, note=_momentum_note())
 
 
-def discovery_channels(week: D.Week) -> None:
-    """Which channels produced the week's arrivals — the intake's composition."""
+def discovery_channels(week: D.Activity) -> None:
+    """Which channels produced the arrivals — the intake's composition.
+
+    Internal only: this names the collection method, which the public pages do
+    not publish. Kept because the operations pages still want the breakdown.
+    """
     if week.channels.empty or not week.total:
         empty_state("No intake recorded for the most recent week.")
         return
@@ -500,7 +617,8 @@ def discovery_channels(week: D.Week) -> None:
         "value": ch["n"] / week.total * 100,
         "sub": ch["n"].map(lambda n: f"{int(n):,}"),
     })
-    rank_rows(df, unit="%", show_bar=True)
+    rank_rows(df, unit="%", show_bar=True, total=100.0,
+              note=f"Share of the {week.total:,} companies recorded in this window.")
 
 
 def category_ranking(cats: pd.DataFrame) -> None:
@@ -512,7 +630,7 @@ def category_ranking(cats: pd.DataFrame) -> None:
         "value": cats["growth"].astype(float),
         "sub": cats["recent"].map(lambda n: f"{int(n):,} cos"),
     })
-    rank_rows(df, unit="%", signed=True, rank=True)
+    rank_rows(df, unit="%", signed=True, rank=True, note=_momentum_note())
 
 
 # Long country names push the city out of a compact row, so the ranked list
@@ -550,7 +668,54 @@ def headquarters(geo: pd.DataFrame) -> None:
         "value": geo["recent"].astype(float),
         "sub": geo["growth"].map(lambda g: "—" if pd.isna(g) else f"{float(g):+.0f}%"),
     })
-    rank_rows(df, unit="", count=True, rank=True)
+    rank_rows(df, unit="", count=True, rank=True,
+              note="Companies founded in each city in the recent cohort; the "
+                   "figure beside each is its change in share.")
+
+
+def domain_ranking(domains: pd.DataFrame, mapped_total: int) -> None:
+    """The largest activity domains, as a share of everything classified.
+
+    Grouped from company descriptions rather than assigned from a fixed sector
+    list, so the labels are the ones the data produced.
+    """
+    if domains.empty or not mapped_total:
+        empty_state("Activity domains are not classified for this dataset yet.")
+        return
+    df = pd.DataFrame({
+        "label": domains["domain"],
+        "value": domains["total"] / mapped_total * 100,
+        "sub": domains["total"].map(lambda n: f"{int(n):,}"),
+    })
+    rank_rows(df, unit="%", show_bar=True, rank=True, total=100.0,
+              note=(f"Share of the {mapped_total:,} AI companies classified so "
+                    f"far. Companies without a usable description yet are not "
+                    f"counted."))
+
+
+def domain_note(domains: pd.DataFrame, mapped_total: int) -> None:
+    """Where the unlisted population sits against the classified whole.
+
+    A domain's unlisted share is the interesting number here: it says which
+    kinds of work the commercial databases are least likely to have recorded.
+    """
+    if domains.empty or not mapped_total:
+        return
+    d = domains.copy()
+    d["unlisted_share"] = d["unlisted"] / d["total"] * 100
+    top = d.sort_values("unlisted_share", ascending=False).iloc[0]
+    section_head("Where the unlisted sit", "SHARE UNLISTED", soft=True)
+    rank_rows(
+        pd.DataFrame({
+            "label": d["domain"],
+            "value": d["unlisted_share"],
+            "sub": d["unlisted"].map(lambda n: f"{int(n):,}"),
+        }).sort_values("value", ascending=False),
+        unit="%", show_bar=True,
+        note=(f"Within each domain, the share of companies that appear in "
+              f"neither Crunchbase nor PitchBook. {escape(str(top['domain']))} "
+              f"is the least well covered."),
+    )
 
 
 def latest_additions(df: pd.DataFrame) -> None:
@@ -567,11 +732,11 @@ def footer(snap: D.Snapshot, f: D.Formation) -> None:
   <div class="cols">
     <div>
       <p class="fh">About this dataset</p>
-      <p>The tracker records AI company formation across public code hosts and model
-      hubs, accelerator and venture portfolios, government grant awards, and startup
-      media. Its distinguishing coverage is the <b>{snap.hidden:,}</b> companies that
-      appear in neither Crunchbase nor PitchBook.</p>
-      <p>Company-level records are published only for that hidden population.
+      <p>The tracker measures where and when new AI companies form. It covers
+      <b>{snap.total:,}</b> companies in <b>{snap.countries:,}</b> countries, of which
+      <b>{snap.hidden:,}</b> appear in neither Crunchbase nor PitchBook &mdash; the
+      layer this project exists to measure.</p>
+      <p>Company-level records are published only for that unlisted population.
       Crunchbase- and PitchBook-derived rows appear here as aggregate statistics
       only, under their licence terms.</p>
     </div>
@@ -581,14 +746,16 @@ def footer(snap: D.Snapshot, f: D.Formation) -> None:
       company formation with {p0}&ndash;{p1}. Share is used rather than raw counts
       because the most recent founding years are still filling in.</p>
       <p>Coverage is judged complete through <b>{f.last_complete or "—"}</b>; later
-      years are drawn as partial.</p>
+      years are drawn as partial and should be read as indicative.</p>
     </div>
     <div>
       <p class="fh">Coverage &amp; limits</p>
       <p>Country and city fields are normalised from mixed source formats, so place
       counts cover only companies that carry a location.</p>
-      <p>Related-coverage links point at each outlet's own search; no newsroom feed
-      is connected to the dataset.</p>
+      <p>Founding-year charts cover only companies that carry a founding year, which
+      is far more common among listed companies than unlisted ones.</p>
+      <p>Company identities are withheld; entries are shown by what they do and
+      where they are.</p>
     </div>
   </div>
   <div class="fine">TOBIN CENTER FOR ECONOMIC POLICY · YALE UNIVERSITY &nbsp;·&nbsp;

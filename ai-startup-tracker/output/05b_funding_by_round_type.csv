@@ -1,61 +1,61 @@
-avg_deal_usd_m,company_type,deals,round_type
-0.14,Non-AI,35642,Accelerator/Incubator
-8.80,Non-AI,32728,Debt - General
-9.93,Non-AI,30028,Early Stage VC
-2.94,Non-AI,27294,Seed Round
-88.30,Non-AI,15314,IPO
-0.23,AI,13231,Accelerator/Incubator
-0.98,Non-AI,12657,Angel (individual)
-3.53,AI,10117,Seed Round
-26.65,Non-AI,9661,Corporate
-429.17,Non-AI,9552,Joint Venture
-2.39,Non-AI,9524,Grant
-14.56,Non-AI,9090,Later Stage VC
-62.93,Non-AI,8648,PE Growth/Expansion
-12.44,AI,7971,Early Stage VC
-357.47,AI,4776,Joint Venture
-117.88,AI,3151,IPO
-0.73,AI,3084,Angel (individual)
-252.88,Non-AI,2971,University Spin-Out
-26.69,AI,2436,Corporate
-6.10,Non-AI,2268,Equity Crowdfunding
-0.35,Non-AI,2113,Product Crowdfunding
-1.53,AI,1880,Grant
-2.10,Non-AI,1760,Capitalization
-172.43,Non-AI,1729,Reverse Merger
-46.69,Non-AI,1646,Spin-Off
-38.19,AI,1486,Debt - General
-41.11,AI,1279,Later Stage VC
-278.31,Non-AI,1278,Platform Creation
-82.13,AI,852,PE Growth/Expansion
-,AI,814,University Spin-Out
-19.86,AI,509,Spin-Off
-3.69,AI,376,Capitalization
-100.99,Non-AI,355,PIPE
-170.64,AI,339,Reverse Merger
-125.98,Non-AI,332,Project Financing
-1.11,AI,327,Equity Crowdfunding
-46.04,Non-AI,229,Capital Spending
-17.21,Non-AI,212,Mezzanine
-0.19,AI,181,Product Crowdfunding
-238.57,AI,178,Platform Creation
-16.08,AI,156,PIPE
-0.53,Non-AI,102,Secondary Transaction - Open Market
-9.40,Non-AI,88,Working Capital
-28.00,Non-AI,88,Debt Repayment
-336.11,Non-AI,77,General Corporate Purpose
-229.43,AI,69,Project Financing
-135.76,Non-AI,66,Leveraged Recapitalization
-103.87,Non-AI,66,GP Stakes
-14.96,AI,34,Mezzanine
-697.80,Non-AI,33,Dividend Recapitalization
-28.09,AI,30,Seed
-594.13,AI,29,General Corporate Purpose
-22.17,AI,20,Capital Spending
-83.58,AI,20,Series A
-5.98,AI,20,Secondary Transaction - Open Market
-416.11,AI,13,Leveraged Recapitalization
-,Non-AI,12,Investor Buyout by Management
-2838.64,Non-AI,11,Debt - Spinoff
-127.30,AI,10,Working Capital
-847.79,AI,10,Series B
+round_type,company_type,deals,avg_deal_usd_m
+Accelerator/Incubator,Non-AI,35620,0.14
+Debt - General,Non-AI,32727,8.80
+Early Stage VC,Non-AI,30015,9.94
+Seed Round,Non-AI,27285,2.94
+IPO,Non-AI,15313,88.30
+Accelerator/Incubator,AI,13253,0.23
+Angel (individual),Non-AI,12657,0.98
+Seed Round,AI,10126,3.52
+Corporate,Non-AI,9658,26.67
+Joint Venture,Non-AI,9550,429.17
+Grant,Non-AI,9518,2.39
+Later Stage VC,Non-AI,9087,14.56
+PE Growth/Expansion,Non-AI,8644,62.93
+Early Stage VC,AI,7984,12.42
+Joint Venture,AI,4778,357.47
+IPO,AI,3152,117.88
+Angel (individual),AI,3084,0.73
+University Spin-Out,Non-AI,2962,252.88
+Corporate,AI,2439,26.62
+Equity Crowdfunding,Non-AI,2268,6.10
+Product Crowdfunding,Non-AI,2113,0.35
+Grant,AI,1886,1.56
+Capitalization,Non-AI,1759,2.10
+Reverse Merger,Non-AI,1729,172.43
+Spin-Off,Non-AI,1642,46.69
+Debt - General,AI,1487,38.16
+Later Stage VC,AI,1282,40.99
+Platform Creation,Non-AI,1278,278.31
+PE Growth/Expansion,AI,856,82.13
+University Spin-Out,AI,823,
+Spin-Off,AI,513,19.86
+Capitalization,AI,377,3.68
+PIPE,Non-AI,355,100.99
+Reverse Merger,AI,339,170.64
+Project Financing,Non-AI,332,125.98
+Equity Crowdfunding,AI,327,1.11
+Capital Spending,Non-AI,229,46.04
+Mezzanine,Non-AI,212,17.21
+Product Crowdfunding,AI,181,0.19
+Platform Creation,AI,178,238.57
+PIPE,AI,156,16.08
+Secondary Transaction - Open Market,Non-AI,102,0.53
+Working Capital,Non-AI,88,9.40
+Debt Repayment,Non-AI,88,28.00
+General Corporate Purpose,Non-AI,77,336.11
+Project Financing,AI,69,229.43
+Leveraged Recapitalization,Non-AI,66,135.76
+GP Stakes,Non-AI,66,103.87
+Mezzanine,AI,34,14.96
+Dividend Recapitalization,Non-AI,33,697.80
+Seed,AI,30,28.09
+General Corporate Purpose,AI,29,594.13
+Capital Spending,AI,20,22.17
+Series A,AI,20,83.58
+Secondary Transaction - Open Market,AI,20,5.98
+Leveraged Recapitalization,AI,13,416.11
+Investor Buyout by Management,Non-AI,12,
+Debt - Spinoff,Non-AI,11,2838.64
+Working Capital,AI,10,127.30
+Series B,AI,10,847.79

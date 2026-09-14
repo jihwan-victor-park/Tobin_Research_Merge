@@ -4,36 +4,35 @@ Each brief is a short paragraph written from figures this dataset actually
 holds, followed by a few places to read around the subject. The dataset drives
 the insight; the links are context, not the story.
 
-**On the links.** No newsroom feed is connected to the database, so nothing here
-claims to have found a specific article. Each brief carries its own subject
-into the outlets' own search endpoints — real destinations, honestly labelled.
-`Brief.sources` is the seam: when a coverage table exists, fill it with real
-headlines and the rendering does not change.
+**On the links.** These point into our own quarterly analyses, not out to news
+outlets. An earlier version sent each brief's subject into Reuters, the FT,
+TechCrunch and others as a search query — real destinations, but they returned
+whatever those outlets happened to publish, which is not evidence for anything
+said above them. A brief now hands the reader the section of our own research
+that the figure was computed from. `Brief.sources` is unchanged as a seam.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from urllib.parse import quote_plus
 
 import pandas as pd
 
 from . import data as D
 
-# Outlets that actually cover company formation and venture activity.
-_OUTLETS = {
-    "reuters": ("Reuters", "https://www.reuters.com/site-search/?query={q}"),
-    "ft": ("Financial Times", "https://www.ft.com/search?q={q}"),
-    "techcrunch": ("TechCrunch", "https://techcrunch.com/?s={q}"),
-    "theverge": ("The Verge", "https://www.theverge.com/search?q={q}"),
-    "sifted": ("Sifted", "https://sifted.eu/?s={q}"),
-    "theinformation": ("The Information", "https://www.theinformation.com/search?query={q}"),
-    "github": ("GitHub", "https://github.com/search?q={q}&type=repositories"),
+# Our own analyses, refreshed quarterly. Keys are the site's own routes, which
+# the shell reads back off `?page=`.
+_SIGNALS = {
+    "formation": ("Formation timeline", "?page=Findings"),
+    "geography": ("Geographic concentration", "?page=Findings"),
+    "sectors": ("Sector adoption", "?page=Findings"),
+    "landscape": ("What these companies do", "?page=Landscape"),
+    "coverage": ("Companies commercial databases miss", "?page=Findings"),
+    "directory": ("Company directory", "?page=Companies"),
 }
 
 
-def _links(subject: str, keys: tuple[str, ...]) -> list[tuple[str, str]]:
-    q = quote_plus(subject)
-    return [(_OUTLETS[k][0], _OUTLETS[k][1].format(q=q)) for k in keys if k in _OUTLETS]
+def _links(keys: tuple[str, ...]) -> list[tuple[str, str]]:
+    return [_SIGNALS[k] for k in keys if k in _SIGNALS]
 
 
 @dataclass
@@ -46,37 +45,30 @@ class Brief:
     sources: list[tuple[str, str]] = field(default_factory=list)
 
 
-def build(week: D.Week, snap: D.Snapshot, facts: dict,
+def build(week: D.Activity, snap: D.Snapshot, facts: dict,
           cats: pd.DataFrame, geo: pd.DataFrame) -> list[Brief]:
-    """Assemble the week's briefs, skipping any the data cannot support."""
+    """Assemble the window's briefs, skipping any the data cannot support."""
     briefs: list[Brief] = []
     (r0, r1), (p0, p1) = D.cohorts()
 
     # ── Lead: what arrived, and how much of it is invisible elsewhere ──
     if week.total:
         share = week.hidden_share
-        channel = ""
-        if not week.channels.empty:
-            top = week.channels.iloc[0]
-            channel = (f" The largest single channel was {top['channel']}, "
-                       f"accounting for <b>{int(top['n']):,}</b> of them.")
-        reach = (f" The week's arrivals carry headquarters in "
-                 f"<b>{week.countries:,}</b> countries." if week.countries else "")
+        reach = (f" They carry headquarters in <b>{week.countries:,}</b> "
+                 f"countries." if week.countries else "")
         briefs.append(Brief(
             kicker="Lead · dataset intake",
-            headline=("Most of this week's arrivals are invisible to commercial databases"
+            headline=("Most of what arrived is invisible to commercial databases"
                       if share >= 60 else
-                      "Commercial coverage kept pace with this week's intake"),
-            body=(f"<b>{week.total:,}</b> companies entered the dataset this week, of "
-                  f"which <b>{week.hidden:,} ({share:.1f}%)</b> appear in neither "
-                  f"Crunchbase nor PitchBook. They surface first through code hosts, "
-                  f"model hubs, accelerator portfolios and public grant awards — often "
-                  f"long before a commercial database registers them, if it ever "
-                  f"does.{channel}{reach}"),
+                      "Commercial coverage kept pace with this intake"),
+            body=(f"<b>{week.total:,}</b> companies entered the dataset in the 30 "
+                  f"days to {week.end:%B %d, %Y}, of which "
+                  f"<b>{week.hidden:,} ({share:.1f}%)</b> appear in neither "
+                  f"Crunchbase nor PitchBook — often long before a commercial "
+                  f"database registers them, if it ever does.{reach}"),
             figure=f"{share:.1f}%",
-            figure_caption="of this week's arrivals are in neither Crunchbase nor PitchBook",
-            sources=_links("AI startup funding database",
-                           ("reuters", "techcrunch", "theinformation")),
+            figure_caption="of these arrivals are in neither Crunchbase nor PitchBook",
+            sources=_links(("coverage", "formation", "directory")),
         ))
 
     # ── Category momentum ──
@@ -95,7 +87,7 @@ def build(week: D.Week, snap: D.Snapshot, facts: dict,
                   f"filling in."),
             figure=f"{float(top['growth']):+.1f}%",
             figure_caption=f"change in share of formation, {r0}–{r1} vs {p0}–{p1}",
-            sources=_links(f"{label} startups", ("techcrunch", "reuters", "theverge")),
+            sources=_links(("sectors", "landscape", "formation")),
         ))
 
     # ── Formation outside the United States ──
@@ -116,23 +108,33 @@ def build(week: D.Week, snap: D.Snapshot, facts: dict,
                       f"not the whole world."),
                 figure=f"{float(city['share']):.1f}%",
                 figure_caption=f"share of {r0}–{r1} AI company formation",
-                sources=_links(f"{name} AI startups", ("sifted", "ft", "techcrunch")),
+                sources=_links(("geography", "formation")),
             ))
 
-    # ── Discovery channel ──
-    if facts.get("github_native"):
+    # ── Coverage ──
+    # This brief used to describe how the companies were found. The finding is
+    # that they are absent from the commercial databases while plainly being
+    # real operating firms; the channel that surfaced them is our business.
+    if facts.get("hidden_ai"):
+        hidden_ai = facts["hidden_ai"]
         with_site = facts.get("with_domain") or 0
+        # Stated as coverage, not as a survival claim: a recorded address is
+        # not a live site, and the companies without one are companies we hold
+        # no address for -- not companies without a website.
+        detail = ""
+        if with_site:
+            detail = (f" We hold a web address for <b>{with_site:,}</b> of them "
+                      f"({with_site / hidden_ai * 100:.0f}%); for the rest we "
+                      f"hold none, which is a gap in what we know rather than a "
+                      f"finding about the company.")
         briefs.append(Brief(
-            kicker="Discovery",
-            headline="Companies keep arriving through code before anyone lists them",
-            body=(f"<b>{facts['github_native']:,}</b> of the companies missing from "
-                  f"Crunchbase and PitchBook were found through a public code "
-                  f"repository rather than a funding announcement or a directory"
-                  + (f", and <b>{with_site:,}</b> of that hidden population already "
-                     f"run a live website" if with_site else "") + "."),
-            figure=f"{facts['github_native']:,}",
-            figure_caption="hidden companies found through a public repository",
-            sources=_links("AI startup open source", ("github", "techcrunch", "theverge")),
+            kicker="Coverage",
+            headline="A large AI population sits outside the commercial databases",
+            body=(f"<b>{hidden_ai:,}</b> AI companies in this dataset appear in "
+                  f"neither Crunchbase nor PitchBook.{detail}"),
+            figure=f"{hidden_ai:,}",
+            figure_caption="AI companies in neither Crunchbase nor PitchBook",
+            sources=_links(("coverage", "landscape")),
         ))
 
     return briefs

@@ -2,8 +2,8 @@
 
 The host script hands control here when `?v=2` is set, and from that point V2
 owns the whole shell. Every route renders inside it — the homepage from this
-package, and the existing Companies / Findings / GitHub Discovery / About /
-Internal pages by calling the very functions the V1 shell calls. Those pages
+package, and the existing Companies / Findings / Landscape / About / Internal
+pages by calling the very functions the V1 shell calls. Those pages
 keep their own logic and queries untouched; only the surface they are drawn on
 changes.
 """
@@ -18,8 +18,9 @@ from . import home, theme
 from .theme import Palette
 
 # Mirrors the host script's public routes.
-NAV = ["Home", "Companies", "Findings", "Landscape", "GitHub Discovery", "About", "Internal"]
-INTERNAL = ["AI Analysis", "Trends", "Pipeline Health", "Inventory", "Scraper"]
+NAV = ["Home", "Findings", "Landscape", "Companies", "About", "Internal"]
+INTERNAL = ["AI Analysis", "Trends", "Pipeline Health", "Inventory", "Scraper",
+            "GitHub Discovery"]
 
 QUERY_FLAG = "v"
 QUERY_VALUE = "2"
@@ -105,13 +106,6 @@ def _render_v1_page(page: str, p: Palette) -> None:
             v1.page_landscape()
         elif page == "About":
             v1.page_about()
-        elif page == "GitHub Discovery":
-            _scraper, github_all = v1._company_frames()
-            if "llm_classification" in github_all.columns:
-                github = github_all[github_all["llm_classification"] == "startup"].copy()
-            else:
-                github = github_all.iloc[0:0].copy()
-            v1.page_github(github, github_all)
         elif page == "Internal":
             _render_internal(v1)
 
@@ -137,6 +131,13 @@ def _render_internal(v1) -> None:
         v1.page_inventory()
     elif sub == "Scraper":
         v1.page_scraper()
+    elif sub == "GitHub Discovery":
+        _scraper, github_all = v1._company_frames()
+        if "llm_classification" in github_all.columns:
+            github = github_all[github_all["llm_classification"] == "startup"].copy()
+        else:
+            github = github_all.iloc[0:0].copy()
+        v1.page_github(github, github_all)
 
 
 # ── Entry point ──────────────────────────────────────────────────────────

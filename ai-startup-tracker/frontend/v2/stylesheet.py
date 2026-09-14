@@ -836,6 +836,21 @@ html, body, .stApp,
 }}
 
 /* ── States ────────────────────────────────────────────────────────── */
+/* Collection paused: stated in the context colour, not an alarm colour --
+   it is a fact about the window, not an error. */
+.stApp .v2-status .stale {{
+  color: var(--v2-text2) !important;
+  border-bottom: 1px dotted var(--v2-border);
+}}
+.stApp .v2-notice {{
+  font-size: 0.78rem !important;
+  line-height: 1.55;
+  color: var(--v2-text2) !important;
+  background: var(--v2-surface-alt);
+  border-left: 2px solid var(--v2-border);
+  padding: 10px 14px;
+  margin: 0 0 18px 0;
+}}
 .stApp .v2-empty {{
   font-family: var(--v2-mono) !important;
   font-size: 0.715rem !important;

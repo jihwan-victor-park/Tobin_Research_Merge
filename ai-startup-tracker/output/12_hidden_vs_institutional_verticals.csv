@@ -1,69 +1,69 @@
-bucket,n,vertical,share_of_bucket_pct
-hidden,292,Hardware & Manufacturing,5.99
-cb,23268,Transportation,1.52
-cb,148796,Biotech & Pharma,9.7
-pb,11744,Food & AgTech,2.91
-cb,50340,Financial Services,3.28
-pb,5046,Education,1.25
-hidden,252,Education,5.17
-hidden,92,Security & Privacy,1.89
-cb,124650,Hardware & Manufacturing,8.13
-hidden_on_li,58,Energy & CleanTech,2.91
-hidden_on_li,224,E-commerce & Retail,11.26
-cb,20669,Consumer & Lifestyle,1.35
-hidden,172,Biotech & Pharma,3.53
-hidden_on_li,143,Media & Marketing,7.19
-hidden,103,Real Estate,2.11
-pb,42443,Hardware & Manufacturing,10.5
-pb,3296,Security & Privacy,0.82
-cb,37399,Security & Privacy,2.44
-hidden,230,Energy & CleanTech,4.72
-hidden,227,Professional Services,4.66
-cb,520006,Software & IT,33.91
-hidden_on_li,59,Biotech & Pharma,2.96
-hidden,168,Food & AgTech,3.45
-cb,49337,Healthcare,3.22
-hidden_on_li,24,Security & Privacy,1.21
-cb,22003,Energy & CleanTech,1.43
-hidden_on_li,59,Education,2.96
-hidden_on_li,64,Data & Analytics,3.22
-pb,12671,Real Estate,3.14
-hidden_on_li,51,Food & AgTech,2.56
-hidden,120,Transportation,2.46
-hidden_on_li,101,Consumer & Lifestyle,5.08
-pb,12770,Biotech & Pharma,3.16
-pb,17667,Energy & CleanTech,4.37
-hidden,231,Data & Analytics,4.74
-pb,59462,Software & IT,14.71
-hidden_on_li,153,Healthcare,7.69
-pb,66675,Professional Services,16.5
-cb,6840,Food & AgTech,0.45
-hidden,464,Financial Services,9.52
-hidden,288,E-commerce & Retail,5.91
-hidden_on_li,395,Software & IT,19.85
-hidden,1093,Software & IT,22.42
-hidden,494,Healthcare,10.13
-hidden_on_li,13,Social Impact,0.65
-cb,211583,Professional Services,13.8
-hidden,365,Media & Marketing,7.49
-cb,5114,Social Impact,0.33
-cb,110996,Data & Analytics,7.24
-hidden_on_li,140,Professional Services,7.04
-hidden_on_li,127,Hardware & Manufacturing,6.38
-hidden,80,Social Impact,1.64
-pb,18818,Consumer & Lifestyle,4.66
-pb,30008,Financial Services,7.42
-pb,27083,Media & Marketing,6.7
-pb,14237,Transportation,3.52
-cb,46260,E-commerce & Retail,3.02
-cb,30465,Real Estate,1.99
-pb,37753,E-commerce & Retail,9.34
-pb,34771,Healthcare,8.6
-hidden_on_li,76,Transportation,3.82
-pb,1152,Social Impact,0.29
-hidden_on_li,251,Financial Services,12.61
-hidden,204,Consumer & Lifestyle,4.18
-cb,81626,Media & Marketing,5.32
-pb,8580,Data & Analytics,2.12
-hidden_on_li,52,Real Estate,2.61
-cb,44189,Education,2.88
+vertical,bucket,n,share_of_bucket_pct
+Hardware & Manufacturing,hidden,292,5.99
+Transportation,cb,23268,1.52
+Biotech & Pharma,cb,148796,9.7
+Food & AgTech,pb,11744,2.91
+Financial Services,cb,50340,3.28
+Education,pb,5046,1.25
+Education,hidden,252,5.17
+Security & Privacy,hidden,92,1.89
+Hardware & Manufacturing,cb,124650,8.13
+Energy & CleanTech,hidden_on_li,58,2.91
+E-commerce & Retail,hidden_on_li,224,11.26
+Consumer & Lifestyle,cb,20669,1.35
+Biotech & Pharma,hidden,172,3.53
+Media & Marketing,hidden_on_li,143,7.19
+Real Estate,hidden,103,2.11
+Hardware & Manufacturing,pb,42443,10.5
+Security & Privacy,pb,3296,0.82
+Security & Privacy,cb,37399,2.44
+Energy & CleanTech,hidden,230,4.72
+Professional Services,hidden,227,4.66
+Software & IT,cb,520006,33.91
+Biotech & Pharma,hidden_on_li,59,2.96
+Food & AgTech,hidden,168,3.45
+Healthcare,cb,49337,3.22
+Security & Privacy,hidden_on_li,24,1.21
+Energy & CleanTech,cb,22003,1.43
+Education,hidden_on_li,59,2.96
+Data & Analytics,hidden_on_li,64,3.22
+Real Estate,pb,12671,3.14
+Food & AgTech,hidden_on_li,51,2.56
+Transportation,hidden,120,2.46
+Consumer & Lifestyle,hidden_on_li,101,5.08
+Biotech & Pharma,pb,12770,3.16
+Energy & CleanTech,pb,17667,4.37
+Data & Analytics,hidden,231,4.74
+Software & IT,pb,59462,14.71
+Healthcare,hidden_on_li,153,7.69
+Professional Services,pb,66675,16.5
+Food & AgTech,cb,6840,0.45
+Financial Services,hidden,464,9.52
+E-commerce & Retail,hidden,288,5.91
+Software & IT,hidden_on_li,395,19.85
+Software & IT,hidden,1093,22.42
+Healthcare,hidden,494,10.13
+Social Impact,hidden_on_li,13,0.65
+Professional Services,cb,211583,13.8
+Media & Marketing,hidden,365,7.49
+Social Impact,cb,5114,0.33
+Data & Analytics,cb,110996,7.24
+Professional Services,hidden_on_li,140,7.04
+Hardware & Manufacturing,hidden_on_li,127,6.38
+Social Impact,hidden,80,1.64
+Consumer & Lifestyle,pb,18818,4.66
+Financial Services,pb,30008,7.42
+Media & Marketing,pb,27083,6.7
+Transportation,pb,14237,3.52
+E-commerce & Retail,cb,46260,3.02
+Real Estate,cb,30465,1.99
+E-commerce & Retail,pb,37753,9.34
+Healthcare,pb,34771,8.6
+Transportation,hidden_on_li,76,3.82
+Social Impact,pb,1152,0.29
+Financial Services,hidden_on_li,251,12.61
+Consumer & Lifestyle,hidden,204,4.18
+Media & Marketing,cb,81626,5.32
+Data & Analytics,pb,8580,2.12
+Real Estate,hidden_on_li,52,2.61
+Education,cb,44189,2.88

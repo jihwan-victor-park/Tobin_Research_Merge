@@ -1,18 +1,18 @@
-ai,ai_pct,total,vertical
-52436,43.7,119871,Data & Analytics
-45582,28.2,161797,Biotech & Pharma
-73256,12.6,580956,Software & IT
-9766,11.5,84755,Healthcare
-8730,10.8,81063,Financial Services
-3413,9.1,37701,Transportation
-3634,8.9,40811,Security & Privacy
-4240,8.6,49546,Education
-14173,8.5,167512,Hardware & Manufacturing
-8727,8.0,109217,Media & Marketing
-5424,6.4,84525,E-commerce & Retail
-17960,6.4,278625,Professional Services
-2368,5.9,39958,Energy & CleanTech
-364,5.7,6359,Social Impact
-2421,5.6,43291,Real Estate
-2247,5.6,39792,Consumer & Lifestyle
-1025,5.5,18803,Food & AgTech
+vertical,total,ai,ai_pct
+Data & Analytics,119871,52476,43.8
+Biotech & Pharma,161797,45687,28.2
+Software & IT,580956,73453,12.6
+Healthcare,84755,9813,11.6
+Financial Services,81063,8744,10.8
+Transportation,37701,3437,9.1
+Security & Privacy,40811,3658,9.0
+Education,49546,4251,8.6
+Hardware & Manufacturing,167512,14286,8.5
+Media & Marketing,109217,8740,8.0
+Professional Services,278625,18026,6.5
+E-commerce & Retail,84525,5444,6.4
+Energy & CleanTech,39958,2390,6.0
+Social Impact,6359,365,5.7
+Consumer & Lifestyle,39792,2250,5.7
+Real Estate,43291,2429,5.6
+Food & AgTech,18803,1028,5.5

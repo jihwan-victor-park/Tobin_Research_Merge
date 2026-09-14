@@ -26,8 +26,12 @@ from backend.db.connection import get_engine
 from backend.orchestrator.orchestrator import Orchestrator
 from backend.scrapers.registry import SCRAPER_REGISTRY
 from backend.utils.ai_filter import ai_filter_sql
+from backend.utils.anonymize import stealth_label, strip_provenance
 from backend.utils.country import normalize_country, GLOBE_COUNTRIES
 from backend.utils.denylist import BIG_TECH_DENYLIST
+# The V2 package owns the canonical country cleaner and the cohort floor; both
+# pages import them rather than keeping a second copy that can drift.
+from frontend.v2.data import MIN_COHORT, clean_country
 
 load_dotenv()
 
@@ -793,16 +797,27 @@ def _load_overview_stats() -> dict:
         funded = conn.execute(text(
             "SELECT COUNT(DISTINCT company_id) FROM funding_signals"
         )).scalar() or 0
-        countries = conn.execute(text(
-            "SELECT COUNT(DISTINCT country) FROM companies "
+        # Raw DISTINCT counts the junk sitting in this column -- US states,
+        # bare city names, postcodes, stray coordinates -- and reports ~280
+        # "countries". The homepage has always cleaned the value before
+        # counting; this page did not, so the two disagreed on the same site.
+        raw_countries = conn.execute(text(
+            "SELECT DISTINCT country FROM companies "
             "WHERE country IS NOT NULL AND country != ''"
-        )).scalar() or 0
+        )).scalars().all()
+    countries = len({c for c in map(clean_country, raw_countries) if c})
     return {"total": total, "ai": ai, "funded": funded, "countries": countries}
 
 
 @st.cache_data(ttl=300)
 def _load_ai_adoption_curve() -> pd.DataFrame:
-    """Aggregate AI adoption by founding year across all companies."""
+    """Aggregate AI adoption by founding year across all companies.
+
+    Years whose total intake is below `MIN_COHORT` are dropped: a share
+    computed on a few dozen records is noise, and the current year always holds
+    a few dozen. This is the same floor the homepage applies, so the two
+    formation charts cannot disagree about where the series ends.
+    """
     engine = get_engine()
     query = f"""
         SELECT
@@ -810,13 +825,15 @@ def _load_ai_adoption_curve() -> pd.DataFrame:
             COUNT(*) AS total,
             COUNT(*) FILTER (WHERE {ai_filter_sql()}) AS ai
         FROM companies
-        WHERE founded_year BETWEEN 2000 AND 2026
+        WHERE founded_year BETWEEN 2000 AND EXTRACT(YEAR FROM NOW())::int
         GROUP BY founded_year
         ORDER BY founded_year
     """
     with engine.connect() as conn:
         rows = conn.execute(text(query)).mappings().all()
     df = pd.DataFrame(rows)
+    if not df.empty:
+        df = df[df["total"] >= MIN_COHORT].reset_index(drop=True)
     if not df.empty:
         df["ai_pct"] = (df["ai"] / df["total"] * 100).round(1)
     return df
@@ -1226,6 +1243,19 @@ def _load_bucket_stats() -> pd.DataFrame:
 
 
 @st.cache_data(ttl=300)
+def _load_hidden_ai_total() -> int:
+    """AI companies in neither Crunchbase nor PitchBook — the headline figure.
+
+    Read off `_load_bucket_stats` rather than re-queried, so this number and the
+    bucket table can never disagree.
+    """
+    buckets = _load_bucket_stats()
+    if buckets.empty or _HIDDEN_STATUS not in set(buckets["bucket"]):
+        return 0
+    return int(buckets.set_index("bucket").loc[_HIDDEN_STATUS, "ai"])
+
+
+@st.cache_data(ttl=300)
 def _load_country_counts() -> pd.DataFrame:
     """Per-country company totals for the world map (aggregates only)."""
     engine = get_engine()
@@ -1264,7 +1294,7 @@ def _load_hidden_companies(search: str, country: str, ai_only: bool,
         conditions.append(ai_filter_sql())
     where = " AND ".join(conditions)
     query = f"""
-        SELECT name, domain, country, city, founded_year,
+        SELECT id, name, domain, country, city, founded_year,
                LEFT(description, 180) AS description,
                ai_score, source_domain, incubator_source,
                first_seen_at::date AS first_seen
@@ -1562,10 +1592,10 @@ def page_home():
     # ── Latest hidden discoveries ────────────────────────────────────
     st.markdown(
         '<div style="height:14px"></div>'
-        '<div class="section-header">Latest hidden discoveries</div>'
-        '<div class="section-sub">Recently found AI companies that are not in '
-        'Crunchbase or PitchBook — browse and export the full list on the '
-        '<b>Companies</b> page</div>',
+        '<div class="section-header">Latest discoveries</div>'
+        '<div class="section-sub">Recently recorded AI companies that are in neither '
+        'Crunchbase nor PitchBook — browse the full list on the '
+        '<b>Companies</b> page. Identities are withheld.</div>',
         unsafe_allow_html=True,
     )
     recent = _load_hidden_companies(search="", country="All countries",
@@ -1574,9 +1604,9 @@ def page_home():
         st.caption("No hidden companies loaded yet.")
     else:
         view = recent.copy()
-        view["Discovered via"] = view.apply(_source_label, axis=1)
-        view = view[["name", "country", "founded_year", "Discovered via", "first_seen"]]
-        view.columns = ["Company", "Country", "Founded", "Discovered via", "First seen"]
+        view["Company"] = view["id"].map(stealth_label)
+        view = view[["Company", "country", "founded_year", "first_seen"]]
+        view.columns = ["Company", "Country", "Founded", "First seen"]
         st.dataframe(view, hide_index=True, width="stretch",
                      column_config={
                          "Founded": st.column_config.NumberColumn(format="%d"),
@@ -1706,17 +1736,19 @@ def _render_enrichment_section() -> None:
 
 def page_companies():
     st.markdown(
-        '<div class="section-header">Hidden companies</div>'
-        '<div class="section-sub" style="max-width:74ch;">Companies discovered by this '
-        'tracker that do not appear in Crunchbase or PitchBook — surfaced from GitHub '
-        'activity, accelerator/VC portfolio pages, US SBIR/STTR grant awards, and '
-        'startup media. Companies from commercial databases are shown on this site '
-        'only as aggregate statistics.</div>',
+        '<div class="section-header">Companies outside the commercial databases</div>'
+        '<div class="section-sub" style="max-width:74ch;">Companies this tracker has '
+        'recorded that appear in neither Crunchbase nor PitchBook. Identities are '
+        'withheld: each is listed by what it does and where it is. Companies from '
+        'commercial databases are shown on this site only as aggregate '
+        'statistics.</div>',
         unsafe_allow_html=True,
     )
 
     c1, c2, c3 = st.columns([2.2, 1.2, 1])
-    search = c1.text_input("Search", placeholder="Search by name or description…",
+    # Search still matches on name -- a reader who already knows a company can
+    # find its row -- but the name itself is never rendered back.
+    search = c1.text_input("Search", placeholder="Search by description…",
                            label_visibility="collapsed")
     country = c2.selectbox("Country", ["All countries"] + _load_hidden_country_options(),
                            label_visibility="collapsed")
@@ -1728,33 +1760,38 @@ def page_companies():
         st.caption("No companies match these filters.")
         return
 
+    # "Discovered via" named the exact channel and domain a company came from
+    # (sbir.gov, nih.gov, a particular portfolio page), which is the collection
+    # method restated once per row. Descriptions get the same treatment: the
+    # grant-record preamble is stripped, the project text kept.
     view = df.copy()
-    view["Discovered via"] = view.apply(_source_label, axis=1)
-    view["domain"] = view["domain"].map(
-        lambda d: f"https://{d}" if isinstance(d, str) and d and not d.startswith("http") else d)
-    view = view[["name", "domain", "country", "city", "founded_year",
-                 "Discovered via", "ai_score", "first_seen", "description"]]
-    view.columns = ["Company", "Website", "Country", "City", "Founded",
-                    "Discovered via", "AI score", "First seen", "Description"]
+    view["Company"] = view["id"].map(stealth_label)
+    view["description"] = view["description"].map(strip_provenance)
+    view = view[["Company", "country", "city", "founded_year",
+                 "ai_score", "first_seen", "description"]]
+    view.columns = ["Company", "Country", "City", "Founded",
+                    "AI score", "First seen", "Description"]
 
     st.markdown(
         f'<div style="color:{TXT3};font-size:0.78rem;margin:2px 0 8px 0;">'
-        f'{len(df):,} companies shown (newest first, capped at 5,000)</div>',
+        f'{len(df):,} companies shown (newest first, capped at 5,000) · '
+        f'identities withheld</div>',
         unsafe_allow_html=True,
     )
     st.dataframe(
         view, hide_index=True, width="stretch", height=560,
         column_config={
-            "Website": st.column_config.LinkColumn(display_text=r"https?://(.*)"),
             "Founded": st.column_config.NumberColumn(format="%d"),
             "AI score": st.column_config.ProgressColumn(
                 min_value=0.0, max_value=1.0, format="%.2f"),
             "Description": st.column_config.TextColumn(width="large"),
         },
     )
+    # The export is the same withheld view, not the underlying frame -- handing
+    # over a CSV of names and domains would undo the whole page.
     st.download_button(
-        "Export CSV", df.to_csv(index=False).encode(),
-        file_name="hidden_companies.csv", mime="text/csv",
+        "Export CSV", view.to_csv(index=False).encode(),
+        file_name="companies_outside_commercial_databases.csv", mime="text/csv",
     )
 
 
@@ -1778,40 +1815,25 @@ def page_about():
         unsafe_allow_html=True,
     )
 
-    st.markdown(
-        '<div style="height:8px"></div>'
-        '<div class="section-header">How companies enter the tracker</div>',
-        unsafe_allow_html=True,
-    )
-    sources = pd.DataFrame([
-        ["GitHub discovery", "Weekly scan of new AI repositories and organizations; "
-         "signals like stars, contributor velocity, and org metadata identify "
-         "companies before any register lists them."],
-        ["Portfolio scraping", "400+ accelerator, incubator, university, and VC "
-         "portfolio pages, scraped by an agentic engine that adapts per site."],
-        ["Government grants", "NIH and NSF SBIR/STTR award APIs — US firms that won "
-         "federal R&D grants, often years before commercial visibility."],
-        ["Startup media", "18 regional startup news feeds worldwide, mined for "
-         "funding announcements and company launches."],
-        ["Commercial registers", "Crunchbase and PitchBook imports verify overlap "
-         "and provide the institutional baseline (shown as aggregates only)."],
-    ], columns=["Source", "What it contributes"])
-    st.dataframe(sources, hide_index=True, width="stretch",
-                 column_config={
-                     "What it contributes": st.column_config.TextColumn(width="large")})
-
+    # The per-source breakdown that stood here -- the discovery channels and the
+    # counts behind each -- is not published. What remains is the part a reader
+    # needs in order to read a number correctly: what the terms mean and where
+    # the coverage is thin. Those are limits, not collection mechanics, and
+    # removing them would only make the gaps harder to see.
     st.markdown(
         '<div style="height:8px"></div>'
         '<div class="section-header">Reading the numbers</div>'
         '<div class="section-sub" style="max-width:76ch;">'
-        '<b>Hidden companies</b> are firms in this tracker absent from both Crunchbase '
-        'and PitchBook at match time. <b>AI classification</b> combines keyword rules, '
-        'register tags, and an LLM verifier. Two caveats: recent-year counts are '
-        'incomplete (young firms take time to surface — we estimate the lag on the '
-        'Findings page), and the grant-sourced subset is 100% US by construction, '
-        'which pulls the hidden bucket\'s geography toward the United States. '
-        'Company-level data from commercial databases is not republished here; those '
-        'sources appear only in aggregate comparisons.</div>',
+        '<b>Unlisted companies</b> are firms in this tracker absent from both '
+        'Crunchbase and PitchBook at match time. Three caveats matter when reading '
+        'any chart here. Recent founding years are substantially incomplete — young '
+        'firms take years to surface — so formation is reported as AI\'s <i>share</i> '
+        'of each year rather than as a count. Founding-year charts cover only '
+        'companies that carry a founding year, which is far more common among listed '
+        'companies than unlisted ones. And geography leans toward the United States '
+        'in the unlisted population by construction. Company-level data from '
+        'commercial databases is not republished here; those sources appear only in '
+        'aggregate comparisons, and company identities are withheld throughout.</div>',
         unsafe_allow_html=True,
     )
     st.caption("Contact: Tobin Center for Economic Policy, Yale University.")
@@ -3041,31 +3063,38 @@ def page_research():
     total_ai = stats["ai"]
     countries_n = stats["countries"]
 
+    hidden_ai = _load_hidden_ai_total()
+
     st.markdown(
         f'<div class="eyebrow">Findings</div>'
         f'<h1>Global AI startup formation</h1>'
         f'<div class="section-sub">{total_cos:,} companies across {countries_n} '
-        f'countries, 2000–2026 — including the hidden layer commercial databases miss</div>',
+        f'countries — including the layer commercial databases miss</div>',
         unsafe_allow_html=True,
     )
 
-    # ── Summary stats ────────────────────────────────────────────────
-    if not curve.empty:
-        # Peak year: only consider years with at least 1,000 companies (avoid sparse recent years)
-        stable = curve[curve["total"] >= 1000]
-        peak_year = int(stable.loc[stable["ai_pct"].idxmax(), "founded_year"]) if not stable.empty else "—"
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Total companies", f"{total_cos:,}")
-        c2.metric("AI companies", f"{total_ai:,}", f"{100*total_ai/total_cos:.1f}% of total")
-        c3.metric("Countries", f"{countries_n}")
-        c4.metric("Peak AI year", str(peak_year))
+    # Two figures, not four. Total companies and the country count already sit
+    # in the status rule above every page, and "Peak AI year" asserted a
+    # turning point the data cannot support: it was picked by AI share across
+    # founding years that are up to 95% undercounted, so it reported the edge
+    # of our coverage as a fact about the world.
+    c1, c2 = st.columns(2)
+    c1.metric("AI companies", f"{total_ai:,}",
+              f"{100 * total_ai / total_cos:.1f}% of all companies tracked")
+    c2.metric("Not in Crunchbase or PitchBook", f"{hidden_ai:,}",
+              f"{100 * hidden_ai / total_ai:.1f}% of AI companies")
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
     # ── Section 1: AI Formation Timeline ────────────────────────────
+    # The bars are the point of this chart as much as the line: they show the
+    # coverage falling away in recent years, which is why the headline series
+    # here and on the homepage is AI's *share* of each year rather than a count.
     st.markdown(
-        '<div class="section-header">AI Startup Formation Timeline</div>'
-        '<div class="section-sub">Total tech companies (bars) vs AI share % (line) by founding year</div>',
+        '<div class="section-header">AI share of company formation</div>'
+        '<div class="section-sub">AI companies as a share of all companies founded '
+        'each year (line), against how many companies we hold for that year '
+        '(bars)</div>',
         unsafe_allow_html=True,
     )
 
@@ -3073,7 +3102,7 @@ def page_research():
         fig = go.Figure()
         fig.add_trace(go.Bar(
             x=curve["founded_year"], y=curve["total"],
-            name="All tech companies",
+            name="Companies recorded",
             marker_color=GRAY_CTX,
             yaxis="y2",
         ))
@@ -3088,99 +3117,108 @@ def page_research():
             **_layout(
                 height=380,
                 yaxis=dict(title="AI share (%)", ticksuffix="%", rangemode="tozero", gridcolor=BORDER_LIGHT),
-                yaxis2=dict(title="Total companies", overlaying="y", side="right", showgrid=False),
+                yaxis2=dict(title="Companies recorded", overlaying="y", side="right", showgrid=False),
                 legend=dict(orientation="h", y=1.08, font=dict(size=11, color=TXT2),
                             bgcolor="rgba(0,0,0,0)"),
             ),
             hovermode="x unified",
         )
         st.plotly_chart(fig, use_container_width=True, config=_PLOT_CFG)
-
-    st.markdown("<hr/>", unsafe_allow_html=True)
-
-    # ── Section 2: Geographic AI Concentration ───────────────────────
-    st.markdown(
-        '<div class="section-header">Geographic AI Concentration</div>'
-        '<div class="section-sub">Countries ranked by AI share of tech startup formation (min 100 companies)</div>',
-        unsafe_allow_html=True,
-    )
-
-    if not country_stats.empty:
-        col_left, col_right = st.columns([3, 2])
-
-        with col_left:
-            top30 = country_stats.head(30).sort_values("ai_pct")
-            fig_geo = px.bar(
-                top30, x="ai_pct", y="country", orientation="h",
-                labels={"ai_pct": "AI share (%)", "country": ""},
-                color="ai_pct",
-                color_continuous_scale=SEQ_SCALE,
-            )
-            fig_geo.update_coloraxes(showscale=False)
-            fig_geo.update_layout(**_layout(height=max(400, len(top30) * 22)))
-            st.plotly_chart(fig_geo, use_container_width=True, config=_PLOT_CFG)
-
-        with col_right:
-            tbl = country_stats.head(30)[["country", "total", "ai", "ai_pct"]].copy()
-            tbl.columns = ["Country", "Total", "AI", "AI %"]
-            tbl["AI %"] = tbl["AI %"].apply(lambda v: f"{v:.1f}%")
-            st.dataframe(tbl, hide_index=True, use_container_width=True, height=680)
-
-    st.markdown("<hr/>", unsafe_allow_html=True)
-
-    # ── Section 3: AI Adoption by Industry Vertical ──────────────────
-    st.markdown(
-        '<div class="section-header">AI Adoption by Industry Vertical</div>'
-        '<div class="section-sub">AI share of startup formation per industry — unified taxonomy across Crunchbase and PitchBook (98% coverage)</div>',
-        unsafe_allow_html=True,
-    )
-
-    if not vertical_stats.empty:
-        col_vl, col_vr = st.columns([3, 2])
-        with col_vl:
-            sorted_v = vertical_stats.sort_values("ai_pct")
-            fig_vert = px.bar(
-                sorted_v, x="ai_pct", y="vertical", orientation="h",
-                labels={"ai_pct": "AI share (%)", "vertical": ""},
-                color="ai_pct",
-                color_continuous_scale=SEQ_SCALE,
-            )
-            fig_vert.update_coloraxes(showscale=False)
-            fig_vert.update_layout(**_layout(height=max(380, len(sorted_v) * 26)))
-            st.plotly_chart(fig_vert, use_container_width=True, config=_PLOT_CFG)
-        with col_vr:
-            tbl_v = vertical_stats[["vertical", "total", "ai", "ai_pct"]].copy()
-            tbl_v = tbl_v.sort_values("ai_pct", ascending=False)
-            tbl_v.columns = ["Vertical", "Total", "AI", "AI %"]
-            tbl_v["AI %"] = tbl_v["AI %"].apply(lambda v: f"{v:.1f}%")
-            st.dataframe(tbl_v, hide_index=True, use_container_width=True, height=500)
-
-    st.markdown("<hr/>", unsafe_allow_html=True)
-
-    # ── Section 4: Country × Year Heatmap ───────────────────────────
-    st.markdown(
-        '<div class="section-header">AI Adoption by Country × Year</div>'
-        '<div class="section-sub">AI share (%) per country per founding year — top 25 countries by total size</div>',
-        unsafe_allow_html=True,
-    )
-
-    if not matrix.empty:
-        pivot = matrix.pivot(index="country", columns="founded_year", values="ai_pct").fillna(0)
-        # Sort countries by their 2022-2024 average AI% descending
-        recent_cols = [c for c in pivot.columns if c >= 2020]
-        pivot["_sort"] = pivot[recent_cols].mean(axis=1) if recent_cols else 0
-        pivot = pivot.sort_values("_sort", ascending=False).drop(columns=["_sort"])
-
-        fig_heat = px.imshow(
-            pivot,
-            labels=dict(x="Founded Year", y="Country", color="AI share (%)"),
-            color_continuous_scale=[[0, "#f4f7fb"], [0.5, "#4f8fd9"], [1, "#00356b"]],
-            aspect="auto",
-            zmin=0, zmax=50,
+        st.caption(
+            "Read the bars before the line. Company records for recent founding "
+            "years are still arriving — 2024 is roughly 80% short of a complete "
+            "cohort and 2025 roughly 95% — so a count of AI companies founded "
+            "per year falls after 2018 and would read as formation collapsing. "
+            "In the share, that incomplete denominator largely cancels. It does "
+            "not cancel entirely: the channels that surface companies quickly "
+            "are themselves AI-tilted, so the most recent points likely lean high."
         )
-        fig_heat.update_layout(**_layout(height=max(500, len(pivot) * 22)))
-        fig_heat.update_xaxes(side="bottom")
-        st.plotly_chart(fig_heat, use_container_width=True, config=_PLOT_CFG)
+
+    st.markdown("<hr/>", unsafe_allow_html=True)
+
+    # ── Section 2: Where AI adoption is concentrated ─────────────────
+    # Three views of the same question -- by country, by industry, and the two
+    # crossed with founding year -- used to run as three full-height sections
+    # of near-identical bar-and-table pairs. They are tabs now: same content,
+    # one screen instead of three.
+    st.markdown(
+        '<div class="section-header">Where AI adoption is concentrated</div>'
+        '<div class="section-sub">AI as a share of company formation, by place and '
+        'by industry</div>',
+        unsafe_allow_html=True,
+    )
+
+    tab_geo, tab_vert, tab_matrix = st.tabs(
+        ["By country", "By industry", "Country × year"])
+
+    with tab_geo:
+        st.caption("Countries ranked by AI share of company formation "
+                   "(minimum 100 companies).")
+        if not country_stats.empty:
+            col_left, col_right = st.columns([3, 2])
+
+            with col_left:
+                top30 = country_stats.head(30).sort_values("ai_pct")
+                fig_geo = px.bar(
+                    top30, x="ai_pct", y="country", orientation="h",
+                    labels={"ai_pct": "AI share (%)", "country": ""},
+                    color="ai_pct",
+                    color_continuous_scale=SEQ_SCALE,
+                )
+                fig_geo.update_coloraxes(showscale=False)
+                fig_geo.update_layout(**_layout(height=max(400, len(top30) * 22)))
+                st.plotly_chart(fig_geo, use_container_width=True, config=_PLOT_CFG)
+
+            with col_right:
+                tbl = country_stats.head(30)[["country", "total", "ai", "ai_pct"]].copy()
+                tbl.columns = ["Country", "Total", "AI", "AI %"]
+                tbl["AI %"] = tbl["AI %"].apply(lambda v: f"{v:.1f}%")
+                st.dataframe(tbl, hide_index=True, use_container_width=True, height=680)
+
+    with tab_vert:
+        st.caption("AI share of company formation per industry, on one taxonomy "
+                   "spanning both commercial databases.")
+        if not vertical_stats.empty:
+            col_vl, col_vr = st.columns([3, 2])
+            with col_vl:
+                sorted_v = vertical_stats.sort_values("ai_pct")
+                fig_vert = px.bar(
+                    sorted_v, x="ai_pct", y="vertical", orientation="h",
+                    labels={"ai_pct": "AI share (%)", "vertical": ""},
+                    color="ai_pct",
+                    color_continuous_scale=SEQ_SCALE,
+                )
+                fig_vert.update_coloraxes(showscale=False)
+                fig_vert.update_layout(**_layout(height=max(380, len(sorted_v) * 26)))
+                st.plotly_chart(fig_vert, use_container_width=True, config=_PLOT_CFG)
+            with col_vr:
+                tbl_v = vertical_stats[["vertical", "total", "ai", "ai_pct"]].copy()
+                tbl_v = tbl_v.sort_values("ai_pct", ascending=False)
+                tbl_v.columns = ["Vertical", "Total", "AI", "AI %"]
+                tbl_v["AI %"] = tbl_v["AI %"].apply(lambda v: f"{v:.1f}%")
+                st.dataframe(tbl_v, hide_index=True, use_container_width=True, height=500)
+
+    with tab_matrix:
+        st.caption("AI share per country per founding year, for the 25 largest "
+                   "countries. Recent years are thinly covered — read the "
+                   "columns, not the right-hand edge.")
+        if not matrix.empty:
+            pivot = matrix.pivot(index="country", columns="founded_year", values="ai_pct").fillna(0)
+            # Sort countries by their 2022-2024 average AI% descending
+            recent_cols = [c for c in pivot.columns if c >= 2020]
+            pivot["_sort"] = pivot[recent_cols].mean(axis=1) if recent_cols else 0
+            pivot = pivot.sort_values("_sort", ascending=False).drop(columns=["_sort"])
+
+            fig_heat = px.imshow(
+                pivot,
+                labels=dict(x="Founded Year", y="Country", color="AI share (%)"),
+                color_continuous_scale=[[0, "#f4f7fb"], [0.5, "#4f8fd9"], [1, "#00356b"]],
+                aspect="auto",
+                zmin=0, zmax=50,
+            )
+            fig_heat.update_layout(**_layout(height=max(500, len(pivot) * 22)))
+            fig_heat.update_xaxes(side="bottom")
+            st.plotly_chart(fig_heat, use_container_width=True, config=_PLOT_CFG)
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
@@ -3296,47 +3334,64 @@ def page_research():
         '<div class="eyebrow">The hidden startup layer</div>'
         '<div class="section-header">Companies commercial databases miss</div>'
         '<div class="section-sub" style="max-width:76ch;">Firms in this tracker that '
-        'appear in neither Crunchbase nor PitchBook — discovered through GitHub, '
-        'portfolio pages, US SBIR/STTR grants, and startup media. This is the '
-        'tracker\'s unique contribution to measuring AI entrepreneurship.</div>',
+        'appear in neither Crunchbase nor PitchBook. This is the tracker\'s unique '
+        'contribution to measuring AI entrepreneurship.</div>',
         unsafe_allow_html=True,
     )
 
     adoption = _read_output_csv("13_hidden_vs_institutional_ai_adoption.csv")
     if not adoption.empty:
-        lbl = {"hidden": "Hidden (this tracker)", "cb": "Crunchbase", "pb": "PitchBook"}
-        cols = st.columns(len(adoption))
-        for col, (_, r) in zip(cols, adoption.iterrows()):
+        # `hidden_on_li` rendered as its raw column value here, and the two
+        # unlisted buckets were shown with no hint that they are a split of the
+        # single figure quoted on every other page. Both are named now, and the
+        # split is stated below rather than left for the reader to notice.
+        lbl = {
+            "hidden": "In no commercial database",
+            "hidden_on_li": "Not in CB/PB, but on LinkedIn",
+            "cb": "Crunchbase",
+            "pb": "PitchBook",
+        }
+        order = [b for b in ("hidden", "hidden_on_li", "cb", "pb")
+                 if b in set(adoption["bucket"])]
+        rows = adoption.set_index("bucket").loc[order].reset_index()
+        cols = st.columns(len(rows))
+        for col, (_, r) in zip(cols, rows.iterrows()):
             col.metric(f"{lbl.get(r['bucket'], r['bucket'])} — {int(r['total']):,} cos",
                        f"{r['ai_pct']:.1f}% AI")
+        unlisted = rows[rows["bucket"].isin(("hidden", "hidden_on_li"))]["total"].sum()
+        if unlisted:
+            st.caption(
+                f"The first two buckets are a split of the same "
+                f"{int(unlisted):,} companies that appear in neither Crunchbase "
+                f"nor PitchBook: those we could not match to LinkedIn either, and "
+                f"those we could. AI share is higher in both than in either "
+                f"commercial database, which is the point of the comparison."
+            )
 
     _render_enrichment_section()
 
-    # Formation of hidden companies by discovery channel
+    # Formation of unlisted companies. The series used to be split and
+    # colour-coded by the channel each company arrived through, which named the
+    # collection method in a legend; the totals carry the finding without it.
     h_form = _read_output_csv("09a_hidden_formation_timeline.csv")
     h_surv = _read_output_csv("09b_hidden_survival_proxy_by_cohort.csv")
     hc1, hc2 = st.columns(2)
     with hc1:
         st.markdown(
-            '<div class="section-header" style="margin-top:20px;">Hidden-company formation</div>'
-            '<div class="section-sub">Founding year of hidden companies, by discovery channel</div>',
+            '<div class="section-header" style="margin-top:20px;">When they were founded</div>'
+            '<div class="section-sub">Founding year of companies in neither Crunchbase '
+            'nor PitchBook</div>',
             unsafe_allow_html=True,
         )
         if not h_form.empty:
-            hf = h_form[h_form["founded_year"].between(2010, 2025)]
-            fig = go.Figure()
-            for src, color in [("github", ACCENT), ("scraper", TEAL)]:
-                s = hf[hf["source"] == src]
-                if not s.empty:
-                    fig.add_trace(go.Bar(
-                        x=s["founded_year"], y=s["total"], name=src.capitalize(),
-                        marker=dict(color=color),
-                        hovertemplate="%{x} · " + src + ": %{y:,}<extra></extra>",
-                    ))
+            hf = (h_form[h_form["founded_year"].between(2010, 2025)]
+                  .groupby("founded_year", as_index=False)["total"].sum())
+            fig = go.Figure(go.Bar(
+                x=hf["founded_year"], y=hf["total"], marker=dict(color=ACCENT),
+                hovertemplate="%{x}: %{y:,} companies<extra></extra>",
+            ))
             fig.update_layout(**_layout(
-                height=300, barmode="stack",
-                legend=dict(orientation="h", y=1.12, font=dict(size=11, color=TXT2),
-                            bgcolor="rgba(0,0,0,0)"),
+                height=300, showlegend=False,
                 margin=dict(l=0, r=4, t=8, b=0),
             ))
             st.plotly_chart(fig, use_container_width=True, config=_PLOT_CFG)
@@ -3400,10 +3455,12 @@ def page_research():
         ))
         st.plotly_chart(fig, use_container_width=True, config=_PLOT_CFG)
 
+    # The caveat is kept -- it is what stops the US share being misread -- but
+    # stated as a property of the population rather than by naming the feed.
     st.caption(
-        "Note: the grant-sourced subset of hidden companies (NIH/NSF SBIR/STTR) is "
-        "US-only by construction and pulls the hidden bucket's geography toward the "
-        "United States — read it as a distinct sub-population."
+        "Note: part of this population is US-only by construction, which pulls its "
+        "geography toward the United States. Read the US share as reflecting that, "
+        "not as a finding about where these companies form."
     )
 
     st.markdown("<hr/>", unsafe_allow_html=True)
@@ -4097,7 +4154,7 @@ def _tax_clusters(domain: str) -> pd.DataFrame:
 @st.cache_data(ttl=300)
 def _tax_companies(domain: str, cluster: str) -> pd.DataFrame:
     return pd.read_sql(text("""
-        SELECT co.name, co.domain, t.bucket,
+        SELECT co.id, t.bucket,
                coalesce(t.ai_application, '') AS application,
                coalesce(t.ai_subfield, '')    AS subfield
         FROM company_taxonomy t JOIN companies co ON co.id = t.company_id
@@ -4111,19 +4168,23 @@ def page_landscape():
     st.markdown(
         '<div class="section-header">What AI companies do</div>'
         '<div class="section-sub" style="max-width:80ch;">A map of what these AI '
-        'companies actually do, discovered bottom-up from their own descriptions '
-        '(neural embeddings &rarr; clusters &rarr; a labelled domain hierarchy) rather '
-        'than a fixed taxonomy. Hidden companies &mdash; those not in Crunchbase or '
-        'PitchBook &mdash; are shown alongside the published sample so you can see '
-        'where each population lives.</div>',
+        'companies actually do, grouped from their own descriptions rather than '
+        'assigned to a fixed list of sectors. Companies outside Crunchbase and '
+        'PitchBook are shown alongside the listed ones, so you can see where each '
+        'population sits.</div>',
         unsafe_allow_html=True,
     )
 
+    # Every figure here is a share of what has been classified, not of the
+    # whole dataset -- "Hidden AI 12,215" beside the 13,579 quoted elsewhere
+    # read as a contradiction rather than a narrower denominator.
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("AI companies mapped", f"{int(ov.mapped):,}")
-    m2.metric("Domains", int(ov.domains))
-    m3.metric("Hidden AI", f"{int(ov.hidden):,}")
-    m4.metric("Pending enrichment", f"{int(ov.pending):,}")
+    m2.metric("Activity domains", int(ov.domains))
+    m3.metric("Of those, unlisted", f"{int(ov.hidden):,}",
+              f"{100 * int(ov.hidden) / int(ov.mapped):.1f}% of mapped"
+              if int(ov.mapped) else None)
+    m4.metric("Not yet classified", f"{int(ov.pending):,}")
 
     doms = _tax_domains()
     fig = go.Figure()
@@ -4157,27 +4218,28 @@ def page_landscape():
         hid = int((comp["bucket"] == "hidden").sum())
         st.caption(f"&ldquo;{c}&rdquo; — {len(comp)} companies shown ({hid} hidden)")
         cv = comp.copy()
-        cv["Source"] = cv["bucket"].map({"hidden": "Hidden", "published": "CB/PB"})
+        cv["Company"] = cv["id"].map(stealth_label)
+        cv["Source"] = cv["bucket"].map({"hidden": "Not in CB/PB", "published": "CB/PB"})
         cv["Category (enrichment)"] = (cv["application"] + " / " + cv["subfield"]).str.strip(" /")
-        cv["domain"] = cv["domain"].map(
-            lambda x: f"https://{x}" if isinstance(x, str) and x and not x.startswith("http") else x)
         st.dataframe(
-            cv[["name", "domain", "Source", "Category (enrichment)"]].rename(
-                columns={"name": "Company", "domain": "Website"}),
-            use_container_width=True, hide_index=True, height=430,
-            column_config={"Website": st.column_config.LinkColumn("Website")})
+            cv[["Company", "Source", "Category (enrichment)"]],
+            use_container_width=True, hide_index=True, height=430)
 
-    st.caption("Method: descriptions embedded (MiniLM) → k-means clusters → LLM-labelled into "
-               "domains; the AI population was verified by re-checking weak &lsquo;AI-mentioned&rsquo; "
-               "matches with an LLM. &lsquo;Pending enrichment&rsquo; = hidden companies without a "
-               "usable description yet — they join the map as enrichment fills their text.")
+    st.caption("Clusters are discovered from company descriptions rather than "
+               "assigned from a fixed list. &lsquo;Pending enrichment&rsquo; = companies "
+               "without a usable description yet — they join the map as their text "
+               "fills in. Company identities are withheld.")
 
 
 # "Home V2" is the homepage redesign; it takes over the whole shell (its own
 # header and theme), leaving everything below untouched. Selecting any other
 # page returns here.
-_PUBLIC_PAGES = ["Overview", "Findings", "Landscape", "Companies", "GitHub Discovery", "About"]
-_INTERNAL_PAGES = ["AI Analysis", "Trends", "Pipeline Health", "Inventory", "Scraper"]
+# GitHub Discovery is internal: it is a view of repository activity -- stars,
+# forks, owner and repo names -- which is operational signal for us and an
+# identity leak on a site that withholds company identities everywhere else.
+_PUBLIC_PAGES = ["Overview", "Findings", "Landscape", "Companies", "About"]
+_INTERNAL_PAGES = ["AI Analysis", "Trends", "Pipeline Health", "Inventory",
+                   "Scraper", "GitHub Discovery"]
 _V2_PAGE = "Home V2"
 
 

@@ -1,551 +1,555 @@
-bucket,country,n,share_of_bucket_pct
-hidden,Luxembourg,4,0.02
-cb,Bosnia and Herzegovina,9,0.0
-pb,Argentina,296,0.11
-pb,Poland,1529,0.54
-hidden,Peterborough,1,0.0
-hidden_on_li,India,65,4.4
-hidden,Florida,3,0.01
-hidden_on_li,Bay Area,1,0.07
-cb,Indonesia,4436,0.69
-hidden_on_li,Belarus,1,0.07
-cb,Andorra,1,0.0
-hidden,Odisha,1,0.0
-cb,Zambia,75,0.01
-hidden,DC,2,0.01
-hidden_on_li,Saudi Arabia,3,0.2
-hidden,ON,1,0.0
-hidden,Arkansas,1,0.0
-pb,Israel,1262,0.45
-hidden,Chad,1,0.0
-cb,Papua New Guinea,1,0.0
-hidden,Kraków,1,0.0
-pb,France,8086,2.87
-hidden,Turkiye,1,0.0
-pb,Myanmar,69,0.02
-cb,Kosovo,1,0.0
-cb,Barbados,1,0.0
-cb,Israel,6633,1.03
-cb,Brazil,18171,2.82
-hidden_on_li,Bangladesh,1,0.07
-hidden,Bulgaria,7,0.03
-pb,Georgia,52,0.02
-cb,Singapore,6994,1.08
-cb,Philippines,1537,0.24
-hidden,South Sudan,2,0.01
-hidden,Bangladesh,34,0.16
-hidden,South,13,0.06
-pb,Taiwan,414,0.15
-hidden,Sri Lanka,8,0.04
-hidden,Mississippi,1,0.0
-hidden,Karnataka 560001,1,0.0
-cb,Syria,2,0.0
-cb,Mozambique,2,0.0
-pb,Morocco,104,0.04
-hidden,Addis Ababa,1,0.0
-hidden,PA,1,0.0
-pb,Cambodia,83,0.03
-cb,Taiwan,1520,0.24
-hidden,Georgia,7,0.03
-pb,Iceland,124,0.04
-hidden,United Arab Emirates,50,0.23
-hidden_on_li,New Zealand,18,1.22
-pb,Mexico,1097,0.39
-pb,Nigeria,309,0.11
-hidden_on_li,United States,631,42.75
-hidden,Saudi Arabia,19,0.09
-hidden_on_li,Colombia,9,0.61
-cb,Palestine,1,0.0
-hidden,Malawi,1,0.0
-hidden,Oregon,2,0.01
-pb,Vietnam,1030,0.37
-cb,Peru,601,0.09
-cb,Bulgaria,953,0.15
-cb,Angola,1,0.0
-hidden,Ecuador,1,0.0
-pb,Greece,284,0.1
-hidden,Indonesia,90,0.41
-hidden,Delhi,1,0.0
-cb,Azerbaijan,221,0.03
-hidden,Norway,44,0.2
-cb,Qatar,289,0.04
-cb,Luxembourg,66,0.01
-cb,Belize,3,0.0
-cb,Argentina,2806,0.43
-hidden,Chile,25,0.11
-pb,Malaysia,1236,0.44
-hidden,Lebanon,1,0.0
-pb,United States,139458,49.56
-hidden,Shanxi,1,0.0
-hidden,Utah,3,0.01
-pb,Ecuador,42,0.01
-hidden,BRA,1,0.0
-hidden,Finland,73,0.33
-hidden,Zhejiang Prov. China,1,0.0
-cb,Portugal,2998,0.46
-hidden_on_li,Puerto Rico,1,0.07
-hidden,Alabama,1,0.0
-pb,Azerbaijan,26,0.01
-cb,Jamaica,96,0.01
-pb,Bulgaria,329,0.12
-hidden,Bay Area,3,0.01
-cb,Libya,1,0.0
-hidden,Punjab,1,0.0
-hidden,United Kingdom,1061,4.86
-hidden_on_li,Lithuania,1,0.07
-hidden,Gujarat,3,0.01
-cb,Tanzania,11,0.0
-hidden,PRC,1,0.0
-cb,Madagascar,3,0.0
-hidden_on_li,Ukraine,2,0.14
-hidden,Saraburi,1,0.0
-cb,Germany,22443,3.48
-cb,Uganda,287,0.04
-hidden,North Macedonia,3,0.01
-hidden_on_li,Mexico,13,0.88
-hidden,Seychelles,2,0.01
-cb,Kazakhstan,221,0.03
-hidden,Iceland,3,0.01
-hidden,Tanzania,6,0.03
-cb,Saint Kitts and Nevis,5,0.0
-hidden,Ilala,1,0.0
-hidden,Oman,2,0.01
-hidden,US.,1,0.0
-cb,Georgia,210,0.03
-cb,Guyana,1,0.0
-pb,Montenegro,18,0.01
-cb,Netherlands,12959,2.01
-hidden_on_li,Italy,16,1.08
-pb,Japan,4376,1.56
-hidden_on_li,Ecuador,1,0.07
-cb,Belgium,4476,0.69
-hidden,People's Republic of China,1,0.0
-cb,New Zealand,2445,0.38
-hidden,Nigeria,136,0.62
-cb,Estonia,1805,0.28
-cb,Slovenia,509,0.08
-hidden,Sweden,121,0.55
-hidden_on_li,Switzerland,14,0.95
-hidden,Hong Kong,79,0.36
-hidden_on_li,Denmark,8,0.54
-hidden,ODISHA,1,0.0
-hidden,Ghana,7,0.03
-hidden,Mexico,45,0.21
-cb,Morocco,428,0.07
-hidden_on_li,Ghana,2,0.14
-cb,Hungary,1273,0.2
-cb,Namibia,3,0.0
-hidden,Minsk,1,0.0
-pb,New Zealand,877,0.31
-cb,Latvia,500,0.08
-hidden,MP,2,0.01
-cb,United Arab Emirates,5906,0.92
-hidden,Argentina,80,0.37
-cb,Malta,23,0.0
-hidden,Croatia,8,0.04
-pb,Czech Republic,603,0.21
-hidden_on_li,Kenya,3,0.2
-hidden,EU,1,0.0
-pb,Jordan,103,0.04
-pb,Brazil,2784,0.99
-cb,Trinidad and Tobago,20,0.0
-hidden,95051,1,0.0
-hidden,Qatar,1,0.0
-hidden,Denmark,53,0.24
-hidden,Peru,9,0.04
-pb,Zambia,45,0.02
-cb,Russia,2846,0.44
-hidden,Moldova,1,0.0
-pb,Pakistan,243,0.09
-cb,Sweden,7033,1.09
-pb,Armenia,23,0.01
-hidden,Cayman Islands,1,0.0
-cb,Croatia,650,0.1
-hidden,Podgorica,1,0.0
-cb,Haiti,1,0.0
-cb,Nepal,19,0.0
-pb,Netherlands,4713,1.68
-hidden,Singapore,201,0.92
-cb,Moldova,5,0.0
-hidden,New Zealand,31,0.14
-pb,Tanzania,56,0.02
-hidden_on_li,UK,1,0.07
-cb,Ghana,422,0.07
-cb,United States,221233,34.28
-pb,Norway,2115,0.75
-cb,South Korea,7917,1.23
-cb,Mexico,6070,0.94
-pb,China,10226,3.63
-hidden,United States,13261,60.75
-cb,Albania,5,0.0
-pb,Colombia,341,0.12
-cb,United Kingdom,45626,7.07
-hidden_on_li,Turkey,3,0.2
-hidden_on_li,Panama,2,0.14
-hidden,S. Korea,1,0.0
-cb,Austria,2417,0.37
-cb,Algeria,11,0.0
-cb,Japan,17498,2.71
-pb,Panama,61,0.02
-hidden,CA ☀️,1,0.0
-hidden_on_li,Norway,11,0.75
-cb,Slovakia,86,0.01
-cb,Iran,44,0.01
-cb,Burkina Faso,1,0.0
-pb,Uruguay,38,0.01
-hidden_on_li,Luxembourg,3,0.2
-hidden,Berlin,1,0.0
-pb,Mongolia,39,0.01
-cb,Dominican Republic,13,0.0
-hidden,Australia,190,0.87
-cb,Senegal,95,0.01
-pb,Italy,3381,1.2
-pb,Australia,6227,2.21
-hidden_on_li,Japan,26,1.76
-hidden,Hungary,8,0.04
-hidden,Vietnam,57,0.26
-hidden,South Africa,29,0.13
-cb,Brunei,1,0.0
-hidden,Jordan,2,0.01
-pb,Switzerland,2094,0.74
-hidden,Bolivia,1,0.0
-pb,Kazakhstan,101,0.04
-cb,Romania,205,0.03
-hidden,Spain,137,0.63
-cb,Tajikistan,1,0.0
-cb,Cameroon,146,0.02
-cb,Bahrain,15,0.0
-cb,Democratic Republic of the Congo,1,0.0
-hidden_on_li,United Kingdom,111,7.52
-hidden_on_li,Sweden,13,0.88
-hidden_on_li,Czech Republic,2,0.14
-cb,Nigeria,2347,0.36
-hidden,Philippines,21,0.1
-hidden,Thailand,20,0.09
-cb,Rwanda,4,0.0
-pb,Egypt,259,0.09
-cb,Isle of Man,2,0.0
-hidden,MA 02139,1,0.0
-hidden,KOLKATA,1,0.0
-hidden_on_li,Volta street 13,1,0.07
-hidden,Colorado,1,0.0
-hidden,Paraguay,1,0.0
-cb,Serbia,663,0.1
-hidden_on_li,Belgium,7,0.47
-cb,Zimbabwe,4,0.0
-pb,Saudi Arabia,508,0.18
-hidden,España,3,0.01
-hidden,SP,1,0.0
-hidden_on_li,Europe,1,0.07
-hidden_on_li,LA,1,0.07
-cb,Ukraine,2653,0.41
-hidden_on_li,Indonesia,11,0.75
-cb,Greece,1543,0.24
-hidden,Dhaka,1,0.0
-cb,Iraq,2,0.0
-hidden,Morocco,8,0.04
-hidden,United States of America,4,0.02
-hidden_on_li,Egypt,3,0.2
-hidden,Latvia,5,0.02
-hidden_on_li,China,47,3.18
-hidden,Bosnia & Herzegovina,1,0.0
-hidden,Kenya,175,0.8
-cb,Colombia,3402,0.53
-pb,Finland,1634,0.58
-hidden,Karnataka,6,0.03
-pb,Nepal,332,0.12
-hidden,WB,1,0.0
-hidden,Armenia,4,0.02
-hidden_on_li,Finland,8,0.54
-cb,Italy,12895,2.0
-cb,Guatemala,12,0.0
-hidden,Uzbekistan,3,0.01
-cb,Thailand,1036,0.16
-hidden,USA,17,0.08
-pb,Bangladesh,191,0.07
-hidden_on_li,Chile,4,0.27
-hidden,NP,1,0.0
-hidden_on_li,Israel,22,1.49
-hidden,Pisa (Italy),1,0.0
-hidden,ROC,1,0.0
-hidden,Guernsey,1,0.0
-hidden,Taiwan,40,0.18
-pb,Kuwait,78,0.03
-hidden_on_li,Thailand,1,0.07
-hidden_on_li,Netherlands,51,3.46
-hidden,Czech Republic,28,0.13
-cb,Hong Kong,2997,0.46
-hidden,Cyprus,3,0.01
-hidden,Venezuela,2,0.01
-hidden,Bucharest,1,0.0
-hidden,Slovenia,6,0.03
-hidden_on_li,Zambia,1,0.07
-cb,Turkey,7598,1.18
-hidden_on_li,Rest of the world,1,0.07
-hidden,Turkey,57,0.26
-hidden_on_li,Brazil,20,1.36
-hidden,LON 11.568161),1,0.0
-cb,Anguilla,2,0.0
-cb,Bangladesh,1719,0.27
-cb,Mali,1,0.0
-hidden_on_li,South,1,0.07
-hidden,Beijing,2,0.01
-cb,France,20224,3.13
-hidden_on_li,Singapore,22,1.49
-hidden,Democratic Republic of the Congo,2,0.01
-hidden,Niigata Prefecture,1,0.0
-cb,Jordan,419,0.06
-cb,Nicaragua,1,0.0
-hidden,Illinois,1,0.0
-hidden,São Paulo,1,0.0
-cb,India,54428,8.43
-hidden,Cameroon,3,0.01
-hidden_on_li,Hong Kong,11,0.75
-hidden,Bahrain,1,0.0
-hidden,Canada,429,1.97
-cb,Canada,22246,3.45
-hidden,Eswatini,1,0.0
-hidden_on_li,Sri Lanka,1,0.07
-hidden,Belarus,1,0.0
-hidden,Montenegro,1,0.0
-hidden,TÜRKİYE,1,0.0
-hidden,Tamilnadu,1,0.0
-cb,El Salvador,8,0.0
-hidden_on_li,Portugal,7,0.47
-cb,Egypt,1517,0.24
-hidden,Ohio,1,0.0
-hidden,University of Ljubljana,1,0.0
-hidden,Brazil,145,0.66
-pb,Lebanon,40,0.01
-pb,Ireland,1283,0.46
-hidden,Chernihiv,1,0.0
-hidden,BC,3,0.01
-cb,Afghanistan,1,0.0
-hidden,Washington,1,0.0
-hidden,Israel,176,0.81
-pb,Germany,8349,2.97
-pb,Austria,911,0.32
-hidden,Lithuania,7,0.03
-pb,South Korea,2706,0.96
-hidden_on_li,Hungary,2,0.14
-hidden,Bologna,1,0.0
-hidden,Ontario,4,0.02
-hidden,Hunan,1,0.0
-cb,Czech Republic,2187,0.34
-hidden,Rwanda,1,0.0
-hidden,Ireland,43,0.2
-hidden,Madhya Predesh,1,0.0
-cb,North Macedonia,7,0.0
-hidden,Türkiye,1,0.0
-hidden,Switerland,1,0.0
-hidden_on_li,The Netherlands,3,0.2
-cb,Lebanon,487,0.08
-pb,Kenya,230,0.08
-hidden,California,13,0.06
-cb,Finland,2910,0.45
-pb,Uganda,82,0.03
-hidden,Sichuan,1,0.0
-pb,Sweden,4474,1.59
-hidden,Tunisia,8,0.04
-hidden,Portugal,43,0.2
-pb,Algeria,17,0.01
-cb,Antigua and Barbuda,1,0.0
-hidden,Austria,52,0.24
-hidden,Kazan,1,0.0
-hidden,11.27507,1,0.0
-hidden,Minnesota,1,0.0
-hidden,North,1,0.0
-cb,Malaysia,2106,0.33
-cb,Chile,2193,0.34
-pb,Senegal,30,0.01
-cb,Macao,2,0.0
-pb,Qatar,101,0.04
-pb,Luxembourg,325,0.12
-cb,Kyrgyzstan,4,0.0
-cb,Uzbekistan,60,0.01
-hidden_on_li,Estonia,1,0.07
-cb,Cambodia,10,0.0
-pb,Peru,199,0.07
-cb,Lithuania,1106,0.17
-cb,Cayman Islands,20,0.0
-hidden_on_li,Iraq,1,0.07
-cb,China,17876,2.77
-hidden,Panama,1,0.0
-hidden,Estonia,33,0.15
-cb,Botswana,3,0.0
-cb,Saudi Arabia,1335,0.21
-hidden,Slovakia,3,0.01
-cb,Honduras,2,0.0
-hidden,Pakistan,56,0.26
-hidden,Dominican Republic,1,0.0
-hidden_on_li,Nigeria,22,1.49
-hidden_on_li,Germany,59,4.0
-cb,Kenya,981,0.15
-hidden_on_li,Russia,3,0.2
-cb,Sri Lanka,149,0.02
-hidden,Japan,534,2.45
-hidden,prev DC.,1,0.0
-cb,Oman,9,0.0
-pb,Bolivia,11,0.0
-hidden,Thailand (Open to Remote),1,0.0
-hidden_on_li,Romania,1,0.07
-hidden,Paris,1,0.0
-hidden,Andhra Pradesh,1,0.0
-hidden,Ethiopia,9,0.04
-cb,Ethiopia,179,0.03
-hidden,Rostov-on-Don,1,0.0
-cb,Paraguay,6,0.0
-hidden,Texas,3,0.01
-hidden_on_li,South Africa,4,0.27
-hidden,Greece,15,0.07
-hidden,UK,2,0.01
-hidden_on_li,Poland,5,0.34
-cb,Somalia,1,0.0
-cb,Denmark,4052,0.63
-hidden,the Netherlands,4,0.02
-hidden_on_li,United Arab Emirates,5,0.34
-cb,Gibraltar,6,0.0
-hidden_on_li,Spain,16,1.08
-cb,Montenegro,2,0.0
-hidden_on_li,Greece,1,0.07
-hidden,Indonesia.,1,0.0
-hidden_on_li,Tanzania,1,0.07
-cb,Côte d'Ivoire,77,0.01
-hidden,Namibia,1,0.0
-cb,Uruguay,359,0.06
-cb,Saint Lucia,2,0.0
-cb,Australia,16583,2.57
-hidden,Iran,6,0.03
-hidden,Brasil,4,0.02
-pb,Serbia,154,0.05
-hidden_on_li,Cyprus,1,0.07
-pb,Slovenia,118,0.04
-hidden,Hooghly,1,0.0
-cb,Spain,12894,2.0
-cb,Bermuda,3,0.0
-hidden,Apeldoorn,1,0.0
-hidden,Belgium,41,0.19
-pb,Spain,3129,1.11
-cb,Switzerland,8910,1.38
-cb,Ireland,3325,0.52
-hidden,Serbia,18,0.08
-hidden,Kazakhstan,6,0.03
-cb,Jersey,2,0.0
-hidden_on_li,Australia,44,2.98
-hidden,U.S,1,0.0
-hidden,NYC,1,0.0
-hidden,Myanmar,1,0.0
-hidden,Mainland China,1,0.0
-pb,Belgium,1657,0.59
-hidden,Colombia,43,0.2
-hidden_on_li,Philippines,5,0.34
-hidden,South Carolina,1,0.0
-cb,Ecuador,275,0.04
-cb,Maldives,1,0.0
-cb,Martinique,1,0.0
-pb,Ukraine,233,0.08
-pb,Estonia,329,0.12
-hidden,Seoul,1,0.0
-hidden,Romania,20,0.09
-hidden_on_li,Austria,4,0.27
-pb,Hong Kong,848,0.3
-pb,United Kingdom,23299,8.28
-pb,South Africa,1149,0.41
-cb,Pakistan,2481,0.38
-cb,Lesotho,1,0.0
-hidden,Switzerland,149,0.68
-hidden,Germany,552,2.53
-pb,Indonesia,899,0.32
-hidden,Malaysia,18,0.08
-hidden,Chennai,1,0.0
-pb,Portugal,621,0.22
-hidden,Mauritius,1,0.0
-pb,Philippines,354,0.13
-pb,Singapore,1937,0.69
-hidden,UCL,1,0.0
-pb,Cameroon,17,0.01
-cb,Costa Rica,18,0.0
-cb,Gabon,1,0.0
-hidden,Jharkhand,1,0.0
-hidden,the only planet inhabited by robots,1,0.0
-hidden_on_li,Seychelles,1,0.07
-pb,Uzbekistan,49,0.02
-pb,Slovakia,161,0.06
-hidden,France,288,1.32
-pb,Croatia,207,0.07
-hidden,Universe,1,0.0
-hidden,Netherlands,218,1.0
-hidden,Lahore,1,0.0
-hidden,75080,1,0.0
-hidden_on_li,USA,1,0.07
-hidden_on_li,Argentina,5,0.34
-hidden,Zagreb,1,0.0
-hidden,AB,1,0.0
-cb,Seychelles,8,0.0
-hidden,China,750,3.44
-pb,India,7457,2.65
-hidden,up(india),1,0.0
-hidden,Nepal,5,0.02
-cb,Mongolia,99,0.02
-cb,Tunisia,57,0.01
-pb,Romania,513,0.18
-pb,Chile,373,0.13
-cb,Kuwait,220,0.03
-cb,Venezuela,7,0.0
-pb,Sri Lanka,149,0.05
-hidden,18940 USA,1,0.0
-pb,Turkey,847,0.3
-hidden,Russia,43,0.2
-cb,Mauritius,10,0.0
-cb,Norway,2850,0.44
-cb,Belarus,28,0.0
-pb,Denmark,2011,0.71
-pb,Thailand,680,0.24
-hidden,India,866,3.97
-hidden_on_li,Taiwan,3,0.2
-cb,Vietnam,2181,0.34
-hidden,Maharashtra,2,0.01
-hidden,Algeria,3,0.01
-hidden_on_li,Benin,1,0.07
-hidden,The Netherlands,6,0.03
-cb,South Africa,4933,0.76
-pb,Latvia,168,0.06
-cb,Armenia,261,0.04
-hidden,200240,1,0.0
-hidden_on_li,Pakistan,6,0.41
-pb,Cayman Islands,1,0.0
-pb,Canada,14563,5.18
-hidden_on_li,Peru,2,0.14
-cb,Panama,256,0.04
-cb,Liechtenstein,9,0.0
-pb,Ghana,97,0.03
-hidden,Ukraine,22,0.1
-pb,Russia,1570,0.56
-hidden_on_li,France,48,3.25
-hidden,South Korea,439,2.01
-pb,Lithuania,257,0.09
-hidden,Egypt,52,0.24
-cb,Iceland,26,0.0
-hidden,Italy,174,0.8
-cb,Poland,4634,0.72
-hidden,H3A 1X1,1,0.0
-cb,Benin,2,0.0
-pb,Hungary,352,0.13
-hidden_on_li,South Korea,12,0.81
-hidden,Uganda,5,0.02
-cb,Myanmar,3,0.0
-hidden,Poland,76,0.35
-hidden_on_li,Ireland,7,0.47
-hidden,Near  by Woolf University(SFO International Airport),1,0.0
-pb,United Arab Emirates,1043,0.37
-cb,Bolivia,87,0.01
-cb,Sudan,1,0.0
-hidden_on_li,Vietnam,6,0.41
-cb,Bhutan,2,0.0
-hidden_on_li,Canada,23,1.56
-pb,Ethiopia,24,0.01
-hidden,Nevada,1,0.0
-cb,Cyprus,83,0.01
-pb,North Macedonia,44,0.02
-cb,Sierra Leone,1,0.0
-cb,Chad,1,0.0
+country,bucket,n,share_of_bucket_pct
+Luxembourg,hidden,17,0.07
+Bosnia and Herzegovina,cb,9,0.0
+Argentina,pb,296,0.11
+Poland,pb,1529,0.54
+Peterborough,hidden,1,0.0
+India,hidden_on_li,67,4.15
+Malaysia,hidden_on_li,1,0.06
+Florida,hidden,3,0.01
+Bay Area,hidden_on_li,1,0.06
+Indonesia,cb,4436,0.69
+Belarus,hidden_on_li,1,0.06
+Andorra,cb,1,0.0
+Odisha,hidden,1,0.0
+Zambia,cb,75,0.01
+DC,hidden,2,0.01
+Saudi Arabia,hidden_on_li,4,0.25
+ON,hidden,1,0.0
+Arkansas,hidden,1,0.0
+Israel,pb,1262,0.45
+Chad,hidden,1,0.0
+Papua New Guinea,cb,1,0.0
+Kraków,hidden,1,0.0
+France,pb,8086,2.87
+Turkiye,hidden,1,0.0
+Myanmar,pb,69,0.02
+Kosovo,cb,1,0.0
+Barbados,cb,1,0.0
+Israel,cb,6633,1.03
+Brazil,cb,18171,2.82
+Bangladesh,hidden_on_li,1,0.06
+Bulgaria,hidden,29,0.11
+Georgia,pb,52,0.02
+Singapore,cb,6994,1.08
+Philippines,cb,1537,0.24
+South Sudan,hidden,2,0.01
+Bangladesh,hidden,34,0.13
+South,hidden,13,0.05
+Taiwan,pb,414,0.15
+Sri Lanka,hidden,10,0.04
+Mississippi,hidden,1,0.0
+Karnataka 560001,hidden,1,0.0
+Syria,cb,2,0.0
+Mozambique,cb,2,0.0
+Morocco,pb,104,0.04
+Addis Ababa,hidden,1,0.0
+PA,hidden,1,0.0
+Cambodia,pb,83,0.03
+Taiwan,cb,1520,0.24
+Georgia,hidden,10,0.04
+Iceland,pb,124,0.04
+United Arab Emirates,hidden,61,0.23
+New Zealand,hidden_on_li,19,1.18
+Mexico,pb,1097,0.39
+Nigeria,pb,309,0.11
+United States,hidden_on_li,696,43.07
+Saudi Arabia,hidden,19,0.07
+Colombia,hidden_on_li,9,0.56
+Palestine,cb,1,0.0
+Malawi,hidden,1,0.0
+Oregon,hidden,2,0.01
+Vietnam,pb,1030,0.37
+Peru,cb,601,0.09
+Bulgaria,cb,953,0.15
+Angola,cb,1,0.0
+Ecuador,hidden,2,0.01
+Greece,pb,284,0.1
+Indonesia,hidden,100,0.39
+Delhi,hidden,1,0.0
+Azerbaijan,cb,221,0.03
+Norway,hidden,87,0.33
+Qatar,cb,289,0.04
+Luxembourg,cb,66,0.01
+Belize,cb,3,0.0
+Argentina,cb,2806,0.43
+Chile,hidden,27,0.1
+Malaysia,pb,1236,0.44
+Lebanon,hidden,1,0.0
+United States,pb,139458,49.56
+Shanxi,hidden,1,0.0
+Utah,hidden,3,0.01
+Ecuador,pb,42,0.01
+BRA,hidden,1,0.0
+Finland,hidden,122,0.47
+Zhejiang Prov. China,hidden,1,0.0
+Portugal,cb,2998,0.46
+Puerto Rico,hidden_on_li,1,0.06
+Alabama,hidden,1,0.0
+Azerbaijan,pb,26,0.01
+Jamaica,cb,96,0.01
+Bulgaria,pb,329,0.12
+Bay Area,hidden,3,0.01
+Libya,cb,1,0.0
+Punjab,hidden,1,0.0
+United Kingdom,hidden,1272,4.9
+Lithuania,hidden_on_li,1,0.06
+Gujarat,hidden,3,0.01
+Tanzania,cb,11,0.0
+PRC,hidden,1,0.0
+Madagascar,cb,3,0.0
+Ukraine,hidden_on_li,3,0.19
+Saraburi,hidden,1,0.0
+Germany,cb,22443,3.48
+Uganda,cb,287,0.04
+North Macedonia,hidden,3,0.01
+Mexico,hidden_on_li,13,0.8
+Seychelles,hidden,2,0.01
+Kazakhstan,cb,221,0.03
+Iceland,hidden,10,0.04
+Tanzania,hidden,6,0.02
+Saint Kitts and Nevis,cb,5,0.0
+Ilala,hidden,1,0.0
+Oman,hidden,2,0.01
+US.,hidden,1,0.0
+Georgia,cb,210,0.03
+Guyana,cb,1,0.0
+Montenegro,pb,18,0.01
+Netherlands,cb,12959,2.01
+Italy,hidden_on_li,16,0.99
+Japan,pb,4376,1.56
+Ecuador,hidden_on_li,1,0.06
+Belgium,cb,4476,0.69
+People's Republic of China,hidden,1,0.0
+New Zealand,cb,2445,0.38
+Nigeria,hidden,141,0.54
+Estonia,cb,1805,0.28
+Slovenia,cb,509,0.08
+Sweden,hidden,192,0.74
+Switzerland,hidden_on_li,16,0.99
+Hong Kong,hidden,85,0.33
+Denmark,hidden_on_li,8,0.5
+ODISHA,hidden,1,0.0
+Ghana,hidden,8,0.03
+Mexico,hidden,49,0.19
+Morocco,cb,428,0.07
+Ghana,hidden_on_li,2,0.12
+Hungary,cb,1273,0.2
+Namibia,cb,3,0.0
+Minsk,hidden,1,0.0
+New Zealand,pb,877,0.31
+Latvia,cb,500,0.08
+MP,hidden,2,0.01
+United Arab Emirates,cb,5906,0.92
+Argentina,hidden,87,0.33
+Malta,cb,23,0.0
+Croatia,hidden,25,0.1
+Czech Republic,pb,603,0.21
+Kenya,hidden_on_li,3,0.19
+EU,hidden,1,0.0
+Jordan,pb,103,0.04
+Brazil,pb,2784,0.99
+Trinidad and Tobago,cb,20,0.0
+95051,hidden,1,0.0
+Qatar,hidden,1,0.0
+Denmark,hidden,99,0.38
+Peru,hidden,10,0.04
+Zambia,pb,45,0.02
+Russia,cb,2846,0.44
+Moldova,hidden,2,0.01
+Pakistan,pb,243,0.09
+Sweden,cb,7033,1.09
+Armenia,pb,23,0.01
+Cayman Islands,hidden,1,0.0
+Croatia,cb,650,0.1
+Podgorica,hidden,1,0.0
+Haiti,cb,1,0.0
+Nepal,cb,19,0.0
+Netherlands,pb,4713,1.68
+Singapore,hidden,225,0.87
+Moldova,cb,5,0.0
+New Zealand,hidden,39,0.15
+Tanzania,pb,56,0.02
+Ghana,cb,422,0.07
+United States,cb,221233,34.28
+Norway,pb,2115,0.75
+Senegal,hidden,1,0.0
+South Korea,cb,7917,1.23
+Mexico,cb,6070,0.94
+China,pb,10226,3.63
+United States,hidden,14733,56.73
+Albania,cb,5,0.0
+Colombia,pb,341,0.12
+United Kingdom,cb,45626,7.07
+Turkey,hidden_on_li,5,0.31
+Panama,hidden_on_li,2,0.12
+S. Korea,hidden,1,0.0
+Austria,cb,2417,0.37
+Algeria,cb,11,0.0
+Japan,cb,17498,2.71
+Panama,pb,61,0.02
+CA ☀️,hidden,1,0.0
+Norway,hidden_on_li,12,0.74
+Slovakia,cb,86,0.01
+Iran,cb,44,0.01
+Burkina Faso,cb,1,0.0
+Uruguay,pb,38,0.01
+Luxembourg,hidden_on_li,4,0.25
+Berlin,hidden,1,0.0
+Mongolia,pb,39,0.01
+Dominican Republic,cb,13,0.0
+Australia,hidden,227,0.87
+Senegal,cb,95,0.01
+Italy,pb,3381,1.2
+Australia,pb,6227,2.21
+Japan,hidden_on_li,28,1.73
+Hungary,hidden,35,0.13
+Vietnam,hidden,63,0.24
+South Africa,hidden,35,0.13
+Brunei,cb,1,0.0
+Jordan,hidden,4,0.02
+Switzerland,pb,2094,0.74
+Bolivia,hidden,1,0.0
+Kazakhstan,pb,101,0.04
+Romania,cb,205,0.03
+Spain,hidden,402,1.55
+Tajikistan,cb,1,0.0
+Cameroon,cb,146,0.02
+Bahrain,cb,15,0.0
+Democratic Republic of the Congo,cb,1,0.0
+United Kingdom,hidden_on_li,132,8.17
+Sweden,hidden_on_li,16,0.99
+Czech Republic,hidden_on_li,3,0.19
+Nigeria,cb,2347,0.36
+Philippines,hidden,23,0.09
+Thailand,hidden,23,0.09
+Rwanda,cb,4,0.0
+Egypt,pb,259,0.09
+Isle of Man,cb,2,0.0
+MA 02139,hidden,1,0.0
+KOLKATA,hidden,1,0.0
+Volta street 13,hidden_on_li,1,0.06
+Colorado,hidden,1,0.0
+Paraguay,hidden,1,0.0
+Serbia,cb,663,0.1
+Belgium,hidden_on_li,9,0.56
+Zimbabwe,cb,4,0.0
+Saudi Arabia,pb,508,0.18
+España,hidden,3,0.01
+SP,hidden,1,0.0
+Europe,hidden_on_li,1,0.06
+LA,hidden_on_li,1,0.06
+Ukraine,cb,2653,0.41
+Indonesia,hidden_on_li,11,0.68
+Greece,cb,1543,0.24
+Dhaka,hidden,1,0.0
+Iraq,cb,2,0.0
+Morocco,hidden,10,0.04
+United States of America,hidden,4,0.02
+Egypt,hidden_on_li,3,0.19
+Latvia,hidden,11,0.04
+China,hidden_on_li,47,2.91
+Bosnia & Herzegovina,hidden,1,0.0
+Kenya,hidden,179,0.69
+Colombia,cb,3402,0.53
+Finland,pb,1634,0.58
+Karnataka,hidden,6,0.02
+Nepal,pb,332,0.12
+WB,hidden,1,0.0
+Armenia,hidden,5,0.02
+Finland,hidden_on_li,9,0.56
+Italy,cb,12895,2.0
+Guatemala,cb,12,0.0
+Uzbekistan,hidden,3,0.01
+Thailand,cb,1036,0.16
+USA,hidden,17,0.07
+Bangladesh,pb,191,0.07
+Chile,hidden_on_li,4,0.25
+NP,hidden,1,0.0
+Israel,hidden_on_li,23,1.42
+Slovakia,hidden_on_li,1,0.06
+Pisa (Italy),hidden,1,0.0
+ROC,hidden,1,0.0
+Guernsey,hidden,1,0.0
+Taiwan,hidden,47,0.18
+Kuwait,pb,78,0.03
+Thailand,hidden_on_li,1,0.06
+Netherlands,hidden_on_li,52,3.22
+Czech Republic,hidden,51,0.2
+Hong Kong,cb,2997,0.46
+Cyprus,hidden,46,0.18
+Venezuela,hidden,3,0.01
+Bucharest,hidden,1,0.0
+Slovenia,hidden,28,0.11
+Zambia,hidden_on_li,1,0.06
+Turkey,cb,7598,1.18
+Rest of the world,hidden_on_li,1,0.06
+Turkey,hidden,89,0.34
+Brazil,hidden_on_li,20,1.24
+LON 11.568161),hidden,1,0.0
+Anguilla,cb,2,0.0
+Bangladesh,cb,1719,0.27
+Mali,cb,1,0.0
+South,hidden_on_li,1,0.06
+Beijing,hidden,2,0.01
+France,cb,20224,3.13
+Singapore,hidden_on_li,23,1.42
+Democratic Republic of the Congo,hidden,2,0.01
+Niigata Prefecture,hidden,1,0.0
+Jordan,cb,419,0.06
+Nicaragua,cb,1,0.0
+Illinois,hidden,1,0.0
+São Paulo,hidden,1,0.0
+India,cb,54428,8.43
+Cameroon,hidden,3,0.01
+Hong Kong,hidden_on_li,11,0.68
+Bahrain,hidden,1,0.0
+Canada,hidden,503,1.94
+Canada,cb,22246,3.45
+Eswatini,hidden,1,0.0
+Sri Lanka,hidden_on_li,1,0.06
+Belarus,hidden,3,0.01
+Montenegro,hidden,1,0.0
+TÜRKİYE,hidden,1,0.0
+Uruguay,hidden,1,0.0
+Tamilnadu,hidden,1,0.0
+El Salvador,cb,8,0.0
+Portugal,hidden_on_li,7,0.43
+Egypt,cb,1517,0.24
+Ohio,hidden,1,0.0
+University of Ljubljana,hidden,1,0.0
+Brazil,hidden,160,0.62
+Lebanon,pb,40,0.01
+Ireland,pb,1283,0.46
+Chernihiv,hidden,1,0.0
+BC,hidden,3,0.01
+Afghanistan,cb,1,0.0
+Washington,hidden,1,0.0
+Israel,hidden,198,0.76
+Germany,pb,8349,2.97
+Austria,pb,911,0.32
+Lithuania,hidden,26,0.1
+South Korea,pb,2706,0.96
+Hungary,hidden_on_li,2,0.12
+Bologna,hidden,1,0.0
+Ontario,hidden,4,0.02
+Hunan,hidden,1,0.0
+Czech Republic,cb,2187,0.34
+Rwanda,hidden,1,0.0
+Ireland,hidden,74,0.28
+Madhya Predesh,hidden,1,0.0
+North Macedonia,cb,7,0.0
+Malta,hidden,3,0.01
+Türkiye,hidden,1,0.0
+Switerland,hidden,1,0.0
+The Netherlands,hidden_on_li,3,0.19
+Lebanon,cb,487,0.08
+Kenya,pb,230,0.08
+California,hidden,13,0.05
+Finland,cb,2910,0.45
+Uganda,pb,82,0.03
+Sichuan,hidden,1,0.0
+Sweden,pb,4474,1.59
+Tunisia,hidden,9,0.03
+Portugal,hidden,112,0.43
+Algeria,pb,17,0.01
+Antigua and Barbuda,cb,1,0.0
+Austria,hidden,101,0.39
+Kazan,hidden,1,0.0
+11.27507,hidden,1,0.0
+Minnesota,hidden,1,0.0
+North,hidden,1,0.0
+Malaysia,cb,2106,0.33
+Chile,cb,2193,0.34
+Senegal,pb,30,0.01
+Macao,cb,2,0.0
+Qatar,pb,101,0.04
+Luxembourg,pb,325,0.12
+Kyrgyzstan,cb,4,0.0
+Uzbekistan,cb,60,0.01
+Estonia,hidden_on_li,2,0.12
+Cambodia,cb,10,0.0
+Peru,pb,199,0.07
+Lithuania,cb,1106,0.17
+Cayman Islands,cb,20,0.0
+Iraq,hidden_on_li,1,0.06
+China,cb,17876,2.77
+Panama,hidden,1,0.0
+Estonia,hidden,55,0.21
+Botswana,cb,3,0.0
+Saudi Arabia,cb,1335,0.21
+Slovakia,hidden,13,0.05
+Honduras,cb,2,0.0
+Pakistan,hidden,57,0.22
+Dominican Republic,hidden,1,0.0
+Nigeria,hidden_on_li,22,1.36
+Germany,hidden_on_li,70,4.33
+Kenya,cb,981,0.15
+Russia,hidden_on_li,3,0.19
+Sri Lanka,cb,149,0.02
+Japan,hidden,566,2.18
+prev DC.,hidden,1,0.0
+Oman,cb,9,0.0
+Bolivia,pb,11,0.0
+Thailand (Open to Remote),hidden,1,0.0
+Romania,hidden_on_li,1,0.06
+Paris,hidden,1,0.0
+Andhra Pradesh,hidden,1,0.0
+Ethiopia,hidden,12,0.05
+Ethiopia,cb,179,0.03
+Rostov-on-Don,hidden,1,0.0
+Paraguay,cb,6,0.0
+Texas,hidden,3,0.01
+South Africa,hidden_on_li,4,0.25
+Greece,hidden,157,0.6
+Poland,hidden_on_li,6,0.37
+Somalia,cb,1,0.0
+Denmark,cb,4052,0.63
+the Netherlands,hidden,4,0.02
+United Arab Emirates,hidden_on_li,5,0.31
+Gibraltar,cb,6,0.0
+Spain,hidden_on_li,16,0.99
+Montenegro,cb,2,0.0
+Greece,hidden_on_li,1,0.06
+Indonesia.,hidden,1,0.0
+Tanzania,hidden_on_li,1,0.06
+Côte d'Ivoire,cb,77,0.01
+Namibia,hidden,1,0.0
+Uruguay,cb,359,0.06
+Saint Lucia,cb,2,0.0
+Australia,cb,16583,2.57
+Iran,hidden,6,0.02
+Brasil,hidden,4,0.02
+Serbia,pb,154,0.05
+Cyprus,hidden_on_li,1,0.06
+Slovenia,pb,118,0.04
+Hooghly,hidden,1,0.0
+Spain,cb,12894,2.0
+Bermuda,cb,3,0.0
+Apeldoorn,hidden,1,0.0
+Belgium,hidden,102,0.39
+Spain,pb,3129,1.11
+Switzerland,cb,8910,1.38
+Ireland,cb,3325,0.52
+Serbia,hidden,29,0.11
+Kazakhstan,hidden,6,0.02
+Jersey,cb,2,0.0
+Australia,hidden_on_li,47,2.91
+U.S,hidden,1,0.0
+NYC,hidden,1,0.0
+Myanmar,hidden,1,0.0
+Mainland China,hidden,1,0.0
+Belgium,pb,1657,0.59
+Colombia,hidden,44,0.17
+Philippines,hidden_on_li,5,0.31
+South Carolina,hidden,1,0.0
+Ecuador,cb,275,0.04
+Maldives,cb,1,0.0
+Martinique,cb,1,0.0
+Ukraine,pb,233,0.08
+Estonia,pb,329,0.12
+Seoul,hidden,1,0.0
+Romania,hidden,51,0.2
+Austria,hidden_on_li,5,0.31
+Hong Kong,pb,848,0.3
+United Kingdom,pb,23299,8.28
+South Africa,pb,1149,0.41
+Pakistan,cb,2481,0.38
+Lesotho,cb,1,0.0
+Switzerland,hidden,215,0.83
+Germany,hidden,785,3.02
+Indonesia,pb,899,0.32
+Malaysia,hidden,20,0.08
+Chennai,hidden,1,0.0
+Portugal,pb,621,0.22
+Mauritius,hidden,1,0.0
+Philippines,pb,354,0.13
+Singapore,pb,1937,0.69
+UCL,hidden,1,0.0
+Cameroon,pb,17,0.01
+Costa Rica,cb,18,0.0
+Gabon,cb,1,0.0
+Jharkhand,hidden,1,0.0
+the only planet inhabited by robots,hidden,1,0.0
+Seychelles,hidden_on_li,1,0.06
+Uzbekistan,pb,49,0.02
+Slovakia,pb,161,0.06
+France,hidden,427,1.64
+Croatia,pb,207,0.07
+Universe,hidden,1,0.0
+Netherlands,hidden,303,1.17
+Lahore,hidden,1,0.0
+75080,hidden,1,0.0
+USA,hidden_on_li,1,0.06
+Argentina,hidden_on_li,6,0.37
+Zagreb,hidden,1,0.0
+AB,hidden,1,0.0
+Seychelles,cb,8,0.0
+China,hidden,817,3.15
+India,pb,7457,2.65
+up(india),hidden,1,0.0
+Nepal,hidden,8,0.03
+Mongolia,cb,99,0.02
+Tunisia,cb,57,0.01
+Romania,pb,513,0.18
+Chile,pb,373,0.13
+Kuwait,cb,220,0.03
+Venezuela,cb,7,0.0
+Sri Lanka,pb,149,0.05
+18940 USA,hidden,1,0.0
+Turkey,pb,847,0.3
+Russia,hidden,49,0.19
+Mauritius,cb,10,0.0
+Norway,cb,2850,0.44
+Belarus,cb,28,0.0
+Denmark,pb,2011,0.71
+Thailand,pb,680,0.24
+India,hidden,957,3.68
+Taiwan,hidden_on_li,4,0.25
+Vietnam,cb,2181,0.34
+Maharashtra,hidden,2,0.01
+Algeria,hidden,5,0.02
+Benin,hidden_on_li,1,0.06
+The Netherlands,hidden,6,0.02
+South Africa,cb,4933,0.76
+Latvia,pb,168,0.06
+Armenia,cb,261,0.04
+200240,hidden,1,0.0
+Pakistan,hidden_on_li,6,0.37
+Cayman Islands,pb,1,0.0
+Canada,pb,14563,5.18
+Peru,hidden_on_li,2,0.12
+Panama,cb,256,0.04
+Liechtenstein,cb,9,0.0
+Ghana,pb,97,0.03
+Ukraine,hidden,53,0.2
+Russia,pb,1570,0.56
+France,hidden_on_li,51,3.16
+South Korea,hidden,468,1.8
+Lithuania,pb,257,0.09
+Egypt,hidden,54,0.21
+Iceland,cb,26,0.0
+Italy,hidden,393,1.51
+Poland,cb,4634,0.72
+H3A 1X1,hidden,1,0.0
+Benin,cb,2,0.0
+Hungary,pb,352,0.13
+South Korea,hidden_on_li,13,0.8
+Uganda,hidden,6,0.02
+Myanmar,cb,3,0.0
+Poland,hidden,116,0.45
+Ireland,hidden_on_li,7,0.43
+Near  by Woolf University(SFO International Airport),hidden,1,0.0
+United Arab Emirates,pb,1043,0.37
+Bolivia,cb,87,0.01
+Sudan,cb,1,0.0
+Vietnam,hidden_on_li,7,0.43
+Bhutan,cb,2,0.0
+Canada,hidden_on_li,29,1.79
+Zambia,hidden,1,0.0
+Ethiopia,pb,24,0.01
+Nevada,hidden,1,0.0
+Cyprus,cb,83,0.01
+North Macedonia,pb,44,0.02
+Sierra Leone,cb,1,0.0
+Chad,cb,1,0.0

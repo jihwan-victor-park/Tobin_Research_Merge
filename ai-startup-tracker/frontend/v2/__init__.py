@@ -5,9 +5,10 @@ canonical AI predicate the rest of the dashboard uses (``backend.db.connection``
 ``backend.utils.ai_filter``). Nothing in this package writes to the database or
 touches the scraper.
 
-The V1 homepage (``pipeline_dashboard.page_home``) is untouched and still serves
-the default route; this package renders only when the "Home V2" nav entry or the
-``?v=2`` query parameter selects it.
+This package is the site. ``shell.is_active()`` returns True unless ``?v=1`` is
+set, so the V1 shell (``pipeline_dashboard.page_home`` and its nav) is reachable
+only at that legacy address. The other public pages still live in
+``pipeline_dashboard`` and are called from ``shell._render_v1_page``.
 """
 
 from . import (theme, stylesheet, data, intelligence, briefing, components,  # noqa: F401

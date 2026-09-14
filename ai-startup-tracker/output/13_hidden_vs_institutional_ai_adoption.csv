@@ -1,5 +1,5 @@
-ai,ai_pct,bucket,total
-645,26.3,hidden_on_li,2455
-10675,20.4,hidden,52276
-80277,12.3,cb,650200
-29953,10.6,pb,281395
+bucket,total,ai,ai_pct
+hidden_on_li,2455,646,26.3
+hidden,54526,12933,23.7
+cb,650200,80528,12.4
+pb,281395,29986,10.7

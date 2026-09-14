@@ -20,7 +20,6 @@ import logging
 import os
 import re
 from dataclasses import dataclass, field
-from urllib.parse import quote_plus
 
 import pandas as pd
 import streamlit as st
@@ -326,11 +325,15 @@ def _scope_totals(scope: Scope) -> dict:
 
 
 def _scope_companies(scope: Scope, limit: int = 6) -> pd.DataFrame:
-    """Named examples — hidden companies only, so nothing licensed is republished."""
+    """Example companies — unlisted only, so nothing licensed is republished.
+
+    Names and domains are selected because the startup/big-tech filters below
+    match on them; the renderer withholds both and shows a stable label.
+    """
     s = Scope(**{**scope.__dict__, "hidden_only": True})
     where, params = _where(s)
     df = D._frame(f"""
-        SELECT c.name, c.domain, c.country, c.city, c.founded_year,
+        SELECT c.id, c.name, c.domain, c.country, c.city, c.founded_year,
                LEFT(c.description, 260) AS description,
                c.source_domain, c.incubator_source
         FROM companies c
@@ -529,23 +532,21 @@ def _template_narrative(scope: Scope, facts: dict) -> str:
     return first + second + third + fourth
 
 
-# ── Coverage links ───────────────────────────────────────────────────────
+# ── Related analysis ─────────────────────────────────────────────────────
 
-# No newsroom feed is wired into the database yet, so the page does not claim to
-# have found specific articles. These are the outlets' own search endpoints for
-# the subject of the answer: real destinations, honestly labelled, and easy to
-# swap for true headlines once a coverage table exists.
-_OUTLETS = [
-    ("Reuters", "https://www.reuters.com/site-search/?query={q}"),
-    ("Financial Times", "https://www.ft.com/search?q={q}"),
-    ("TechCrunch", "https://techcrunch.com/?s={q}"),
-    ("The Verge", "https://www.theverge.com/search?q={q}"),
+# Our own quarterly analyses rather than outlet searches. An answer here is
+# computed from this dataset, so the useful next click is the section of our
+# research that derives it -- not whatever a newsroom published about the
+# subject, which supports nothing stated above.
+_ANALYSIS = [
+    ("Formation & geography", "?page=Findings"),
+    ("What these companies do", "?page=Landscape"),
+    ("Company directory", "?page=Companies"),
 ]
 
 
 def coverage_links(subject: str) -> list[tuple[str, str]]:
-    q = quote_plus(f"{subject} AI startups".strip())
-    return [(name, tmpl.format(q=q)) for name, tmpl in _OUTLETS]
+    return list(_ANALYSIS)
 
 
 # ── Entry point ──────────────────────────────────────────────────────────

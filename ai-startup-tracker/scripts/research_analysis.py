@@ -33,9 +33,15 @@ from backend.utils.ai_filter import ai_filter_sql  # noqa: E402
 load_dotenv()
 
 def _db_url() -> str:
-    url = os.environ.get("DATABASE_URL") or os.environ.get("RAILWAY_URL")
+    # Production first. RAILWAY_URL was never defined in any .env, so the old
+    # `DATABASE_URL or RAILWAY_URL` silently resolved to local Postgres and
+    # every output/*.csv was generated from a database ~10K companies behind
+    # the one the site serves -- then rendered beside live SQL on the same
+    # page. RAILWAY_DATABASE_URL is the convention the other sync/analysis
+    # scripts already use (see match_cb_exits.py).
+    url = os.environ.get("RAILWAY_DATABASE_URL") or os.environ.get("DATABASE_URL")
     if not url:
-        raise RuntimeError("Set DATABASE_URL or RAILWAY_URL env var")
+        raise RuntimeError("Set RAILWAY_DATABASE_URL or DATABASE_URL env var")
     return url
 
 # Canonical AI predicate — see backend/utils/ai_filter.py for the single

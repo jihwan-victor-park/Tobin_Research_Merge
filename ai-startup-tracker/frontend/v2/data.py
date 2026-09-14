@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
 
 import pandas as pd
 import streamlit as st
@@ -40,6 +40,13 @@ log = logging.getLogger("v2.data")
 
 AI = ai_filter_sql()
 HIDDEN = "emerging_github"   # verification bucket: in neither Crunchbase nor PitchBook
+
+# Floor on a founding year's total intake before its AI share is plotted.
+# 2026 currently holds ~16 companies; a 69% share off that base is noise.
+MIN_COHORT = 500
+
+# Length of the "recent activity" window the homepage reports, in days.
+WINDOW_DAYS = 30
 
 # Crunchbase-derived rows carry ISO-3; the backend normalizer only knows free
 # text and ISO-2, so map the codes that actually occur before handing off.
@@ -122,6 +129,15 @@ class Snapshot:
     added_7d: int = 0
     added_30d: int = 0
     as_of: date | None = None
+
+    @property
+    def stale_days(self) -> int:
+        """Days since the newest record. 0 when the dataset has no records."""
+        return max(0, (date.today() - self.as_of).days) if self.as_of else 0
+
+    @property
+    def is_stale(self) -> bool:
+        return self.stale_days > WINDOW_DAYS
 
     @property
     def ai_share(self) -> float:
@@ -234,7 +250,18 @@ def metric_trends() -> dict[str, list[float]]:
 
 @dataclass
 class Formation:
-    series: pd.DataFrame = field(default_factory=pd.DataFrame)  # year, n
+    """AI formation by founding year, carried as both a count and a share.
+
+    The page plots `share`, not `n`. Raw AI counts fall from 2018 onward
+    (8,105 -> 5,612 in 2024 -> 1,611 in 2025), which reads as AI startup
+    formation collapsing. It is not: total company coverage falls with it --
+    output/07_data_lag_estimate.csv puts 2024 at ~80% undercounted and 2025 at
+    ~95%. In the ratio the incomplete denominator largely cancels, and the
+    same data rises monotonically (15.9% in 2018 -> 59.0% in 2025). Both
+    columns are kept so the count is still available for hover and for the
+    cohort totals the header quotes.
+    """
+    series: pd.DataFrame = field(default_factory=pd.DataFrame)  # year, n, total, share
     last_complete: int | None = None   # last year with credible coverage
     latest: int = 0                    # count in last_complete
     prior: int = 0                     # count in last_complete - 1
@@ -258,9 +285,20 @@ class Formation:
 
     @property
     def peak_year(self) -> int | None:
-        if self.series.empty:
+        """The year AI's share of formation peaks -- restricted to complete years.
+
+        Taken off `share` rather than `n`: the count peaks in 2018 purely
+        because that is where coverage peaks, which would put "PEAK 2018" on a
+        page whose whole argument is that AI formation is still climbing.
+        """
+        if self.series.empty or "share" not in self.series:
             return None
-        return int(self.series.loc[self.series["n"].idxmax(), "year"])
+        usable = self.series
+        if self.last_complete is not None:
+            usable = usable[usable["year"] <= self.last_complete]
+        if usable.empty:
+            return None
+        return int(usable.loc[usable["share"].idxmax(), "year"])
 
     @property
     def provisional(self) -> pd.DataFrame:
@@ -279,22 +317,36 @@ def formation() -> Formation:
     not landed yet, not of firms that were never founded.
     """
     df = _frame(f"""
-        SELECT founded_year AS year, COUNT(*) AS n
+        SELECT founded_year AS year,
+               COUNT(*)                     AS total,
+               COUNT(*) FILTER (WHERE {AI}) AS n
         FROM companies
-        WHERE {AI} AND founded_year BETWEEN 2010 AND EXTRACT(YEAR FROM NOW())::int
+        WHERE founded_year BETWEEN 2010 AND EXTRACT(YEAR FROM NOW())::int
         GROUP BY 1 ORDER BY 1
     """)
     if df.empty:
         return Formation()
     df["year"] = df["year"].astype(int)
     df["n"] = df["n"].astype(int)
+    df["total"] = df["total"].astype(int)
 
+    # A share computed on a handful of companies is noise, not a finding: the
+    # current year typically holds a few dozen records. Drop those years
+    # outright rather than plotting a ratio nobody should read.
+    df = df[df["total"] >= MIN_COHORT].reset_index(drop=True)
+    if df.empty:
+        return Formation()
+    df["share"] = df["n"] / df["total"] * 100
+
+    # Completeness is a property of coverage, so it is judged on the total
+    # intake for a year, not on the AI subset -- the AI count can hold up in a
+    # thin year simply because AI-tilted channels report faster.
     last_complete = int(df["year"].max())
     for y in sorted(df["year"], reverse=True):
-        window = df[(df["year"] >= y - 3) & (df["year"] < y)]["n"]
+        window = df[(df["year"] >= y - 3) & (df["year"] < y)]["total"]
         if len(window) < 3:
             break
-        if df.loc[df["year"] == y, "n"].iloc[0] >= 0.5 * window.median():
+        if df.loc[df["year"] == y, "total"].iloc[0] >= 0.5 * window.median():
             last_complete = int(y)
             break
         last_complete = int(y) - 1
@@ -491,7 +543,13 @@ def region_totals() -> pd.DataFrame:
 # ── Weekly intake ────────────────────────────────────────────────────────
 
 @dataclass
-class Week:
+class Activity:
+    """Companies that entered the dataset in the trailing window.
+
+    This measures *discovery*, not formation — when a record reached us, not
+    when the company was founded. The two are routinely confused, so every
+    label built from this says "recorded" or "arrived", never "founded".
+    """
     start: date | None = None
     end: date | None = None
     total: int = 0
@@ -501,6 +559,17 @@ class Week:
     prior_total: int = 0
     top_countries: pd.DataFrame = field(default_factory=pd.DataFrame)
     channels: pd.DataFrame = field(default_factory=pd.DataFrame)
+    stale_days: int = 0                # days between `end` and today
+
+    @property
+    def is_stale(self) -> bool:
+        """Whether the window has drifted behind the calendar.
+
+        The window is anchored on the newest record rather than on today, so a
+        paused pipeline produces a full-looking window that is simply old. The
+        page has to say so or the figures read as current.
+        """
+        return self.stale_days > WINDOW_DAYS
 
     @property
     def hidden_share(self) -> float:
@@ -514,39 +583,43 @@ class Week:
 
 
 @st.cache_data(ttl=300, show_spinner=False)
-def latest_week() -> Week:
-    """The most recent week in which companies actually entered the dataset.
+def recent_activity() -> Activity:
+    """The trailing 30 days of intake, anchored on the newest record.
 
-    Anchored on the newest `first_seen_at` rather than on today, so the brief
-    reports a real window with a real date range even when ingestion is paused.
+    Anchored on the newest `first_seen_at` rather than on today, so the page
+    reports a real window with a real date range even when ingestion is
+    paused — `stale_days` is what tells the reader which of those it is.
     """
-    weeks = _frame("""
-        SELECT date_trunc('week', first_seen_at)::date AS wk, COUNT(*) AS n
-        FROM companies WHERE first_seen_at IS NOT NULL
-        GROUP BY 1 ORDER BY 1 DESC LIMIT 2
-    """)
-    if weeks.empty:
-        return Week()
+    anchor = _frame("SELECT MAX(first_seen_at)::date AS d FROM companies")
+    if anchor.empty or pd.isna(anchor.iloc[0]["d"]):
+        return Activity()
+    end = pd.to_datetime(anchor.iloc[0]["d"]).date()
+    start = end - timedelta(days=WINDOW_DAYS - 1)
+    prior_start = start - timedelta(days=WINDOW_DAYS)
+    stale_days = max(0, (date.today() - end).days)
 
-    start = pd.to_datetime(weeks.iloc[0]["wk"]).date()
-    prior_total = int(weeks.iloc[1]["n"]) if len(weeks) > 1 else 0
+    prior_total = int(_scalar(
+        "SELECT COUNT(*) FROM companies "
+        "WHERE first_seen_at::date >= :p0 AND first_seen_at::date < :s",
+        p0=prior_start, s=start))
 
     agg = _frame(f"""
         SELECT COUNT(*) AS total,
                COUNT(*) FILTER (WHERE verification_status = :hidden) AS hidden,
                COUNT(*) FILTER (WHERE {AI}) AS ai
-        FROM companies WHERE date_trunc('week', first_seen_at)::date = :wk
-    """, wk=start, hidden=HIDDEN)
+        FROM companies
+        WHERE first_seen_at::date BETWEEN :s AND :e
+    """, s=start, e=end, hidden=HIDDEN)
     if agg.empty:
-        return Week(start=start)
+        return Activity(start=start, end=end, stale_days=stale_days)
     a = agg.iloc[0]
 
     countries = _frame("""
         SELECT country, COUNT(*) AS n FROM companies
-        WHERE date_trunc('week', first_seen_at)::date = :wk
+        WHERE first_seen_at::date BETWEEN :s AND :e
           AND country IS NOT NULL AND country <> ''
         GROUP BY 1
-    """, wk=start)
+    """, s=start, e=end)
     n_countries = 0
     top = pd.DataFrame()
     if not countries.empty:
@@ -564,13 +637,14 @@ def latest_week() -> Week:
                  ELSE 'GitHub & model hubs'
                END AS channel,
                COUNT(*) AS n
-        FROM companies WHERE date_trunc('week', first_seen_at)::date = :wk
+        FROM companies WHERE first_seen_at::date BETWEEN :s AND :e
         GROUP BY 1 ORDER BY 2 DESC
-    """, wk=start)
+    """, s=start, e=end)
 
-    return Week(
+    return Activity(
         start=start,
-        end=start + pd.Timedelta(days=6).to_pytimedelta(),
+        end=end,
+        stale_days=stale_days,
         total=int(a["total"] or 0),
         hidden=int(a["hidden"] or 0),
         ai=int(a["ai"] or 0),
@@ -579,6 +653,34 @@ def latest_week() -> Week:
         top_countries=top,
         channels=channels,
     )
+
+
+# ── What these companies do (bottom-up taxonomy) ─────────────────────────
+
+@st.cache_data(ttl=1800, show_spinner=False)
+def domain_totals(limit: int = 6) -> tuple[pd.DataFrame, int]:
+    """AI companies per discovered domain, with the full mapped total.
+
+    Surfaced on the homepage so a reader meets "what these companies do"
+    before deciding whether to open the Landscape page. The total comes back
+    alongside the top rows so the caller can draw an honest remainder.
+
+    Returns an empty frame where `company_taxonomy` does not exist -- that is
+    the case on the local database, and `_frame` already swallows it.
+    """
+    df = _frame("""
+        SELECT domain_l1 AS domain,
+               COUNT(*) FILTER (WHERE bucket = 'hidden') AS unlisted,
+               COUNT(*)                                  AS total
+        FROM company_taxonomy
+        WHERE status IN ('mapped', 'category_mapped')
+        GROUP BY 1 ORDER BY total DESC
+    """)
+    if df.empty:
+        return df, 0
+    df["total"] = df["total"].astype(int)
+    df["unlisted"] = df["unlisted"].astype(int)
+    return df.head(limit).reset_index(drop=True), int(df["total"].sum())
 
 
 # ── Discovery-channel facts used by the secondary stories ────────────────
@@ -662,7 +764,7 @@ def recent_hidden(limit: int = 8) -> pd.DataFrame:
     records, but they say nothing a reader can use.
     """
     df = _frame(f"""
-        SELECT name, domain, country, city, founded_year,
+        SELECT c.id, name, domain, country, city, founded_year,
                LEFT(description, 260) AS description,
                source_domain, incubator_source,
                first_seen_at::date AS first_seen
