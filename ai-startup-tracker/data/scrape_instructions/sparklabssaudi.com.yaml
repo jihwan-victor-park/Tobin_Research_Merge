@@ -1,7 +1,7 @@
 version: 1
 domain: sparklabssaudi.com
 created_at: '2026-06-12T14:17:55.119877Z'
-updated_at: '2026-06-12T14:17:55.119877Z'
+updated_at: '2026-07-09T11:08:57.846390Z'
 seed_urls:
 - https://sparklabssaudi.com
 preferred_strategy: single_page_extract
@@ -14,11 +14,11 @@ subpage_hints: []
 pagination_hints: []
 quality_expectation_min_records: 1
 last_success:
-  run_id: agentic_run_20260612_141741
-  at: '2026-06-12T14:17:55.119877Z'
+  run_id: agentic_run_20260709_110839
+  at: '2026-07-09T11:08:57.846390Z'
   input_url: https://sparklabssaudi.com
   strategy: single_page_extract
-  record_count: 3
+  record_count: 10
   valid_name_ratio: 1.0
   duplicate_ratio: 0.0
   completeness_score: 1.0

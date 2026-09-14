@@ -1,0 +1,338 @@
+country,sector,ai,lq
+China,Hardware & Manufacturing,716,2.432
+Mexico,Financial Services,64,2.132
+Israel,Security & Privacy,109,2.103
+India,Education,435,2.04
+China,Transportation,151,2.023
+Hong Kong,Financial Services,75,1.864
+Israel,Transportation,93,1.765
+Germany,Energy & CleanTech,93,1.76
+United Arab Emirates,Financial Services,110,1.73
+Germany,Transportation,137,1.723
+Estonia,Financial Services,48,1.715
+Canada,Food & AgTech,61,1.672
+Singapore,Financial Services,202,1.663
+Canada,Real Estate,136,1.653
+Canada,Energy & CleanTech,120,1.635
+Hong Kong,Media & Marketing,52,1.567
+Japan,Professional Services,605,1.529
+Indonesia,Professional Services,57,1.52
+Pakistan,Professional Services,56,1.511
+Canada,Healthcare,494,1.477
+Switzerland,Financial Services,117,1.475
+Taiwan,Hardware & Manufacturing,56,1.474
+South Africa,Professional Services,63,1.469
+Switzerland,Security & Privacy,41,1.455
+United Kingdom,Financial Services,631,1.413
+Turkey,Education,40,1.402
+Denmark,Hardware & Manufacturing,64,1.4
+Norway,Hardware & Manufacturing,40,1.375
+Ukraine,Professional Services,41,1.361
+United Kingdom,Energy & CleanTech,145,1.353
+United States,Healthcare,4037,1.316
+Belgium,Professional Services,72,1.295
+Brazil,Education,62,1.29
+Australia,Education,65,1.289
+South Korea,Hardware & Manufacturing,209,1.274
+South Korea,Healthcare,158,1.254
+Netherlands,Media & Marketing,89,1.214
+Taiwan,Biotech & Pharma,170,1.197
+Saudi Arabia,Data & Analytics,181,1.196
+Mexico,Professional Services,64,1.187
+Spain,E-commerce & Retail,62,1.186
+South Korea,Biotech & Pharma,727,1.186
+Japan,Media & Marketing,215,1.183
+Canada,Consumer & Lifestyle,88,1.183
+Israel,Hardware & Manufacturing,246,1.183
+Ireland,Professional Services,65,1.183
+Japan,Biotech & Pharma,1374,1.171
+South Korea,Education,59,1.162
+India,Professional Services,1009,1.162
+Poland,Media & Marketing,41,1.159
+Australia,Professional Services,237,1.154
+Canada,Hardware & Manufacturing,502,1.153
+Colombia,Data & Analytics,153,1.144
+United States,Consumer & Lifestyle,778,1.14
+Singapore,Transportation,50,1.14
+Turkey,E-commerce & Retail,41,1.14
+Denmark,Healthcare,40,1.139
+Turkey,Hardware & Manufacturing,105,1.139
+United States,Security & Privacy,1125,1.13
+Switzerland,Healthcare,98,1.129
+Denmark,Professional Services,65,1.128
+Brazil,Financial Services,123,1.128
+France,Security & Privacy,65,1.127
+Argentina,Data & Analytics,106,1.125
+Norway,Professional Services,41,1.118
+South Africa,Data & Analytics,157,1.118
+Poland,Professional Services,86,1.117
+Singapore,Security & Privacy,48,1.112
+Japan,Education,108,1.111
+Ukraine,Biotech & Pharma,99,1.108
+Brazil,E-commerce & Retail,67,1.106
+Ukraine,Data & Analytics,109,1.105
+China,Biotech & Pharma,1213,1.103
+Japan,Data & Analytics,1421,1.097
+Israel,Media & Marketing,132,1.097
+Finland,Hardware & Manufacturing,48,1.096
+Poland,Data & Analytics,276,1.095
+Czech Republic,Data & Analytics,121,1.094
+Finland,Biotech & Pharma,179,1.094
+Netherlands,E-commerce & Retail,54,1.093
+Sweden,Financial Services,48,1.093
+Turkey,Professional Services,127,1.093
+Chile,Data & Analytics,170,1.093
+France,Transportation,64,1.092
+Taiwan,Data & Analytics,171,1.091
+South Korea,Data & Analytics,738,1.09
+Argentina,Biotech & Pharma,93,1.09
+New Zealand,Data & Analytics,96,1.087
+United Arab Emirates,Professional Services,124,1.086
+United States,Media & Marketing,2512,1.086
+South Africa,Biotech & Pharma,138,1.085
+Israel,E-commerce & Retail,88,1.085
+Finland,Data & Analytics,196,1.085
+Turkey,Biotech & Pharma,373,1.083
+Italy,Data & Analytics,598,1.082
+Spain,Data & Analytics,598,1.081
+India,E-commerce & Retail,290,1.079
+Germany,Data & Analytics,1397,1.079
+Brazil,Data & Analytics,691,1.078
+Brazil,Professional Services,211,1.078
+Netherlands,Professional Services,172,1.078
+France,Energy & CleanTech,42,1.078
+Spain,Biotech & Pharma,539,1.076
+France,Real Estate,47,1.076
+Australia,Data & Analytics,722,1.074
+Brazil,Biotech & Pharma,623,1.073
+Chile,Biotech & Pharma,151,1.072
+Vietnam,Data & Analytics,127,1.071
+Vietnam,Biotech & Pharma,115,1.071
+Sweden,Data & Analytics,276,1.069
+Malaysia,Data & Analytics,94,1.069
+Singapore,Media & Marketing,107,1.068
+Germany,Biotech & Pharma,1251,1.067
+Spain,Professional Services,180,1.066
+Portugal,Biotech & Pharma,138,1.066
+Italy,Biotech & Pharma,533,1.065
+Hong Kong,Data & Analytics,252,1.065
+Colombia,Biotech & Pharma,129,1.065
+Portugal,Data & Analytics,152,1.064
+Hong Kong,Biotech & Pharma,227,1.06
+Poland,Biotech & Pharma,242,1.06
+Israel,Data & Analytics,909,1.06
+United States,Food & AgTech,354,1.058
+Singapore,Biotech & Pharma,684,1.057
+Israel,Biotech & Pharma,820,1.056
+Belgium,Data & Analytics,192,1.055
+United Kingdom,Data & Analytics,2771,1.055
+Malaysia,Biotech & Pharma,84,1.055
+United States,Real Estate,796,1.055
+United Kingdom,Professional Services,845,1.054
+Portugal,Professional Services,46,1.054
+Austria,Biotech & Pharma,146,1.054
+Italy,Hardware & Manufacturing,141,1.053
+Netherlands,Data & Analytics,550,1.053
+Russia,Biotech & Pharma,96,1.052
+Russia,Data & Analytics,106,1.052
+Germany,Hardware & Manufacturing,330,1.052
+Finland,Professional Services,58,1.051
+Estonia,Data & Analytics,173,1.051
+India,Data & Analytics,2983,1.049
+France,Data & Analytics,1000,1.048
+Israel,Healthcare,167,1.046
+France,Biotech & Pharma,903,1.045
+United States,Software & IT,23578,1.045
+Switzerland,Hardware & Manufacturing,118,1.044
+Singapore,Data & Analytics,743,1.04
+Australia,Media & Marketing,98,1.039
+Pakistan,Biotech & Pharma,114,1.038
+Czech Republic,Biotech & Pharma,104,1.038
+New Zealand,Biotech & Pharma,83,1.037
+Australia,Biotech & Pharma,631,1.036
+Turkey,Data & Analytics,394,1.036
+Sweden,Biotech & Pharma,242,1.035
+Austria,Data & Analytics,158,1.033
+Australia,Financial Services,118,1.032
+Ireland,Hardware & Manufacturing,45,1.032
+India,Biotech & Pharma,2656,1.031
+Switzerland,Biotech & Pharma,434,1.028
+United States,Financial Services,2881,1.028
+Netherlands,Hardware & Manufacturing,130,1.027
+Singapore,Education,55,1.027
+Belgium,Biotech & Pharma,169,1.026
+New Zealand,Software & IT,124,1.026
+United Kingdom,Biotech & Pharma,2433,1.023
+United Kingdom,Real Estate,123,1.023
+Sweden,Software & IT,361,1.022
+Pakistan,Data & Analytics,124,1.022
+Singapore,E-commerce & Retail,69,1.022
+United Kingdom,Security & Privacy,162,1.021
+France,E-commerce & Retail,92,1.02
+France,Hardware & Manufacturing,236,1.02
+Pakistan,Software & IT,169,1.018
+United States,E-commerce & Retail,1584,1.016
+Poland,Hardware & Manufacturing,62,1.015
+Netherlands,Biotech & Pharma,480,1.015
+Germany,Professional Services,400,1.012
+India,Software & IT,3928,1.01
+Switzerland,Data & Analytics,471,1.01
+Norway,Data & Analytics,121,1.008
+France,Media & Marketing,135,1.008
+Finland,Software & IT,249,1.007
+Canada,Software & IT,2476,1.007
+Indonesia,Biotech & Pharma,112,1.007
+United Arab Emirates,Biotech & Pharma,341,1.007
+Malaysia,Software & IT,121,1.006
+Ireland,Data & Analytics,181,1.006
+Ireland,Software & IT,247,1.004
+China,Data & Analytics,1218,1.003
+Portugal,Software & IT,196,1.002
+Denmark,Biotech & Pharma,171,1.001
+Colombia,Software & IT,183,1.0
+South Korea,E-commerce & Retail,64,1.0
+Brazil,Software & IT,875,0.998
+Canada,Professional Services,546,0.995
+Russia,Software & IT,137,0.994
+Estonia,Biotech & Pharma,148,0.993
+United Kingdom,Media & Marketing,366,0.993
+Vietnam,Software & IT,161,0.992
+Italy,Professional Services,167,0.989
+France,Professional Services,288,0.988
+United States,Social Impact,110,0.987
+China,Healthcare,223,0.986
+Denmark,Software & IT,254,0.984
+United Arab Emirates,Data & Analytics,367,0.982
+Denmark,Data & Analytics,185,0.981
+Italy,Software & IT,742,0.981
+South Korea,Media & Marketing,93,0.979
+Germany,Real Estate,58,0.979
+France,Education,70,0.978
+United States,Transportation,990,0.978
+Turkey,Software & IT,509,0.978
+Australia,Software & IT,900,0.978
+Mexico,Software & IT,236,0.977
+Indonesia,Data & Analytics,120,0.977
+Germany,Software & IT,1729,0.976
+United Kingdom,Food & AgTech,52,0.976
+Japan,Hardware & Manufacturing,306,0.975
+Norway,Software & IT,160,0.974
+United States,Professional Services,4901,0.973
+United Arab Emirates,Software & IT,496,0.97
+France,Software & IT,1264,0.968
+United Kingdom,Education,190,0.965
+Austria,Software & IT,202,0.965
+Canada,Financial Services,294,0.962
+United States,Hardware & Manufacturing,3834,0.96
+Belgium,Software & IT,239,0.96
+Mexico,Data & Analytics,169,0.957
+China,Software & IT,1591,0.957
+Norway,Biotech & Pharma,104,0.957
+Singapore,Software & IT,934,0.956
+Estonia,Professional Services,48,0.955
+Spain,Software & IT,721,0.953
+United Arab Emirates,Media & Marketing,50,0.953
+Netherlands,Software & IT,681,0.953
+Belgium,Hardware & Manufacturing,42,0.952
+United Kingdom,Software & IT,3415,0.951
+Czech Republic,Software & IT,144,0.951
+Saudi Arabia,Software & IT,196,0.947
+Argentina,Software & IT,122,0.946
+Chile,Software & IT,201,0.945
+Poland,Software & IT,326,0.945
+India,Media & Marketing,376,0.942
+Ukraine,Software & IT,127,0.941
+Saudi Arabia,Biotech & Pharma,129,0.941
+Spain,Media & Marketing,73,0.941
+United Kingdom,E-commerce & Retail,233,0.939
+South Africa,Software & IT,180,0.937
+United States,Biotech & Pharma,13971,0.936
+Switzerland,Software & IT,597,0.936
+Indonesia,Software & IT,157,0.935
+United States,Data & Analytics,15412,0.935
+South Korea,Software & IT,862,0.93
+Italy,Media & Marketing,72,0.929
+United Kingdom,Consumer & Lifestyle,101,0.929
+Hong Kong,Software & IT,300,0.927
+Ireland,Biotech & Pharma,151,0.927
+Singapore,Professional Services,202,0.926
+Canada,E-commerce & Retail,157,0.924
+Canada,Biotech & Pharma,1502,0.923
+Israel,Software & IT,1080,0.92
+Canada,Data & Analytics,1653,0.92
+Estonia,Software & IT,206,0.915
+France,Healthcare,162,0.912
+Nigeria,Software & IT,136,0.911
+Japan,Software & IT,1609,0.908
+Canada,Media & Marketing,229,0.908
+India,Hardware & Manufacturing,624,0.906
+United States,Energy & CleanTech,607,0.902
+Nigeria,Biotech & Pharma,89,0.9
+Germany,E-commerce & Retail,110,0.899
+Canada,Transportation,99,0.897
+Taiwan,Software & IT,192,0.895
+Italy,Financial Services,84,0.894
+India,Security & Privacy,153,0.89
+United Kingdom,Transportation,143,0.887
+Switzerland,Media & Marketing,58,0.886
+Nigeria,Data & Analytics,96,0.88
+Netherlands,Financial Services,78,0.878
+Austria,Professional Services,41,0.877
+Sweden,Professional Services,69,0.875
+India,Financial Services,418,0.864
+Switzerland,Professional Services,123,0.863
+Italy,E-commerce & Retail,45,0.861
+United States,Education,1063,0.86
+Spain,Healthcare,88,0.855
+Mexico,Biotech & Pharma,136,0.851
+Spain,Hardware & Manufacturing,111,0.828
+Australia,Healthcare,103,0.823
+United Kingdom,Hardware & Manufacturing,523,0.822
+Germany,Media & Marketing,147,0.809
+Turkey,Media & Marketing,43,0.806
+Hong Kong,Hardware & Manufacturing,46,0.803
+Canada,Education,108,0.801
+Sweden,Hardware & Manufacturing,50,0.799
+Canada,Security & Privacy,86,0.792
+United Arab Emirates,Hardware & Manufacturing,71,0.784
+Germany,Consumer & Lifestyle,42,0.784
+Singapore,Hardware & Manufacturing,135,0.78
+Spain,Financial Services,73,0.776
+Brazil,Hardware & Manufacturing,120,0.773
+India,Transportation,135,0.773
+Israel,Financial Services,112,0.768
+India,Consumer & Lifestyle,90,0.764
+France,Financial Services,123,0.758
+Australia,Hardware & Manufacturing,123,0.755
+India,Food & AgTech,43,0.745
+Germany,Education,72,0.742
+Japan,Real Estate,44,0.742
+Germany,Security & Privacy,58,0.741
+China,Education,67,0.735
+United Kingdom,Healthcare,351,0.718
+Brazil,Media & Marketing,64,0.712
+Netherlands,Healthcare,69,0.71
+Australia,E-commerce & Retail,45,0.708
+Hong Kong,Professional Services,51,0.706
+Italy,Healthcare,72,0.7
+South Korea,Professional Services,141,0.682
+Germany,Financial Services,148,0.672
+Israel,Professional Services,176,0.672
+Germany,Healthcare,161,0.668
+Japan,Healthcare,161,0.668
+Turkey,Financial Services,43,0.665
+Brazil,Healthcare,74,0.62
+India,Energy & CleanTech,72,0.62
+China,E-commerce & Retail,68,0.592
+India,Real Estate,76,0.584
+China,Security & Privacy,42,0.572
+China,Media & Marketing,97,0.569
+Singapore,Healthcare,75,0.564
+China,Financial Services,110,0.532
+Japan,E-commerce & Retail,65,0.531
+Japan,Transportation,41,0.515
+South Korea,Financial Services,59,0.512
+Japan,Security & Privacy,40,0.511
+India,Healthcare,247,0.467
+Japan,Financial Services,101,0.458
+China,Professional Services,169,0.455

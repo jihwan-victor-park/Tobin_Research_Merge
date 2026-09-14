@@ -1,0 +1,7 @@
+bucket,classifier,n,ref_ai_rate,precision,recall,f1
+Commercial A,ai_mentioned (keyword),199,9.5,0.625,0.526,0.571
+Commercial A,PIPELINE UNION,199,9.5,0.469,0.789,0.588
+Commercial B,ai_mentioned (keyword),200,11.0,0.9,0.409,0.563
+Commercial B,PIPELINE UNION,200,11.0,0.842,0.727,0.78
+Unlisted,ai_mentioned (keyword),200,19.0,0.545,0.632,0.585
+Unlisted,PIPELINE UNION,200,19.0,0.576,0.895,0.701

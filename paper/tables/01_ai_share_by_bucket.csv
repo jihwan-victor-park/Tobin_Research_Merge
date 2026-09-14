@@ -1,0 +1,16 @@
+ai_definition,bucket,n,ai,ai_pct,ci_lo,ci_hi
+canonical,Commercial A,650200,80528,12.39,12.31,12.47
+canonical,Commercial B,281395,29986,10.66,10.54,10.77
+canonical,Unlisted,56981,13579,23.83,23.48,24.18
+no_mention,Commercial A,650200,74610,11.47,11.4,11.55
+no_mention,Commercial B,281395,29743,10.57,10.46,10.68
+no_mention,Unlisted,56981,11981,21.03,20.69,21.36
+pre_llm,Commercial A,650200,70224,10.8,10.73,10.88
+pre_llm,Commercial B,281395,3563,1.27,1.23,1.31
+pre_llm,Unlisted,56981,10654,18.7,18.38,19.02
+mention,Commercial A,650200,42393,6.52,6.46,6.58
+mention,Commercial B,281395,12370,4.4,4.32,4.47
+mention,Unlisted,56981,7323,12.85,12.58,13.13
+evidence,Commercial A,650200,49603,7.63,7.56,7.69
+evidence,Commercial B,281395,28925,10.28,10.17,10.39
+evidence,Unlisted,56981,1327,2.33,2.21,2.46

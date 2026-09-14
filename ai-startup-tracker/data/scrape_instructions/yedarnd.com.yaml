@@ -1,7 +1,7 @@
 version: 1
 domain: yedarnd.com
 created_at: '2026-06-13T14:02:23.222108Z'
-updated_at: '2026-06-13T14:02:23.222108Z'
+updated_at: '2026-07-09T10:53:05.691585Z'
 seed_urls:
 - https://www.yedarnd.com/about
 preferred_strategy: single_page_extract
@@ -14,8 +14,8 @@ subpage_hints: []
 pagination_hints: []
 quality_expectation_min_records: 1
 last_success:
-  run_id: agentic_run_20260613_140219
-  at: '2026-06-13T14:02:23.222108Z'
+  run_id: agentic_run_20260709_105259
+  at: '2026-07-09T10:53:05.691585Z'
   input_url: https://www.yedarnd.com/about
   strategy: single_page_extract
   record_count: 1

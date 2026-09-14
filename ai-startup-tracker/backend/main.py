@@ -285,7 +285,9 @@ def get_score_distribution():
 
 # ── Scout agent job queue ─────────────────────────────────────────────────────
 
-# agent/ lives at ai_startup_scraper/ — two levels up from ai-startup-tracker/backend/
+# agent/ lives at the REPOSITORY ROOT, two levels up from
+# ai-startup-tracker/backend/. Invoked by subprocess below, not imported --
+# so a grep for `import agent` will report it as dead code when it is not.
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 class JobStatus:

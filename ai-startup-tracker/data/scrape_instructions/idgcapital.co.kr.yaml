@@ -1,7 +1,7 @@
 version: 1
 domain: idgcapital.co.kr
 created_at: '2026-06-12T14:31:13.307914Z'
-updated_at: '2026-06-12T14:31:13.307914Z'
+updated_at: '2026-07-09T11:13:14.670864Z'
 seed_urls:
 - https://idgcapital.co.kr/focus
 preferred_strategy: single_page_extract
@@ -14,8 +14,8 @@ subpage_hints: []
 pagination_hints: []
 quality_expectation_min_records: 1
 last_success:
-  run_id: agentic_run_20260612_143057
-  at: '2026-06-12T14:31:13.307914Z'
+  run_id: agentic_run_20260709_111255
+  at: '2026-07-09T11:13:14.670864Z'
   input_url: https://idgcapital.co.kr/focus
   strategy: single_page_extract
   record_count: 7

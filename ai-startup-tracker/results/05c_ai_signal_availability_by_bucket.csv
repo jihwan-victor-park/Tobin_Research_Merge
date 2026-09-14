@@ -1,0 +1,4 @@
+bucket,n,has_vendor_tag,has_llm_verdict,has_score,has_description
+Commercial A,650200,6.95,0.67,100.0,100.0
+Commercial B,281395,0.69,98.82,99.95,99.99
+Unlisted,56981,0.0,2.33,68.03,53.1

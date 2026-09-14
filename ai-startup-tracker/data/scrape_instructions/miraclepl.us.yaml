@@ -1,7 +1,7 @@
 version: 1
 domain: miraclepl.us
 created_at: '2026-06-12T14:50:37.565326Z'
-updated_at: '2026-06-12T14:50:37.565326Z'
+updated_at: '2026-07-09T11:15:41.038922Z'
 seed_urls:
 - https://www.miraclepl.us
 preferred_strategy: single_page_extract
@@ -14,8 +14,8 @@ subpage_hints: []
 pagination_hints: []
 quality_expectation_min_records: 1
 last_success:
-  run_id: agentic_run_20260612_145031
-  at: '2026-06-12T14:50:37.565326Z'
+  run_id: agentic_run_20260709_111536
+  at: '2026-07-09T11:15:41.038922Z'
   input_url: https://www.miraclepl.us
   strategy: single_page_extract
   record_count: 1

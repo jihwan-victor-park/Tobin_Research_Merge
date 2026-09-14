@@ -684,7 +684,17 @@ def load_startups() -> pd.DataFrame:
             tr.forks AS github_forks,
             ls.llm_classification,
             ls.llm_confidence,
-            ls.startup_likelihood
+            ls.startup_likelihood,
+            -- github_signals/github_repo_snapshots are empty in production (the
+            -- repo linkage was lost), so the two joins above yield NULL for every
+            -- row. These two tables are what survived, and they still carry the
+            -- GitHub identity: the account login and whether it is an
+            -- organisation or a person.
+            COALESCE(ge.login, gp.login) AS github_owner,
+            ge.entity_type              AS github_entity_type,
+            gp.public_repos             AS github_public_repos,
+            gp.followers                AS github_followers,
+            gp.created_year             AS github_created_year
         FROM companies c
         LEFT JOIN LATERAL (
             SELECT deal_date, deal_size, round_type
@@ -702,6 +712,14 @@ def load_startups() -> pd.DataFrame:
             WHERE s.repo_full_name = tr.repo_full_name
             ORDER BY s.collected_at DESC LIMIT 1
         ) ls ON TRUE
+        LEFT JOIN LATERAL (
+            SELECT login, entity_type FROM github_entity_check e
+            WHERE e.company_id = c.id LIMIT 1
+        ) ge ON TRUE
+        LEFT JOIN LATERAL (
+            SELECT login, public_repos, followers, created_year FROM github_profile g2
+            WHERE g2.company_id = c.id LIMIT 1
+        ) gp ON TRUE
         ORDER BY lf.deal_date DESC NULLS LAST, c.first_seen_at DESC NULLS LAST
         LIMIT 15000
     """
@@ -1799,317 +1817,6 @@ def page_about():
     st.caption("Contact: Tobin Center for Economic Policy, Yale University.")
 
 
-# ── Page: Overview ───────────────────────────────────────────────────
-
-def page_overview(df: pd.DataFrame, health_df: pd.DataFrame | None = None):
-    if df.empty:
-        st.info("No companies in database. Go to the Scraper tab to get started.")
-        return
-
-    # ── Sources analyzed (site_health inventory) ─────────────────────
-    if health_df is not None and not health_df.empty:
-        st.markdown(
-            '<div class="section-header">Sources Analyzed</div>'
-            '<div class="section-sub">Portfolio sites in the tracker — click to expand category and scraping-state breakdown</div>',
-            unsafe_allow_html=True,
-        )
-
-        cat = health_df.get("category")
-        if cat is None:
-            cat = pd.Series([None] * len(health_df))
-        cat = cat.fillna("other")
-        state = (
-            health_df.get("worker_state").fillna("pending")
-            if "worker_state" in health_df.columns
-            else pd.Series(["pending"] * len(health_df))
-        )
-
-        # Top-level summary: just total sites.
-        st.metric("Total Sites", f"{len(health_df):,}")
-
-        # Detailed breakdown collapsed by default.
-        with st.expander("View detailed breakdown", expanded=False):
-            s1, s2, s3, s4, s5 = st.columns(5)
-            s1.metric("Universities", f"{int((cat == 'university_incubator').sum()):,}")
-            s2.metric("Accelerators", f"{int((cat == 'accelerator').sum()):,}")
-            s3.metric("VC Portfolios", f"{int((cat == 'vc_portfolio').sum()):,}")
-            s4.metric("Discovery", f"{int((cat == 'discovery_aggregator').sum()):,}")
-            s5.metric("Gov Programs", f"{int((cat == 'government_program').sum()):,}")
-
-            working_n = int((state == "working").sum())
-            pending_n = int((state == "pending").sum())
-            sc1, sc2, sc3 = st.columns(3)
-            sc1.metric("Scrapable (working)", f"{working_n:,}")
-            sc2.metric("Challenging (pending)", f"{pending_n:,}")
-            if "pending_reason" in health_df.columns:
-                diagnosed_n = int(health_df["pending_reason"].notna().sum())
-                sc3.metric("With AI diagnosis", f"{diagnosed_n:,}")
-
-    # Live aggregate stats (full DB, not limited to the 15K loaded rows)
-    stats = _load_overview_stats()
-    total = stats["total"]
-
-    st.markdown(
-        '<div class="section-header" style="margin-top:24px;">Companies</div>'
-        '<div class="section-sub">AI-startup totals across all tracked sources (inclusive: any AI signal)</div>',
-        unsafe_allow_html=True,
-    )
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Total Companies", f"{stats['total']:,}")
-    m2.metric("AI Startups", f"{stats['ai']:,}")
-    m3.metric("With Funding", f"{stats['funded']:,}")
-    m4.metric("Countries", f"{stats['countries']:,}")
-
-    # ── US Geography Map ─────────────────────────────────────────────
-    st.markdown(
-        f'<div class="section-header" style="margin-top:24px;">US Startup Geography</div>'
-        f'<div class="section-sub">Distribution of tracked companies across the United States</div>',
-        unsafe_allow_html=True,
-    )
-
-    geo = _geocode_us(df)
-    if geo.empty:
-        st.caption("No US companies with recognized city data to map yet.")
-    else:
-        city_agg = (
-            geo.groupby(["city", "lat", "lon"])
-            .agg(count=("id", "size"), ai_pct=("is_ai", "mean"))
-            .reset_index()
-        )
-        if len(city_agg) > 100:
-            city_agg = city_agg.nlargest(100, "count")
-
-        # Streamlit's native pydeck map. plotly's scatter_geo (with scope="usa"
-        # + showsubunits) ships US state geojson chunks that get truncated by
-        # Railway's response buffering and surface as "Unexpected end of input"
-        # in the browser. pydeck only sends lat/lon/size — a few KB payload.
-        map_df = city_agg.rename(columns={"count": "size"})[["lat", "lon", "size"]].copy()
-        # Scale marker size for visibility on a continental zoom.
-        map_df["size"] = (map_df["size"].astype(float) ** 0.5) * 4000
-        mc1, mc2 = st.columns([3, 1])
-        with mc1:
-            st.map(map_df, latitude="lat", longitude="lon", size="size",
-                   color="#1f3a5f", zoom=3, width="stretch")
-        with mc2:
-            top_cities = (
-                city_agg.nlargest(10, "count")[["city", "count"]]
-                .rename(columns={"city": "City", "count": "Companies"})
-            )
-            st.markdown(
-                f'<div style="color:{TXT3};font-size:0.82rem;margin-bottom:4px;">Top 10 cities</div>',
-                unsafe_allow_html=True,
-            )
-            st.dataframe(top_cities, width="stretch", hide_index=True, height=380)
-
-    # ── Filters ──────────────────────────────────────────────────────
-    # (raw-HTML wrappers can't enclose Streamlit widgets, so this is a
-    # labeled divider rather than a boxed container)
-    st.markdown('<hr/><div class="filter-bar-label">Filters</div>', unsafe_allow_html=True)
-
-    search = st.text_input("Search", placeholder="Search by name or description...",
-                           label_visibility="collapsed")
-
-    fc1, fc2, fc3, fc4 = st.columns(4)
-    ai_only = fc1.checkbox("AI startups only", value=True)
-    funded_only = fc2.checkbox("Funded only")
-    has_loc = fc3.checkbox("Has location")
-    recent = fc4.checkbox("Last 30 days")
-
-    _SOURCE_CATEGORY = {
-        "yc": "accelerator", "techstars": "accelerator", "alchemist": "accelerator",
-        "antler": "accelerator", "entrepreneur_first": "accelerator", "seedcamp": "accelerator",
-        "era_nyc": "accelerator", "capital_factory": "accelerator", "dreamit": "accelerator",
-        "sosv": "accelerator", "masschallenge": "accelerator", "plug_and_play": "accelerator",
-        "five_hundred_global": "accelerator", "station_f": "accelerator",
-        "startupbootcamp": "accelerator", "h_farm": "accelerator", "rockstart": "accelerator",
-        "wayra": "accelerator", "surge": "accelerator", "brinc": "accelerator",
-        "hax": "accelerator", "flat6labs": "accelerator", "astrolabs": "accelerator",
-        "parallel18": "accelerator", "nxtp_ventures": "accelerator",
-        "sequoia": "vc_portfolio", "greylock": "vc_portfolio", "balderton": "vc_portfolio",
-        "foundersfund": "vc_portfolio", "usv": "vc_portfolio", "bvp": "vc_portfolio",
-        "generalcatalyst": "vc_portfolio", "village_global": "vc_portfolio",
-        "pioneer_fund": "vc_portfolio", "beenext": "vc_portfolio", "allvp": "vc_portfolio",
-        "lux_capital": "vc_portfolio", "ventures_platform": "vc_portfolio",
-        "berkeley_skydeck": "university_incubator", "stanford_startx": "university_incubator",
-        "harvard_ilabs": "university_incubator", "mit_engine": "university_incubator",
-        "princeton_elab": "university_incubator", "rice_owlspark": "university_incubator",
-        "uiuc_enterpriseworks": "university_incubator", "cmu_swartz": "university_incubator",
-        "georgia_tech_atdc": "university_incubator", "michigan_zell_lurie": "university_incubator",
-        "grindstone": "government_program", "seedstars": "government_program",
-        "sting_stockholm": "government_program", "startup_chile": "government_program",
-        "sparklabs": "government_program",
-        "agentic_scrape": "discovery_aggregator", "betalist": "discovery_aggregator",
-        "wellfound": "discovery_aggregator", "f6s": "discovery_aggregator",
-    }
-    _CAT_LABELS = {
-        "accelerator": "Accelerator", "vc_portfolio": "VC Portfolio",
-        "university_incubator": "University Incubator",
-        "government_program": "Government Program", "discovery_aggregator": "Discovery Aggregator",
-    }
-
-    ff1, ff2, ff3, ff4, ff5 = st.columns(5)
-    stages = sorted(df["stage"].dropna().unique().tolist())
-    sel_stages = ff1.multiselect("Stage", options=stages, placeholder="All stages")
-    ctries = sorted(df["country"].dropna().unique().tolist())
-    sel_ctries = ff2.multiselect("Country", options=ctries, placeholder="All countries")
-    incs = sorted(df["incubator_source"].dropna().astype(str).unique().tolist())
-    sel_incs = ff3.multiselect("Incubator", options=incs, placeholder="All incubators")
-    sel_cats = ff4.multiselect("Source type", options=list(_CAT_LABELS.keys()),
-                                format_func=lambda x: _CAT_LABELS.get(x, x),
-                                placeholder="All types")
-    from backend.utils.industry import CANONICAL_VERTICALS
-    sel_verticals = ff5.multiselect("Vertical", options=CANONICAL_VERTICALS, placeholder="All verticals")
-
-    if "founded_year" in df.columns and df["founded_year"].notna().any():
-        valid_yrs = df["founded_year"].dropna().astype(int)
-        yr_min, yr_max = int(valid_yrs.min()), int(valid_yrs.max())
-        yr_min = max(yr_min, 2000)
-        yr_range = st.slider("Founded year", yr_min, yr_max, (2015, yr_max), key="yr_range")
-    else:
-        yr_range = None
-
-    # Apply
-    f = df.copy()
-    if ai_only:
-        f = f[f["is_ai"]] if "is_ai" in f.columns else f[f["ai_score"].fillna(0) >= 0.3]
-    if funded_only:
-        f = f[f["last_funding_date"].notna()]
-    if has_loc:
-        f = f[f["country"].notna()]
-    if recent:
-        f = f[f["first_seen_at"] >= datetime.utcnow() - timedelta(days=30)]
-    if sel_stages:
-        f = f[f["stage"].isin(sel_stages)]
-    if sel_ctries:
-        f = f[f["country"].isin(sel_ctries)]
-    if sel_incs:
-        f = f[f["incubator_source"].astype(str).isin(sel_incs)]
-    if sel_cats:
-        src_cat = f["incubator_source"].astype(str).map(_SOURCE_CATEGORY).fillna("discovery_aggregator")
-        f = f[src_cat.isin(sel_cats)]
-    if sel_verticals and "categories" in f.columns:
-        f = f[f["categories"].apply(
-            lambda cats: isinstance(cats, list) and any(v in cats for v in sel_verticals)
-        )]
-    if yr_range and "founded_year" in f.columns:
-        f = f[f["founded_year"].isna() | f["founded_year"].between(yr_range[0], yr_range[1])]
-    if search:
-        s = search.lower()
-        f = f[
-            f["name"].str.lower().str.contains(s, na=False)
-            | f["description"].fillna("").str.lower().str.contains(s, na=False)
-        ]
-
-    # Results header
-    r1, r2 = st.columns([5, 1])
-    r1.markdown(
-        f'<span style="color:{TXT3};font-size:0.84rem;">'
-        f'<b style="color:{TXT};">{len(f):,}</b> matching '
-        f'(of {len(df):,} loaded) &middot; <b style="color:{TXT};">{total:,}</b> total in DB '
-        f'&middot; sorted by most recent funding</span>',
-        unsafe_allow_html=True,
-    )
-    r2.download_button(
-        "Export CSV",
-        data=f.to_csv(index=False).encode("utf-8"),
-        file_name=f"startups_{datetime.now().strftime('%Y%m%d')}.csv",
-        mime="text/csv",
-        width="stretch",
-    )
-
-    # Table — sort so AI startups appear first (by is_ai DESC, then by funding date).
-    if "is_ai" in f.columns:
-        f = f.sort_values(
-            by=["is_ai", "last_funding_date", "first_seen_at"],
-            ascending=[False, False, False],
-            na_position="last",
-        )
-
-    cols = [c for c in [
-        "is_ai", "name", "ai_tags", "country", "stage",
-        "last_funding_date", "last_funding_amount", "last_funding_round",
-        "city", "incubator_source", "first_seen_at", "domain", "description",
-    ] if c in f.columns]
-
-    disp = f[cols].copy()
-    if "ai_tags" in disp.columns:
-        disp["ai_tags"] = disp["ai_tags"].apply(
-            lambda x: ", ".join(x) if isinstance(x, list) else (x or ""))
-    if "last_funding_amount" in disp.columns:
-        disp["last_funding_amount"] = disp["last_funding_amount"].apply(
-            lambda v: f"${v/1e6:.1f}M" if pd.notna(v) and v > 0 else "")
-    if "last_funding_date" in disp.columns:
-        disp["last_funding_date"] = disp["last_funding_date"].dt.strftime("%Y-%m-%d")
-    if "first_seen_at" in disp.columns:
-        disp["first_seen_at"] = disp["first_seen_at"].dt.strftime("%Y-%m-%d")
-    if "incubator_source" in disp.columns:
-        disp["incubator_source"] = disp["incubator_source"].astype(str).replace("None", "")
-    if "is_ai" in disp.columns:
-        disp["is_ai"] = disp["is_ai"].astype(bool)
-
-    disp = disp.rename(columns={
-        "is_ai": "AI",
-        "name": "Name", "ai_tags": "AI Category", "country": "Country",
-        "city": "City", "stage": "Stage",
-        "last_funding_date": "Last Funded", "last_funding_amount": "Amount",
-        "last_funding_round": "Round",
-        "incubator_source": "Incubator", "first_seen_at": "First Seen",
-        "domain": "Website", "description": "Description",
-    })
-
-    col_cfg = {}
-    if "AI" in disp.columns:
-        col_cfg["AI"] = st.column_config.CheckboxColumn(
-            "AI", help="AI signal detected (model score or AI tag)", width="small"
-        )
-    if "Website" in disp.columns:
-        col_cfg["Website"] = st.column_config.LinkColumn("Website", display_text="visit")
-    if "Description" in disp.columns:
-        col_cfg["Description"] = st.column_config.TextColumn("Description", width="large")
-
-    # Paginate the in-browser table. Sending tens of thousands of rows in a
-    # single response trips Railway's proxy buffer (shows up as
-    # "Unexpected end of input" + the page's plotly charts breaking too).
-    # Full data remains downloadable via the Export CSV button above.
-    PAGE_SIZE = 100
-    total_rows = len(disp)
-    total_pages = max(1, (total_rows + PAGE_SIZE - 1) // PAGE_SIZE)
-
-    pc1, pc2, pc3 = st.columns([1, 2, 1])
-    with pc2:
-        page = st.number_input(
-            "Page",
-            min_value=1,
-            max_value=total_pages,
-            value=1,
-            step=1,
-            label_visibility="collapsed",
-            help=f"{total_rows:,} rows across {total_pages:,} pages of {PAGE_SIZE}",
-        )
-    with pc1:
-        st.markdown(
-            f'<div style="color:{TXT3};font-size:0.82rem;padding-top:6px;">'
-            f"Page <b style=\"color:{TXT};\">{page:,}</b> of {total_pages:,}"
-            f"</div>",
-            unsafe_allow_html=True,
-        )
-    with pc3:
-        start_row = (page - 1) * PAGE_SIZE + 1
-        end_row = min(page * PAGE_SIZE, total_rows)
-        st.markdown(
-            f'<div style="color:{TXT3};font-size:0.82rem;padding-top:6px;text-align:right;">'
-            f"Rows <b style=\"color:{TXT};\">{start_row:,}–{end_row:,}</b> of {total_rows:,}"
-            f"</div>",
-            unsafe_allow_html=True,
-        )
-
-    start = (page - 1) * PAGE_SIZE
-    disp_view = disp.iloc[start:start + PAGE_SIZE]
-
-    st.dataframe(disp_view, width="stretch", hide_index=True, height=560,
-                 column_config=col_cfg)
-
-
 # ── Page: Trends ─────────────────────────────────────────────────────
 
 def page_trends(df: pd.DataFrame):
@@ -2226,7 +1933,6 @@ def page_trends(df: pd.DataFrame):
     md = md.rename(columns={"subdomain": "Subdomain", "total": "Total",
                              "new_30d": "New (30d)", "prev_30d": "Prev 30d", "growth_pct": "Growth"})
     st.dataframe(md, width="stretch", hide_index=True)
-
 
 
 # ── Page: Pipeline Health ────────────────────────────────────────────
@@ -2412,32 +2118,61 @@ def page_health(health_df: pd.DataFrame, runs_df: pd.DataFrame):
 # ── Page: GitHub Discovery ───────────────────────────────────────────
 
 def page_github(df: pd.DataFrame, df_all: pd.DataFrame):
-    """GitHub-sourced companies only, filtered by LLM = 'startup'."""
+    """GitHub-sourced companies, filtered by whatever verdict actually exists.
+
+    Two regimes, because the LLM repo classification was lost when
+    github_repo_snapshots emptied:
+      * llm_classification present -> filter to 'startup', the original design
+      * otherwise                  -> fall back to the GitHub entity check,
+                                      which survived, and label the page for it
+    The page never implies a classification that did not run.
+    """
+    has_llm = (not df_all.empty and "llm_classification" in df_all.columns
+               and df_all["llm_classification"].notna().any())
+
+    subtitle = ("Repos found via GitHub scan and classified as startups by the LLM filter"
+                if has_llm else
+                "Companies discovered via the GitHub scan, excluding accounts the "
+                "GitHub API confirmed are individuals")
     st.markdown(
         f'<div class="section-header">GitHub Discovery</div>'
-        f'<div class="section-sub">Repos found via GitHub scan and classified as startups by the LLM filter</div>',
+        f'<div class="section-sub">{subtitle}</div>',
         unsafe_allow_html=True,
     )
 
     total_all = len(df_all)
     total_kept = len(df)
 
-    cls_counts = (
-        df_all["llm_classification"].fillna("unclassified").value_counts().to_dict()
-        if not df_all.empty and "llm_classification" in df_all.columns
-        else {}
-    )
-
-    m1, m2, m3, m4, m5 = st.columns(5)
-    m1.metric("GitHub repos (raw)", f"{total_all:,}")
-    m2.metric("Classified as startup", f"{total_kept:,}")
-    m3.metric("Personal projects", f"{cls_counts.get('personal_project', 0):,}")
-    m4.metric("Research", f"{cls_counts.get('research', 0):,}")
-    m5.metric("Community tools", f"{cls_counts.get('community_tool', 0):,}")
+    if has_llm:
+        cls_counts = df_all["llm_classification"].fillna("unclassified").value_counts().to_dict()
+        m1, m2, m3, m4, m5 = st.columns(5)
+        m1.metric("GitHub repos (raw)", f"{total_all:,}")
+        m2.metric("Classified as startup", f"{total_kept:,}")
+        m3.metric("Personal projects", f"{cls_counts.get('personal_project', 0):,}")
+        m4.metric("Research", f"{cls_counts.get('research', 0):,}")
+        m5.metric("Community tools", f"{cls_counts.get('community_tool', 0):,}")
+    else:
+        ent = (df_all["github_entity_type"].fillna("not checked").value_counts().to_dict()
+               if "github_entity_type" in df_all.columns else {})
+        m1, m2, m3, m4, m5 = st.columns(5)
+        m1.metric("GitHub-sourced companies", f"{total_all:,}")
+        m2.metric("Shown here", f"{total_kept:,}")
+        m3.metric("Confirmed organisations", f"{ent.get('Organization', 0):,}")
+        m4.metric("Confirmed individuals (excluded)", f"{ent.get('User', 0):,}")
+        m5.metric("Not checked", f"{ent.get('not checked', 0):,}")
+        st.caption(
+            "The per-repo LLM classification is unavailable: `github_signals` and "
+            "`github_repo_snapshots` are empty, so the repo-to-company linkage and "
+            "the startup/personal verdict are both gone. This page therefore uses "
+            "the GitHub entity check, which did survive, and only tells us whether "
+            "an account is an organisation or a person. Star counts and repo names "
+            "are unavailable for the same reason."
+        )
 
     if df.empty:
-        st.info("No GitHub repos pass the LLM startup filter yet. "
-                "Run `python scripts/github_weekly_discover.py` or `scripts/run_llm_classify.py`.")
+        st.info("No GitHub-sourced companies to show. "
+                "`companies.verification_status = 'emerging_github'` is empty, which "
+                "would mean the GitHub scan has never run against this database.")
         return
 
     # Filters
@@ -2484,10 +2219,15 @@ def page_github(df: pd.DataFrame, df_all: pd.DataFrame):
 
     disp = f.sort_values("github_stars", ascending=False, na_position="last").copy()
     cols = [c for c in [
-        "name", "github_repo", "github_stars", "github_forks", "github_url",
+        "name", "github_owner", "github_entity_type", "github_repo",
+        "github_stars", "github_forks", "github_url",
+        "github_public_repos", "github_followers", "github_created_year",
         "ai_tags", "llm_confidence", "country", "city",
         "first_seen_at", "domain", "description",
     ] if c in disp.columns]
+    # Drop columns that are entirely empty rather than showing a wall of blanks
+    # (github_repo/stars/forks are all NULL while the linkage is missing).
+    cols = [c for c in cols if c in ("name", "description") or disp[c].notna().any()]
     disp = disp[cols]
 
     if "ai_tags" in disp.columns:
@@ -2506,6 +2246,9 @@ def page_github(df: pd.DataFrame, df_all: pd.DataFrame):
             lambda v: f"{v:.2f}" if pd.notna(v) else "auto")
 
     disp = disp.rename(columns={
+        "github_owner": "GitHub account", "github_entity_type": "Account type",
+        "github_public_repos": "Public repos", "github_followers": "Followers",
+        "github_created_year": "Account created",
         "name": "Owner", "github_repo": "Repo", "github_stars": "Stars",
         "github_forks": "Forks", "github_url": "Link",
         "ai_tags": "AI Category", "llm_confidence": "LLM Conf",
@@ -4200,44 +3943,91 @@ def _info_sources_section():
         st.dataframe(det, hide_index=True, use_container_width=True)
 
 
-def page_info_sheet():
-    """One-page summary for collaborators: where the data comes from, what
-    runs to build it, and how scraping is doing.
-
-    Sections are filled in incrementally — see reports/INFO_SHEET_PLAN.md
-    for the step plan and how to resume.
-    """
-    st.markdown(
-        '<div class="section-header">Info Sheet</div>'
-        '<div class="section-sub">Everything about this database on one page — '
-        'data provenance, scraping operations, and pipeline status</div>',
-        unsafe_allow_html=True,
-    )
-    st.caption(
-        f"Generated {_utcnow():%Y-%m-%d %H:%M} UTC — "
-        "all numbers query the live production database"
-    )
-
-    st.markdown('<div class="section-header">1 · Where the data comes from</div>'
-                '<div class="section-sub">How much is covered by standard databases '
-                '(Crunchbase / PitchBook), and where the rest came from</div>',
-                unsafe_allow_html=True)
-    _info_sources_section()
-
-    st.markdown('<div class="section-header">2 · Scraping operations</div>'
-                '<div class="section-sub">How many websites we scrape, how many succeed, '
-                'and which ones are struggling</div>',
-                unsafe_allow_html=True)
-    _info_scraping_section()
-
-    st.markdown('<div class="section-header">3 · Pipeline components — running vs. not</div>'
-                '<div class="section-sub">Every agent and script that builds this database, '
-                'and whether it is currently running</div>',
-                unsafe_allow_html=True)
-    _info_pipeline_section()
-
-
 # ── Main ─────────────────────────────────────────────────────────────
+
+@st.cache_data(ttl=300)
+def load_github_companies(limit: int = 5000) -> pd.DataFrame:
+    """GitHub-discovered companies, queried directly rather than filtered out of
+    load_startups().
+
+    load_startups() takes the newest 15,000 rows for container-memory reasons,
+    and that window is dominated by commercial-database companies with funding
+    dates -- only 59 of the 56,981 GitHub-sourced companies survive it. Filtering
+    that frame made the page look almost empty for a reason that had nothing to
+    do with GitHub.
+
+    Rows that still carry the surviving enrichment are ordered first, so the
+    informative ones are the ones that fit inside the limit.
+    """
+    engine = get_engine()
+    query = """
+        SELECT
+            c.id, c.name, c.domain,
+            LEFT(c.description, 240) AS description,
+            c.country, c.city, c.founded_year, c.ai_tags, c.categories,
+            c.ai_score, c.cb_ai_tagged, c.ai_mentioned, c.llm_ai_verified,
+            c.first_seen_at, c.incubator_source, c.verification_status,
+            COALESCE(ge.login, gp.login) AS github_owner,
+            ge.entity_type              AS github_entity_type,
+            gp.public_repos             AS github_public_repos,
+            gp.followers                AS github_followers,
+            gp.created_year             AS github_created_year
+        FROM companies c
+        LEFT JOIN LATERAL (
+            SELECT login, entity_type FROM github_entity_check e
+            WHERE e.company_id = c.id LIMIT 1
+        ) ge ON TRUE
+        LEFT JOIN LATERAL (
+            SELECT login, public_repos, followers, created_year FROM github_profile g2
+            WHERE g2.company_id = c.id LIMIT 1
+        ) gp ON TRUE
+        WHERE c.verification_status::text = 'emerging_github'
+        -- Confirmed organisations first. Ordering by follower count alone put
+        -- famous individual developers at the top of a company table: they have
+        -- no entity_check row, so they are "not checked" rather than "confirmed
+        -- a person", and the exclusion filter cannot catch them. Only 3,056
+        -- accounts are confirmed organisations, so they lead.
+        ORDER BY (ge.entity_type = 'Organization') DESC NULLS LAST,
+                 gp.followers DESC NULLS LAST,
+                 gp.public_repos DESC NULLS LAST,
+                 c.first_seen_at DESC NULLS LAST
+        LIMIT :limit
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(query), {"limit": limit}).mappings().all()
+    df = pd.DataFrame(rows)
+    if df.empty:
+        return df
+
+    # Same big-tech filter load_startups() applies. A dedicated query bypasses
+    # it, which is how Google, Ethereum and Bitcoin surfaced at the top of a
+    # table of "discovered startups" -- they are real GitHub organisations, just
+    # not the thing this page is about. Matched on the account login too, since
+    # for these rows the login IS the identity.
+    name_l = df["name"].fillna("").str.strip().str.lower()
+    owner_l = df["github_owner"].fillna("").str.strip().str.lower()
+    dom = df["domain"].fillna("").str.strip().str.lower().str.replace(r"^www\.", "", regex=True)
+    dom_root = dom.str.split(".").str[0]
+    is_big = (name_l.isin(BIG_TECH_DENYLIST) | owner_l.isin(BIG_TECH_DENYLIST)
+              | dom_root.isin(BIG_TECH_DENYLIST))
+    df = df[~is_big].reset_index(drop=True)
+
+    # 98 GitHub logins map to more than one `companies` row -- duplicates the
+    # entity resolver never merged, because both rows lack a domain and the
+    # name-only fallback did not fire. Collapsed for display only; the
+    # underlying rows are left alone, since merging company records on
+    # production is a separate operation from rendering a table.
+    if "github_owner" in df.columns:
+        has_owner = df["github_owner"].notna()
+        df = pd.concat([
+            df[has_owner].drop_duplicates(subset=["github_owner"], keep="first"),
+            df[~has_owner],
+        ]).reset_index(drop=True)
+
+    if "first_seen_at" in df.columns:
+        df["first_seen_at"] = pd.to_datetime(df["first_seen_at"], errors="coerce")
+    return df
+
 
 def _company_frames():
     """Load companies and split by source.
@@ -4247,9 +4037,15 @@ def _company_frames():
     """
     df = load_startups()
     if not df.empty:
-        inc = df["incubator_source"].astype("string")
-        has_repo = df["github_repo"].notna() if "github_repo" in df.columns else pd.Series([False] * len(df))
-        is_gh = inc.isna() & has_repo
+        # verification_status is the authoritative marker for "came in via the
+        # GitHub scan" -- it is set at import and 56,981 companies carry it.
+        # This used to key off github_repo instead, which silently emptied the
+        # page when github_signals lost its rows: every company looked
+        # non-GitHub because the linkage table it read was gone.
+        vs = df["verification_status"].astype("string")
+        is_gh = vs.eq("emerging_github")
+        if not is_gh.any() and "github_repo" in df.columns:
+            is_gh = df["incubator_source"].astype("string").isna() & df["github_repo"].notna()
     else:
         is_gh = pd.Series([], dtype=bool)
 
@@ -4438,12 +4234,22 @@ def main():
         elif page == "Companies":
             page_companies()
         elif page == "GitHub Discovery":
-            _sc, github_df_all = _company_frames()
-            # LLM filter: only keep repos classified as 'startup' by the LLM
-            if "llm_classification" in github_df_all.columns:
+            github_df_all = load_github_companies()
+            # The LLM 'startup' verdict lived in github_repo_snapshots, which is
+            # empty -- that classification is gone and is NOT reconstructed here.
+            # What survived is the GitHub entity check, which answered a narrower
+            # but real question: is this login an organisation or a person? So
+            # the page now excludes accounts confirmed to be individuals, which
+            # is the same first cut the paper's funnel makes (-11,169 personal
+            # accounts), and says so rather than implying an LLM ran.
+            if ("llm_classification" in github_df_all.columns
+                    and github_df_all["llm_classification"].notna().any()):
                 github_df = github_df_all[github_df_all["llm_classification"] == "startup"].copy()
+            elif "github_entity_type" in github_df_all.columns:
+                github_df = github_df_all[
+                    github_df_all["github_entity_type"].fillna("unknown") != "User"].copy()
             else:
-                github_df = github_df_all.iloc[0:0].copy()
+                github_df = github_df_all.copy()
             page_github(github_df, github_df_all)
         elif page == "About":
             page_about()
