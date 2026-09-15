@@ -269,12 +269,13 @@ def answer_panel(ans: Answer, p: Palette) -> None:
             coverage(ans.sources)
 
         engine = {
-            "model": "Claude synthesis over computed aggregates, figures verified "
-                     "against them",
+            "model": "Claude synthesis over the scope's computed aggregates and "
+                     "retrieved context, figures verified against them",
             "computed": "Computed aggregates, summarised without a model",
             "rejected": "Computed aggregates — a model summary was discarded for "
                         "citing a figure not in the data",
-        }[ans.narrative_source]
+            "withheld": "Answered from policy, without querying the dataset",
+        }.get(ans.narrative_source, "Computed aggregates")
         _md(f'<p class="v2-answer-note">{escape(ans.basis)} · {engine}</p>')
 
 

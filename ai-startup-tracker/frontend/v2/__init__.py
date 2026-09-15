@@ -11,7 +11,7 @@ only at that legacy address. The other public pages still live in
 ``pipeline_dashboard`` and are called from ``shell._render_v1_page``.
 """
 
-from . import (theme, stylesheet, data, intelligence, briefing, components,  # noqa: F401
-               home, shell)
+from . import (theme, stylesheet, data, guard, intelligence, briefing,  # noqa: F401
+               components, home, shell)
 
-__all__ = ["theme", "data", "intelligence", "components", "home", "shell"]
+__all__ = ["theme", "data", "guard", "intelligence", "components", "home", "shell"]
