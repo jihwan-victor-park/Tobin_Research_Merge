@@ -72,7 +72,6 @@ def topbar(nav_items: list[str], mode: str) -> tuple[str, str | None]:
         with brand_col:
             _md('<div class="v2-brand">'
                 '<span class="v2-brand-name">AI Startup Tracker</span>'
-                '<span class="v2-brand-sub">Tobin Center for Economic Policy · Yale</span>'
                 '</div>')
         with nav_col:
             with st.container(key="v2nav"):

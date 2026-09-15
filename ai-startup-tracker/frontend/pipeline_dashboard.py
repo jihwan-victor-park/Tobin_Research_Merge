@@ -1806,8 +1806,7 @@ def page_about():
 
     st.markdown(
         '<div class="section-header">About this tracker</div>'
-        f'<div class="section-sub" style="max-width:76ch;">A research project of the '
-        f'Tobin Center for Economic Policy at Yale University. We measure where and '
+        f'<div class="section-sub" style="max-width:76ch;">We measure where and '
         f'when new AI companies form — including the young firms that commercial '
         f'databases miss. The tracker currently covers <b>{stats["total"]:,}</b> '
         f'companies across <b>{stats["countries"]}</b> countries, of which '
@@ -1836,7 +1835,6 @@ def page_about():
         'aggregate comparisons, and company identities are withheld throughout.</div>',
         unsafe_allow_html=True,
     )
-    st.caption("Contact: Tobin Center for Economic Policy, Yale University.")
 
 
 # ── Page: Trends ─────────────────────────────────────────────────────
@@ -4265,7 +4263,6 @@ def main():
                 '<span class="brand-mark">AI</span>'
                 '<span class="brand-text">'
                 '<span class="brand-name">AI Startup Tracker</span>'
-                '<span class="brand-sub">Tobin Center for Economic Policy &middot; Yale</span>'
                 '</span>'
                 '</div>',
                 unsafe_allow_html=True,
