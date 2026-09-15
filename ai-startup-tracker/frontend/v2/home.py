@@ -62,26 +62,25 @@ def render(p: Palette) -> None:
     C.spacer(26)
 
     # ── Dataset scale ────────────────────────────────────────────────────
-    # AI figures only. The strip used to lead with every tracked company,
-    # which counted firms this site is not about. Each cell names the base it
-    # is a share of: the percentages here are shares of DIFFERENT bases and so
-    # do not sum to 100, which is only confusing while the base is left unsaid.
+    # Four figures that nest inside one another, so a reader can add them up:
+    # 191,488 AI and data companies, of which 124,093 are core AI, of which
+    # 13,579 appear in no commercial database. Each caption names the figure
+    # directly above it as its base, rather than leaving the base implied.
     trends = D.metric_trends()
     h = D.headline_counts()
     broad, narrow = h.get("ai_broad", 0), h.get("ai_narrow", 0)
     hidden, tracked = h.get("ai_hidden", 0), h.get("all_companies", 0)
     C.metrics_strip([
-        ("AI and data companies", f"{broad:,}",
-         f"of {tracked:,} companies tracked ({broad / max(tracked, 1) * 100:.0f}%)",
+        ("AI companies", f"{broad:,}",
+         f"{broad / max(tracked, 1) * 100:.0f}% of {tracked:,} tracked",
          C.sparkline(trends.get("total", []), p)),
-        ("Core AI companies", f"{narrow:,}",
-         "excludes firms that are data-analytics only",
+        ("Core AI only", f"{narrow:,}",
+         f"{narrow / max(broad, 1) * 100:.0f}% of the above",
          C.sparkline(trends.get("ai_share", []), p)),
         ("In no commercial database", f"{hidden:,}",
-         f"of {narrow:,} core AI companies ({hidden / max(narrow, 1) * 100:.0f}%)",
+         f"{hidden / max(narrow, 1) * 100:.0f}% of core AI",
          C.sparkline(trends.get("hidden", []), p)),
-        ("Countries", f"{h.get('countries', 0):,}",
-         "with at least one AI company headquartered there",
+        ("Countries", f"{h.get('countries', 0):,}", "with an AI headquarters",
          C.sparkline(trends.get("countries", []), p)),
     ])
     C.spacer(44)

@@ -557,49 +557,41 @@ def briefing(briefs: list) -> None:
             fig = ('<div class="fig"><span class="tag">Our data</span>'
                    f'<span class="n">{escape(b.figure)}</span>'
                    f'<span class="cap">{escape(b.figure_caption)}</span></div>')
-        more = ""
-        if b.sources:
-            links = "".join(
-                f'<a href="{escape(url)}" target="_blank" rel="noopener">'
-                f'{escape(name)}</a>'
-                for name, url in b.sources
-            )
-            more = f'<div class="more"><span class="lbl">Read more</span>{links}</div>'
         kicker = (f'<p class="kicker">{escape(b.kicker)}</p>' if b.kicker else "")
         blocks.append(
             f'<div class="{cls}">{kicker}'
             f'<p class="t">{escape(b.headline)}</p>'
-            f'<p class="d">{b.body}</p>{fig}{more}</div>'
+            f'<p class="d">{b.body}</p>{fig}</div>'
         )
     _md("".join(blocks))
 
 
-def _momentum_note() -> str:
-    """Why the momentum lists do not add up, said once.
+def _overlap_note() -> str:
+    """Why the category shares do not close at 100%, said once.
 
-    These are rates of change, not a partition, so a reader looking for 100%
-    will not find it. Naming the two cohorts being compared is what makes the
-    figure interpretable at all.
+    Not a rounding artefact and not a top-N truncation: `ai_tags` is an array,
+    so a company tagged both "agents" and "llm" is counted in both rows. The
+    shares genuinely overlap. Every other ranked list on the page closes at
+    100% with an explicit "Other", so this one has to explain itself.
     """
     (r0, r1), (p0, p1) = D.cohorts()
-    return (f"Change in each category's share of AI company formation, "
-            f"{r0}–{r1} against {p0}–{p1}. These are rates of change, not a "
-            f"breakdown, so they do not sum to 100%. The figures beside each "
-            f"name are its current share and company count.")
+    return (f"Share of AI companies founded {r0}–{r1} carrying each tag. "
+            f"Companies can carry several tags, so these shares overlap and do "
+            f"not sum to 100%. Beside each: how many companies, and how its "
+            f"share moved against {p0}–{p1}.")
 
 
 def market_signals(cats: pd.DataFrame) -> None:
     if cats.empty:
         empty_state("Category momentum needs more founding-year coverage.")
         return
-    # Share and base together: a percentage move means little without the
-    # number of companies it rests on.
     df = pd.DataFrame({
         "label": cats["label"],
-        "value": cats["growth"].astype(float),
-        "sub": [f"{s:.1f}% · {int(n):,}" for s, n in zip(cats["share"], cats["recent"])],
+        "value": cats["share"].astype(float),
+        "sub": [f"{int(n):,} cos · {float(g):+.0f}%"
+                for n, g in zip(cats["recent"], cats["growth"])],
     })
-    rank_rows(df, unit="%", signed=True, note=_momentum_note())
+    rank_rows(df, unit="%", show_bar=True, note=_overlap_note())
 
 
 def discovery_channels(week: D.Activity) -> None:
@@ -627,10 +619,16 @@ def category_ranking(cats: pd.DataFrame) -> None:
         return
     df = pd.DataFrame({
         "label": cats["label"],
-        "value": cats["growth"].astype(float),
-        "sub": cats["recent"].map(lambda n: f"{int(n):,} cos"),
+        "value": cats["share"].astype(float),
+        "sub": [f"{int(n):,} cos · {float(g):+.0f}%"
+                for n, g in zip(cats["recent"], cats["growth"])],
     })
-    rank_rows(df, unit="%", signed=True, rank=True, note=_momentum_note())
+    # No `total` here, and that is deliberate. Categories come from ai_tags,
+    # which is an array: a company tagged both "agents" and "llm" is counted in
+    # both rows. These shares therefore overlap and CANNOT sum to 100, so
+    # drawing an "Other" remainder would assert a breakdown that does not
+    # exist. The note says so instead of leaving the reader to wonder.
+    rank_rows(df, unit="%", show_bar=True, rank=True, note=_overlap_note())
 
 
 # Long country names push the city out of a compact row, so the ranked list
@@ -665,12 +663,19 @@ def headquarters(geo: pd.DataFrame) -> None:
 
     df = pd.DataFrame({
         "label": geo.apply(label, axis=1),
-        "value": geo["recent"].astype(float),
-        "sub": geo["growth"].map(lambda g: "—" if pd.isna(g) else f"{float(g):+.0f}%"),
+        "value": geo["share"].astype(float),
+        "sub": [f"{int(n):,} cos · {'—' if pd.isna(g) else f'{float(g):+.0f}%'}"
+                for n, g in zip(geo["recent"], geo["growth"])],
     })
-    rank_rows(df, unit="", count=True, rank=True,
-              note="Companies founded in each city in the recent cohort; the "
-                   "figure beside each is its change in share.")
+    # A company has one city, so these shares DO sum -- the remainder is drawn
+    # as "Other" and the list closes at 100%. Cities used to be ranked by raw
+    # count with the share change beside them, which put a third kind of
+    # percentage next to the category and region panels and gave the reader
+    # three different things all labelled "%".
+    rank_rows(df, unit="%", show_bar=True, rank=True, total=100.0,
+              note="Share of AI companies founded in the recent cohort that "
+                   "record a city. Beside each: how many, and how its share "
+                   "moved against the prior cohort.")
 
 
 def domain_ranking(domains: pd.DataFrame, mapped_total: int) -> None:
