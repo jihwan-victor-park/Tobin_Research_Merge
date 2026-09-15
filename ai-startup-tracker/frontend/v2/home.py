@@ -62,22 +62,26 @@ def render(p: Palette) -> None:
     C.spacer(26)
 
     # ── Dataset scale ────────────────────────────────────────────────────
+    # AI figures only. The strip used to lead with every tracked company,
+    # which counted firms this site is not about. Each cell names the base it
+    # is a share of: the percentages here are shares of DIFFERENT bases and so
+    # do not sum to 100, which is only confusing while the base is left unsaid.
     trends = D.metric_trends()
-    ai_share = f'{snap.ai_share:.1f}<span style="font-size:0.55em">%</span>'
-    as_of = snap.as_of.strftime("%b %d") if snap.as_of else "—"
+    h = D.headline_counts()
+    broad, narrow = h.get("ai_broad", 0), h.get("ai_narrow", 0)
+    hidden, tracked = h.get("ai_hidden", 0), h.get("all_companies", 0)
     C.metrics_strip([
-        ("Companies tracked", f"{snap.total:,}",
-         # Ingestion, not formation — bulk imports land in single days, so this
-         # is deliberately labelled as records added rather than growth.
-         f"+{snap.added_30d:,} records in the 30 days to {as_of}"
-         if snap.added_30d else "no additions recorded",
+        ("AI and data companies", f"{broad:,}",
+         f"of {tracked:,} companies tracked ({broad / max(tracked, 1) * 100:.0f}%)",
          C.sparkline(trends.get("total", []), p)),
-        ("Not in Crunchbase or PitchBook", f"{snap.hidden:,}",
-         f"{snap.hidden_share:.1f}% of the dataset",
-         C.sparkline(trends.get("hidden", []), p)),
-        ("AI share", ai_share, "of all tracked companies",
+        ("Core AI companies", f"{narrow:,}",
+         "excludes firms that are data-analytics only",
          C.sparkline(trends.get("ai_share", []), p)),
-        ("Countries", f"{snap.countries:,}", "with at least one headquarters",
+        ("In no commercial database", f"{hidden:,}",
+         f"of {narrow:,} core AI companies ({hidden / max(narrow, 1) * 100:.0f}%)",
+         C.sparkline(trends.get("hidden", []), p)),
+        ("Countries", f"{h.get('countries', 0):,}",
+         "with at least one AI company headquartered there",
          C.sparkline(trends.get("countries", []), p)),
     ])
     C.spacer(44)

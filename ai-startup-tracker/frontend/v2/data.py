@@ -196,6 +196,40 @@ def snapshot() -> Snapshot:
     )
 
 
+# Broad "AI and data" definition. The narrow AI filter (`AI`) counts 124,093
+# companies; adding the Data & Analytics vertical reaches 191,488, which is the
+# ~200,000 the research programme reports. The two are never used
+# interchangeably, and neither is shown without its denominator.
+AI_BROAD = f"(({AI}) OR categories && ARRAY['Data & Analytics'])"
+
+
+@st.cache_data(ttl=600, show_spinner=False)
+def headline_counts() -> dict:
+    """The AI figures the page leads with, each with the base it is a share of.
+
+    Held in one place so a number cannot drift between the hero, the metric
+    strip and the footer -- which is how a site ends up quoting two different
+    totals for the same thing.
+    """
+    row = _frame(f"""
+        SELECT
+          COUNT(*) FILTER (WHERE {AI_BROAD})                        AS ai_broad,
+          COUNT(*) FILTER (WHERE {AI})                              AS ai_narrow,
+          COUNT(*) FILTER (WHERE {AI} AND verification_status = :h) AS ai_hidden,
+          COUNT(*)                                                  AS all_companies
+        FROM companies
+    """, h=HIDDEN)
+    if row.empty:
+        return {}
+    out = {k: int(v) for k, v in row.iloc[0].items()}
+    # Uses the same country cleaner as the rest of the page. A raw DISTINCT
+    # counts "Alabama", "Bologna" and a bare latitude as countries.
+    places = _frame(f"SELECT DISTINCT country FROM companies "
+                    f"WHERE {AI} AND country IS NOT NULL")
+    out["countries"] = len({c for c in places["country"].map(clean_country) if c})
+    return out
+
+
 @st.cache_data(ttl=600, show_spinner=False)
 def metric_trends() -> dict[str, list[float]]:
     """Short cumulative series behind each headline metric, for the sparklines.
