@@ -62,25 +62,21 @@ def render(p: Palette) -> None:
     C.spacer(26)
 
     # ── Dataset scale ────────────────────────────────────────────────────
-    # Four figures that nest inside one another, so a reader can add them up:
-    # 191,488 AI and data companies, of which 124,093 are core AI, of which
-    # 13,579 appear in no commercial database. Each caption names the figure
-    # directly above it as its base, rather than leaving the base implied.
+    # The two figures the research programme reports, on one definition so they
+    # can be read together, plus the geographic reach. Non-AI companies are not
+    # counted here at all -- the strip used to open with every tracked record.
     trends = D.metric_trends()
     h = D.headline_counts()
-    broad, narrow = h.get("ai_broad", 0), h.get("ai_narrow", 0)
-    hidden, tracked = h.get("ai_hidden", 0), h.get("all_companies", 0)
+    total, hidden = h.get("ai_total", 0), h.get("ai_hidden", 0)
     C.metrics_strip([
-        ("AI companies", f"{broad:,}",
-         f"{broad / max(tracked, 1) * 100:.0f}% of {tracked:,} tracked",
+        ("AI companies tracked", f"{total:,}",
+         "artificial intelligence and data",
          C.sparkline(trends.get("total", []), p)),
-        ("Core AI only", f"{narrow:,}",
-         f"{narrow / max(broad, 1) * 100:.0f}% of the above",
-         C.sparkline(trends.get("ai_share", []), p)),
         ("In no commercial database", f"{hidden:,}",
-         f"{hidden / max(narrow, 1) * 100:.0f}% of core AI",
+         f"{hidden / max(total, 1) * 100:.0f}% of the companies tracked",
          C.sparkline(trends.get("hidden", []), p)),
-        ("Countries", f"{h.get('countries', 0):,}", "with an AI headquarters",
+        ("Countries", f"{h.get('countries', 0):,}",
+         "with an AI headquarters",
          C.sparkline(trends.get("countries", []), p)),
     ])
     C.spacer(44)

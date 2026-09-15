@@ -3059,16 +3059,22 @@ def page_research():
     deal_sizes = _load_deal_size_trend()
     first_fin = _load_ai_first_financing()
 
+    from frontend.v2 import data as _v2data
+    _h = _v2data.headline_counts()
     total_cos = stats["total"]
-    total_ai = stats["ai"]
-    countries_n = stats["countries"]
+    total_ai = _h.get("ai_total", stats["ai"])
+    countries_n = _h.get("countries", stats["countries"])
+    hidden_ai = _h.get("ai_hidden", 0)
 
-    hidden_ai = _load_hidden_ai_total()
-
+    # One source of truth for the headline pair, shared with the homepage.
+    # These two pages used to compute them separately and disagreed in public:
+    # Findings said 124,093 AI and 13,579 hidden, the homepage said 191,488 and
+    # 13,696, because one used the narrow AI filter and the other included the
+    # data vertical. A reader moving between tabs saw two different datasets.
     st.markdown(
         f'<div class="eyebrow">Findings</div>'
         f'<h1>Global AI startup formation</h1>'
-        f'<div class="section-sub">{total_cos:,} companies across {countries_n} '
+        f'<div class="section-sub">{total_ai:,} AI companies across {countries_n} '
         f'countries — including the layer commercial databases miss</div>',
         unsafe_allow_html=True,
     )
@@ -3079,10 +3085,10 @@ def page_research():
     # founding years that are up to 95% undercounted, so it reported the edge
     # of our coverage as a fact about the world.
     c1, c2 = st.columns(2)
-    c1.metric("AI companies", f"{total_ai:,}",
-              f"{100 * total_ai / total_cos:.1f}% of all companies tracked")
-    c2.metric("Not in Crunchbase or PitchBook", f"{hidden_ai:,}",
-              f"{100 * hidden_ai / total_ai:.1f}% of AI companies")
+    c1.metric("AI companies tracked", f"{total_ai:,}",
+              "artificial intelligence and data")
+    c2.metric("In no commercial database", f"{hidden_ai:,}",
+              f"{100 * hidden_ai / total_ai:.1f}% of the companies tracked")
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 

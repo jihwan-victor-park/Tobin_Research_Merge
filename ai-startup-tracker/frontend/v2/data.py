@@ -205,27 +205,29 @@ AI_BROAD = f"(({AI}) OR categories && ARRAY['Data & Analytics'])"
 
 @st.cache_data(ttl=600, show_spinner=False)
 def headline_counts() -> dict:
-    """The AI figures the page leads with, each with the base it is a share of.
+    """The two figures the research programme reports, plus their bases.
 
-    Held in one place so a number cannot drift between the hero, the metric
-    strip and the footer -- which is how a site ends up quoting two different
-    totals for the same thing.
+    Both come from the SAME broad definition, which is why they can be read
+    together: 191,488 AI and data companies, of which 13,696 appear in no
+    commercial database. Mixing the broad total with the narrow hidden count
+    (13,579) would put two different definitions side by side and invite the
+    reader to subtract one from the other.
     """
     row = _frame(f"""
         SELECT
-          COUNT(*) FILTER (WHERE {AI_BROAD})                        AS ai_broad,
-          COUNT(*) FILTER (WHERE {AI})                              AS ai_narrow,
-          COUNT(*) FILTER (WHERE {AI} AND verification_status = :h) AS ai_hidden,
-          COUNT(*)                                                  AS all_companies
+          COUNT(*) FILTER (WHERE {AI_BROAD})                              AS ai_total,
+          COUNT(*) FILTER (WHERE {AI_BROAD} AND verification_status = :h) AS ai_hidden,
+          COUNT(*) FILTER (WHERE {AI})                                    AS ai_narrow,
+          COUNT(*)                                                        AS all_companies
         FROM companies
     """, h=HIDDEN)
     if row.empty:
         return {}
     out = {k: int(v) for k, v in row.iloc[0].items()}
-    # Uses the same country cleaner as the rest of the page. A raw DISTINCT
-    # counts "Alabama", "Bologna" and a bare latitude as countries.
+    # Same country cleaner the rest of the page uses; a raw DISTINCT counts
+    # "Alabama", "Bologna" and a bare latitude as countries.
     places = _frame(f"SELECT DISTINCT country FROM companies "
-                    f"WHERE {AI} AND country IS NOT NULL")
+                    f"WHERE {AI_BROAD} AND country IS NOT NULL")
     out["countries"] = len({c for c in places["country"].map(clean_country) if c})
     return out
 
