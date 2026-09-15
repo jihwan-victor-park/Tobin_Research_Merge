@@ -157,7 +157,8 @@ def render(p: Palette) -> None:
                     value=regions["n"] / total * 100,
                     sub=regions["n"].map(lambda n: f"{int(n):,}"),
                 )[["label", "value", "sub"]],
-                unit="%", show_bar=True, total=100.0,
+                # No bar: narrow column, the label needs the room.
+                unit="%", total=100.0,
                 note=(f"Share of the {total:,} companies outside Crunchbase and "
                       f"PitchBook that resolve to a region, across "
                       f"{len(regions):,}."),

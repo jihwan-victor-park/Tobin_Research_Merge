@@ -640,10 +640,11 @@ def market_signals(cats: pd.DataFrame) -> None:
     df = pd.DataFrame({
         "label": cats["label"],
         "value": cats["share"].astype(float),
-        "sub": [f"{int(n):,} cos · {float(g):+.0f}%"
+        "sub": [f"{int(n):,} · {float(g):+.0f}%"
                 for n, g in zip(cats["recent"], cats["growth"])],
     })
-    rank_rows(df, unit="%", show_bar=True, note=_overlap_note())
+    # No bar: this sits in a narrow column beside the chart.
+    rank_rows(df, unit="%", note=_overlap_note())
 
 
 def discovery_channels(week: D.Activity) -> None:
@@ -672,7 +673,7 @@ def category_ranking(cats: pd.DataFrame) -> None:
     df = pd.DataFrame({
         "label": cats["label"],
         "value": cats["share"].astype(float),
-        "sub": [f"{int(n):,} cos · {float(g):+.0f}%"
+        "sub": [f"{int(n):,} · {float(g):+.0f}%"
                 for n, g in zip(cats["recent"], cats["growth"])],
     })
     # No `total` here, and that is deliberate. Categories come from ai_tags,
@@ -680,7 +681,7 @@ def category_ranking(cats: pd.DataFrame) -> None:
     # both rows. These shares therefore overlap and CANNOT sum to 100, so
     # drawing an "Other" remainder would assert a breakdown that does not
     # exist. The note says so instead of leaving the reader to wonder.
-    rank_rows(df, unit="%", show_bar=True, rank=True, note=_overlap_note())
+    rank_rows(df, unit="%", rank=True, note=_overlap_note())
 
 
 # Long country names push the city out of a compact row, so the ranked list
@@ -716,7 +717,7 @@ def headquarters(geo: pd.DataFrame) -> None:
     df = pd.DataFrame({
         "label": geo.apply(label, axis=1),
         "value": geo["share"].astype(float),
-        "sub": [f"{int(n):,} cos · {'—' if pd.isna(g) else f'{float(g):+.0f}%'}"
+        "sub": [f"{int(n):,} · {'—' if pd.isna(g) else f'{float(g):+.0f}%'}"
                 for n, g in zip(geo["recent"], geo["growth"])],
     })
     # A company has one city, so these shares DO sum -- the remainder is drawn
@@ -724,7 +725,7 @@ def headquarters(geo: pd.DataFrame) -> None:
     # count with the share change beside them, which put a third kind of
     # percentage next to the category and region panels and gave the reader
     # three different things all labelled "%".
-    rank_rows(df, unit="%", show_bar=True, rank=True, total=100.0,
+    rank_rows(df, unit="%", rank=True, total=100.0,
               note="Share of AI companies founded in the recent cohort that "
                    "record a city. Beside each: how many, and how its share "
                    "moved against the prior cohort.")
@@ -815,7 +816,7 @@ def footer(snap: D.Snapshot, f: D.Formation) -> None:
       where they are.</p>
     </div>
   </div>
-  <div class="fine">TOBIN CENTER FOR ECONOMIC POLICY · YALE UNIVERSITY &nbsp;·&nbsp;
+  <div class="fine">AI STARTUP TRACKER &nbsp;·&nbsp;
   DATASET UPDATED {escape(as_of.upper())} &nbsp;·&nbsp;
   {snap.total:,} COMPANIES TRACKED</div>
 </div>

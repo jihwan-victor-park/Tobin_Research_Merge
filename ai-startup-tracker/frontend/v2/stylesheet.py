@@ -536,11 +536,14 @@ html, body, .stApp,
 }}
 .stApp .v2-rows .name {{
   flex: 1 1 auto;
+  /* A label must never be squeezed narrower than a few characters. Without
+     this, a crowded row (bar + long sub + value) collapses the name to zero
+     width and `overflow-wrap: anywhere` breaks it one letter per line. */
+  min-width: 6.5ch;
   font-size: 0.875rem !important;
   font-weight: 500 !important;
   line-height: 1.3 !important;
   color: var(--v2-text) !important;
-  min-width: 0;
   /* Wrap rather than ellipsis: in a three-column analysis row the labels are
      the content, and "Predictive Analy…" tells the reader nothing. */
   overflow-wrap: anywhere;
@@ -560,7 +563,7 @@ html, body, .stApp,
   font-variant-numeric: tabular-nums;
 }}
 .stApp .v2-rows .val {{ color: var(--v2-text) !important; }}
-.v2-rows .val {{ flex: none; text-align: right; min-width: 88px; }}
+.v2-rows .val {{ flex: none; text-align: right; min-width: 52px; }}
 .v2-rows .bar {{
   position: relative; flex: 0 0 74px; height: 4px;
   background: var(--v2-border-soft);
@@ -1245,6 +1248,18 @@ html, body, .stApp,
 /* ── Responsive ────────────────────────────────────────────────────── */
 @media (max-width: 1100px) {{
   .v2-footer .cols {{ grid-template-columns: 1fr 1fr; gap: 30px; }}
+  /* Below this width the narrow analysis columns can no longer seat a label,
+     its detail and its value on one line. Let the row wrap so the detail and
+     value drop underneath, rather than crushing the label into a column of
+     single letters. The value keeps to the right edge of whichever line it
+     lands on. */
+  .v2-rows .row {{ flex-wrap: wrap; row-gap: 2px; }}
+  /* Claim the whole first line after the rank. A mere `min-width` floor is not
+     enough: the row can still fit by a pixel or two, and the label then wraps
+     inside a 59px box while the detail and value sit beside it in comfort. */
+  .stApp .v2-rows .name {{ flex: 1 0 calc(100% - 32px); }}
+  .v2-rows .bar {{ margin-left: 32px; }}
+  .v2-rows .val {{ margin-left: auto; }}
 }}
 @media (max-width: 820px) {{
   .block-container {{ padding-left: 18px !important; padding-right: 18px !important; }}
