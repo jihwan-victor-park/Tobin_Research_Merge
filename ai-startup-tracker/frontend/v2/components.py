@@ -565,6 +565,59 @@ def briefing(briefs: list) -> None:
     _md("".join(blocks))
 
 
+def quarterly_update(df: pd.DataFrame) -> None:
+    """Our collection, quarter by quarter, in the briefing's own layout.
+
+    Reuses the `v2-brief` classes on purpose: the meeting asked for the news
+    slot to carry our quarterly research signal, and keeping the visual form
+    means the page rhythm does not change -- only the source of the content,
+    which is now entirely our own scrapers.
+    """
+    if df.empty:
+        empty_state("Not enough quarterly history to report yet.")
+        return
+
+    blocks = []
+    for i, (_, r) in enumerate(df.iterrows()):
+        q = pd.Timestamp(r["q"])
+        label = f"{q.year} Q{(q.month - 1) // 3 + 1}"
+        n = int(r["discovered"])
+        delta = r.get("delta")
+
+        if pd.notna(delta):
+            direction = "up" if float(delta) >= 0 else "down"
+            move = (f' That is <b>{abs(float(delta)):.0f}% '
+                    f'{"more" if direction == "up" else "fewer"}</b> than the '
+                    f'quarter before.')
+            headline = (f"Discovery {'rose' if direction == 'up' else 'slowed'} "
+                        f"in {label}")
+        else:
+            move = ""
+            headline = f"{label}: {n:,} companies found"
+
+        site = int(r["with_site"])
+        body = (f"Our scrapers found <b>{n:,}</b> AI companies in {label} that "
+                f"appear in neither Crunchbase nor PitchBook, across "
+                f"<b>{int(r['countries'])}</b> countries.{move} "
+                f"<b>{site:,}</b> of them already run a live website.")
+
+        cls = "v2-brief v2-reveal" + (" lead" if i == 0 else "")
+        blocks.append(
+            f'<div class="{cls}"><p class="kicker">Quarterly update · {escape(label)}</p>'
+            f'<p class="t">{escape(headline)}</p>'
+            f'<p class="d">{body}</p>'
+            f'<div class="fig"><span class="tag">Our scrapers</span>'
+            f'<span class="n">{n:,}</span>'
+            f'<span class="cap">companies discovered in {escape(label)}</span></div>'
+            f'</div>'
+        )
+    _md("".join(blocks))
+    _md('<p class="v2-small" style="margin-top:14px">Counts companies our own '
+        'collection found, in neither commercial database. Bulk-imported records '
+        'are excluded: they would date tens of thousands of companies to the '
+        'quarter a file was loaded.</p>')
+
+
 def _overlap_note() -> str:
     """Why the category shares do not close at 100%, said once.
 

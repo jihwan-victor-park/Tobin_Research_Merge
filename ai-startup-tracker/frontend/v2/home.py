@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import streamlit as st
 
-from . import briefing as B
 from . import components as C
 from . import data as D
 from . import intelligence as I
@@ -83,7 +82,6 @@ def render(p: Palette) -> None:
 
     # ── The last 30 days of intake ───────────────────────────────────────
     week = D.recent_activity()
-    facts = D.channel_facts()
     cats = D.category_momentum(limit=6)
     geo = D.geographic_momentum(limit=6)
 
@@ -100,7 +98,10 @@ def render(p: Palette) -> None:
 
     lead, signals = st.columns([1.62, 1], gap="large")
     with lead:
-        C.briefing(B.build(week, snap, facts, cats, geo))
+        # The briefing read as a news column -- kicker, headline, paragraph --
+        # and the meeting asked for this slot to carry our own quarterly
+        # research signal instead. Same layout, our scrapers as the source.
+        C.quarterly_update(D.quarterly_discovery())
     with signals:
         C.section_head("Market signals", "SHARE Δ", soft=True)
         C.market_signals(cats)

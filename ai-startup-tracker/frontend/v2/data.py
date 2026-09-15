@@ -618,6 +618,33 @@ class Activity:
         return (self.total - self.prior_total) / self.prior_total * 100
 
 
+@st.cache_data(ttl=600, show_spinner=False)
+def quarterly_discovery(quarters: int = 5) -> pd.DataFrame:
+    """What our own collection found each quarter.
+
+    Restricted to companies in neither commercial database, because those are
+    the ones the scrapers actually discovered. Counting every arrival would
+    date tens of thousands of companies to whichever quarter a bulk parquet was
+    imported, and show the quarter after as a collapse.
+
+    Columns: q, discovered, countries, with_site, delta.
+    """
+    df = _frame(f"""
+        SELECT date_trunc('quarter', first_seen_at)::date   AS q,
+               COUNT(*)                                     AS discovered,
+               COUNT(DISTINCT country)                      AS countries,
+               COUNT(*) FILTER (WHERE domain IS NOT NULL)   AS with_site
+        FROM companies
+        WHERE {AI} AND verification_status = :h AND first_seen_at IS NOT NULL
+        GROUP BY 1 ORDER BY 1 DESC LIMIT :n
+    """, h=HIDDEN, n=quarters + 1)
+    if df.empty:
+        return df
+    df = df.sort_values("q").reset_index(drop=True)
+    df["delta"] = df["discovered"].pct_change() * 100
+    return df.tail(quarters).iloc[::-1].reset_index(drop=True)
+
+
 @st.cache_data(ttl=300, show_spinner=False)
 def recent_activity() -> Activity:
     """The trailing 30 days of intake, anchored on the newest record.
