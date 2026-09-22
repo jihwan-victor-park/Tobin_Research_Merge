@@ -23,7 +23,7 @@ from sqlalchemy import text
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from frontend import atlas, vocabulary as V
+from frontend import atlas, table, vocabulary as V
 
 from backend.db.connection import get_engine
 from backend.orchestrator.orchestrator import Orchestrator
@@ -1590,7 +1590,8 @@ def page_home():
             st.markdown(
                 f'<div style="color:{TXT3};font-size:0.8rem;margin:6px 0 6px 0;">'
                 'Top 10 countries</div>', unsafe_allow_html=True)
-            st.dataframe(top, hide_index=True, width="stretch", height=384)
+            table.render(top, roles={"Companies": table.NUMBER},
+                         widths={"Companies": "34%"}, height=384)
 
     # ── Latest hidden discoveries ────────────────────────────────────
     st.markdown(
@@ -1610,10 +1611,12 @@ def page_home():
         view["Company"] = view["id"].map(stealth_label)
         view = view[["Company", "country", "founded_year", "first_seen"]]
         view.columns = ["Company", "Country", "Founded", "First seen"]
-        st.dataframe(view, hide_index=True, width="stretch",
-                     column_config={
-                         "Founded": st.column_config.NumberColumn(format="%d"),
-                     })
+        view["Founded"] = view["Founded"].map(
+            lambda v: "—" if pd.isna(v) else f"{int(v)}")
+        table.render(view, roles={"Company": table.STRONG,
+                                  "Country": table.MUTED,
+                                  "Founded": table.NUMBER,
+                                  "First seen": table.MUTED})
 
 
 def _render_enrichment_section() -> None:
@@ -1781,15 +1784,21 @@ def page_companies():
         f'identities withheld</div>',
         unsafe_allow_html=True,
     )
-    st.dataframe(
-        view, hide_index=True, width="stretch", height=560,
-        column_config={
-            "Founded": st.column_config.NumberColumn(format="%d"),
-            "AI score": st.column_config.ProgressColumn(
-                min_value=0.0, max_value=1.0, format="%.2f"),
-            "Description": st.column_config.TextColumn(width="large"),
-        },
+    view["Founded"] = view["Founded"].map(
+        lambda v: "—" if pd.isna(v) else f"{int(v)}")
+    drawn = table.render(
+        view, height=620,
+        roles={"Company": table.STRONG, "Country": table.MUTED,
+               "City": table.MUTED, "Founded": table.NUMBER,
+               "AI score": table.BAR, "First seen": table.MUTED},
+        widths={"Company": "17%", "Country": "9%", "City": "9%",
+                "Founded": "9%", "AI score": "9%", "First seen": "10%",
+                "Description": "37%"},
     )
+    if drawn < len(view):
+        st.caption(f"Showing the first {drawn:,} of {len(view):,} matching "
+                   "companies — narrow the filters above, or take the whole "
+                   "set as CSV below.")
     # The export is the same withheld view, not the underlying frame -- handing
     # over a CSV of names and domains would undo the whole page.
     st.download_button(
@@ -4289,8 +4298,13 @@ def page_landscape():
     st.caption(f"{len(cl)} clusters in {d} · {int(cl['companies'].sum()):,} companies")
     show = cl.rename(columns={"cluster": "What they do", "capability": "AI capability",
                               "companies": "Companies", "hidden_pct": "% hidden"})
-    st.dataframe(show, use_container_width=True, hide_index=True,
-                 height=min(430, 46 + 35 * len(cl)))
+    table.render(show, height=min(430, 60 + 38 * len(cl)),
+                 roles={"What they do": table.STRONG,
+                        "AI capability": table.MUTED,
+                        "Companies": table.NUMBER,
+                        "% hidden": table.NUMBER},
+                 widths={"What they do": "46%", "AI capability": "24%",
+                         "Companies": "15%", "% hidden": "15%"})
 
     if len(cl):
         c = st.selectbox("Cluster", cl["cluster"].tolist(), label_visibility="collapsed")
@@ -4302,9 +4316,10 @@ def page_landscape():
         cv["Source"] = cv["bucket"].map({"hidden": V.NOT_IN_SHORT.capitalize(),
                                          "published": V.IN_SHORT.capitalize()})
         cv["Category (enrichment)"] = (cv["application"] + " / " + cv["subfield"]).str.strip(" /")
-        st.dataframe(
-            cv[["Company", "Source", "Category (enrichment)"]],
-            use_container_width=True, hide_index=True, height=430)
+        table.render(cv[["Company", "Source", "Category (enrichment)"]],
+                     height=430,
+                     roles={"Company": table.STRONG, "Source": table.MUTED},
+                     widths={"Company": "22%", "Source": "26%"})
 
     st.caption("Clusters are discovered from company descriptions rather than "
                "assigned from a fixed list. &lsquo;Pending enrichment&rsquo; = companies "

@@ -57,6 +57,15 @@ html, body, .stApp,
 .stApp h1, .stApp h2, .stApp h3, .stApp h4 {{
   font-family: var(--v2-sans) !important;
 }}
+/* Streamlit draws its icons as ligatures in an icon font, so the blanket rule
+   above turns every one of them into its own name in prose — an expander
+   arrives labelled "keyboard_arrow_right". Icons keep their font. */
+.stApp [data-testid="stIconMaterial"],
+.stApp span[class*="material-symbols"],
+.stApp span[class*="material-icons"] {{
+  font-family: "Material Symbols Rounded", "Material Symbols Outlined",
+               "Material Icons" !important;
+}}
 
 /* Editorial column: wider than the V1 shell, generous but not sprawling. */
 .block-container {{
@@ -791,7 +800,18 @@ html, body, .stApp,
 
 /* ── Table ─────────────────────────────────────────────────────────── */
 .v2-tablewrap {{ overflow-x: auto; }}
-.v2-table {{ width: 100%; border-collapse: collapse; }}
+/* A tall table scrolls its body under a header that stays put; without the
+   sticky header a reader 40 rows down is looking at unlabelled columns. */
+.v2-tablewrap.scroll {{ overflow-y: auto; }}
+.v2-tablewrap.scroll .v2-table thead th {{
+  position: sticky; top: 0; z-index: 2;
+  background: var(--v2-bg);
+}}
+/* Fixed layout so the colgroup is honoured: left to itself the browser
+   apportions by content, which starves the narrow columns and hands the slack
+   to whichever one happens to hold the longest string. */
+.v2-table {{ width: 100%; border-collapse: collapse; table-layout: fixed; }}
+.stApp .v2-table td {{ overflow-wrap: anywhere; }}
 /* Streamlit styles markdown tables with a full box border; keep only the
    horizontal rules this design uses. */
 .stApp .v2-table th, .stApp .v2-table td {{
@@ -807,9 +827,9 @@ html, body, .stApp,
   font-weight: 600 !important;
   letter-spacing: 0.11em !important;
   text-transform: uppercase;
-  color: var(--v2-text3) !important;
+  color: var(--v2-text2) !important;
   text-align: left;
-  padding: 0 14px 9px 0;
+  padding: 7px 14px 8px 0;
   border-bottom: 1px solid var(--v2-border);
   white-space: nowrap;
 }}
@@ -817,7 +837,7 @@ html, body, .stApp,
   font-size: 0.855rem !important;
   font-weight: 400 !important;
   line-height: 1.45 !important;
-  color: var(--v2-text2) !important;
+  color: var(--v2-text) !important;
   padding: 11px 14px 11px 0;
   border-bottom: 1px solid var(--v2-border-soft);
   vertical-align: top;
@@ -830,6 +850,27 @@ html, body, .stApp,
   font-size: 0.735rem !important;
   color: var(--v2-text3) !important;
   white-space: nowrap;
+}}
+/* Figures line up digit over digit and read as a column, which is the whole
+   reason to put them in a table. */
+.stApp .v2-table th.num, .stApp .v2-table td.num {{
+  text-align: right;
+  font-family: var(--v2-mono) !important;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.775rem !important;
+  color: var(--v2-text) !important;
+  white-space: nowrap;
+}}
+.v2-table thead th.num {{ text-align: right; }}
+/* A score is easier to compare as a length than as three decimal places, so
+   it gets both: the rule carries the comparison, the number the precision. */
+.v2-bar {{
+  display: inline-block; width: 46px; height: 3px; margin-right: 8px;
+  background: var(--v2-border-soft); vertical-align: middle;
+}}
+.v2-bar i {{ display: block; height: 100%; background: var(--v2-accent); }}
+.v2-bar-v {{
+  font-family: var(--v2-mono); font-size: 0.735rem; color: var(--v2-text2);
 }}
 .stApp .v2-table a {{
   color: var(--v2-text) !important; border-bottom: 1px solid var(--v2-border);
