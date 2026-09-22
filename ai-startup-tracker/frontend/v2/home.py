@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import streamlit as st
 
+from .. import vocabulary as V
 from . import components as C
 from . import data as D
 from . import intelligence as I
@@ -159,8 +160,8 @@ def render(p: Palette) -> None:
                 )[["label", "value", "sub"]],
                 # No bar: narrow column, the label needs the room.
                 unit="%", total=100.0,
-                note=(f"Share of the {total:,} companies outside Crunchbase and "
-                      f"PitchBook that resolve to a region, across "
+                note=(f"Share of the {total:,} companies outside "
+                      f"{V.THE_DATASETS} that resolve to a region, across "
                       f"{len(regions):,}."),
             )
     C.spacer(46)
@@ -179,7 +180,7 @@ def render(p: Palette) -> None:
         C.spacer(46)
 
     # ── Latest additions ─────────────────────────────────────────────────
-    C.section_head("Latest discoveries", "NOT IN CRUNCHBASE OR PITCHBOOK")
+    C.section_head("Latest discoveries", V.KICKER)
     C.latest_additions(D.recent_hidden(limit=8))
 
     C.footer(snap, f)

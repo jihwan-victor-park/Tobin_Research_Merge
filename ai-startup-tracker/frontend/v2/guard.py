@@ -28,28 +28,28 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-# ── The one dial worth having ────────────────────────────────────────────
+from .. import vocabulary as V
 
-# The coverage *claim* ("in neither Crunchbase nor PitchBook") is the site's
-# headline and is named on every other page, so answers name it too. Flip this
-# to False to make the answer box speak about "the major commercial databases"
-# instead, without touching the rest of the site. It does not affect sourcing
-# questions — those are always answered with DISCLOSURE below.
-NAME_COVERAGE_VENDORS = True
+# ── The claim, in the site's own words ───────────────────────────────────
 
 
 def coverage_phrase() -> str:
-    """How an answer refers to the databases a company is absent from."""
-    return ("neither Crunchbase nor PitchBook" if NAME_COVERAGE_VENDORS
-            else "none of the major commercial databases")
+    """How an answer refers to the databases a company is absent from.
+
+    One source, shared with every other page — see `frontend/vocabulary`. The
+    answer box used to carry a switch for this, back when the rest of the site
+    named the vendors and only the answers were in question. It does not now,
+    so there is nothing left to switch between.
+    """
+    return V.NO_DATASET
 
 
 # ── What the box says about where the data comes from ────────────────────
 
 DISCLOSURE = (
     "Companies here are identified from public signals on the open web and then "
-    "checked against the major commercial company databases to see which ones are "
-    "already registered. Which signals, which feeds, and the matching rules that "
+    f"checked against {V.THE_DATASETS} to see which ones are already "
+    "registered. Which signals, which feeds, and the matching rules that "
     "connect them are the method behind the tracker, and we do not publish them. "
     "What is published is the result: the counts, the shares and the cohort "
     "comparisons on this page, each computed from the live dataset."
@@ -157,8 +157,8 @@ _REPLIES = {
         "The full dataset is not served from here",
         "This box answers with computed figures — counts, shares and cohort "
         "comparisons — not with record-level extracts. Individual unlisted "
-        "companies are browsable in the directory, and the rows derived from "
-        "commercial databases are licensed, so they appear only as aggregates. "
+        f"companies are browsable in the directory, and rows drawn from "
+        f"{V.THE_DATASETS} are licensed, so they appear only as aggregates. "
         "Ask a question about a scope and the numbers for that scope are computed "
         "in full.",
         "Record-level export is out of scope for the answer box.",

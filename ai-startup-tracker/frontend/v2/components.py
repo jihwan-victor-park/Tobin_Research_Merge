@@ -19,6 +19,7 @@ import streamlit as st
 from backend.utils.anonymize import stealth_label, strip_provenance
 
 from . import data as D
+from .. import vocabulary as V
 from .intelligence import Answer
 from .theme import PLOT_CONFIG, Palette, plot_layout
 
@@ -102,7 +103,7 @@ def status_line(snap: D.Snapshot) -> None:
     segs = [
         f'<span class="seg">{lead}</span>',
         f'<span class="seg"><b>{snap.total:,}</b> COMPANIES</span>',
-        f'<span class="seg"><b>{snap.hidden:,}</b> NOT IN CRUNCHBASE OR PITCHBOOK</span>',
+        f'<span class="seg"><b>{snap.hidden:,}</b> {V.KICKER}</span>',
         f'<span class="seg"><b>{snap.countries:,}</b> COUNTRIES</span>',
         f'<span class="seg">UPDATED {as_of}</span>',
     ]
@@ -262,7 +263,7 @@ def answer_panel(ans: Answer, p: Palette) -> None:
         if not ans.series.empty and len(ans.series) > 2 and not ans.companies.empty:
             spacer(18)
             _md('<p class="v2-meta" style="margin-bottom:8px">'
-                'Recently discovered in this scope · not in Crunchbase or PitchBook</p>')
+                f'Recently discovered in this scope · {V.ABSENT_SHORT}</p>')
             _company_table(ans.companies)
 
         if ans.sources:
@@ -598,7 +599,7 @@ def quarterly_update(df: pd.DataFrame) -> None:
 
         site = int(r["with_site"])
         body = (f"Our scrapers found <b>{n:,}</b> AI companies in {label} that "
-                f"appear in neither Crunchbase nor PitchBook, across "
+                f"{V.ABSENT}, across "
                 f"<b>{int(r['countries'])}</b> countries.{move} "
                 f"<b>{site:,}</b> of them already run a live website.")
 
@@ -771,8 +772,8 @@ def domain_note(domains: pd.DataFrame, mapped_total: int) -> None:
             "sub": d["unlisted"].map(lambda n: f"{int(n):,}"),
         }).sort_values("value", ascending=False),
         unit="%", show_bar=True,
-        note=(f"Within each domain, the share of companies that appear in "
-              f"neither Crunchbase nor PitchBook. {escape(str(top['domain']))} "
+        note=(f"Within each domain, the share of companies that "
+              f"{V.ABSENT}. {escape(str(top['domain']))} "
               f"is the least well covered."),
     )
 
@@ -793,10 +794,10 @@ def footer(snap: D.Snapshot, f: D.Formation) -> None:
       <p class="fh">About this dataset</p>
       <p>The tracker measures where and when new AI companies form. It covers
       <b>{snap.total:,}</b> companies in <b>{snap.countries:,}</b> countries, of which
-      <b>{snap.hidden:,}</b> appear in neither Crunchbase nor PitchBook &mdash; the
+      <b>{snap.hidden:,}</b> {V.ABSENT} &mdash; the
       layer this project exists to measure.</p>
       <p>Company-level records are published only for that unlisted population.
-      Crunchbase- and PitchBook-derived rows appear here as aggregate statistics
+      Rows drawn from {V.THE_DATASETS} appear here as aggregate statistics
       only, under their licence terms.</p>
     </div>
     <div>

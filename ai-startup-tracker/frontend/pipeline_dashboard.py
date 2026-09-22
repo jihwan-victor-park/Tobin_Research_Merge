@@ -22,6 +22,8 @@ from sqlalchemy import text
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+from frontend import vocabulary as V
+
 from backend.db.connection import get_engine
 from backend.orchestrator.orchestrator import Orchestrator
 from backend.scrapers.registry import SCRAPER_REGISTRY
@@ -1447,7 +1449,7 @@ def page_home():
 
     ai_stat = (
         f'<span class="stat-value">{hidden_ai_pct:.1f}%</span>'
-        f'<span class="stat-sub">vs <b>{cb_ai_pct:.1f}%</b> in Crunchbase</span>'
+        f'<span class="stat-sub">vs <b>{cb_ai_pct:.1f}%</b> in {V.SOURCE_A}</span>'
         if hidden_ai_pct is not None and cb_ai_pct is not None
         else f'<span class="stat-value">{stats["ai"]:,}</span>'
              f'<span class="stat-sub">across all sources</span>'
@@ -1460,7 +1462,7 @@ def page_home():
         f'<span class="stat-sub">all discovery channels</span></div>'
         f'<div class="stat"><span class="stat-label">Hidden companies</span>'
         f'<span class="stat-value">{hidden_total:,}</span>'
-        f'<span class="stat-sub">in neither Crunchbase nor PitchBook</span></div>'
+        f'<span class="stat-sub">{V.ABSENT_SHORT}</span></div>'
         f'<div class="stat"><span class="stat-label">AI share of hidden firms</span>'
         f'{ai_stat}</div>'
         f'<div class="stat"><span class="stat-label">Countries</span>'
@@ -1514,8 +1516,8 @@ def page_home():
         )
         if not buckets.empty:
             order = [(_HIDDEN_STATUS, "Hidden (this tracker)"),
-                     ("verified_cb", "Crunchbase"),
-                     ("verified_pb", "PitchBook")]
+                     ("verified_cb", V.SOURCE_A),
+                     ("verified_pb", V.SOURCE_B)]
             rows = [(label, float(buckets.set_index("bucket").loc[key, "ai_pct"]))
                     for key, label in order
                     if key in buckets["bucket"].values]
@@ -1593,9 +1595,9 @@ def page_home():
     st.markdown(
         '<div style="height:14px"></div>'
         '<div class="section-header">Latest discoveries</div>'
-        '<div class="section-sub">Recently recorded AI companies that are in neither '
-        'Crunchbase nor PitchBook — browse the full list on the '
-        '<b>Companies</b> page. Identities are withheld.</div>',
+        f'<div class="section-sub">Recently recorded AI companies that are '
+        f'{V.ABSENT_SHORT} — browse the full list on the '
+        f'<b>Companies</b> page. Identities are withheld.</div>',
         unsafe_allow_html=True,
     )
     recent = _load_hidden_companies(search="", country="All countries",
@@ -1737,8 +1739,8 @@ def _render_enrichment_section() -> None:
 def page_companies():
     st.markdown(
         '<div class="section-header">Companies outside the commercial databases</div>'
-        '<div class="section-sub" style="max-width:74ch;">Companies this tracker has '
-        'recorded that appear in neither Crunchbase nor PitchBook. Identities are '
+        f'<div class="section-sub" style="max-width:74ch;">Companies this tracker '
+        f'has recorded that {V.ABSENT}. Identities are '
         'withheld: each is listed by what it does and where it is. Companies from '
         'commercial databases are shown on this site only as aggregate '
         'statistics.</div>',
@@ -1810,7 +1812,7 @@ def page_about():
         f'when new AI companies form — including the young firms that commercial '
         f'databases miss. The tracker currently covers <b>{stats["total"]:,}</b> '
         f'companies across <b>{stats["countries"]}</b> countries, of which '
-        f'<b>{hidden_total:,}</b> appear in neither Crunchbase nor PitchBook.</div>',
+        f'<b>{hidden_total:,}</b> {V.ABSENT}.</div>',
         unsafe_allow_html=True,
     )
 
@@ -1823,8 +1825,8 @@ def page_about():
         '<div style="height:8px"></div>'
         '<div class="section-header">Reading the numbers</div>'
         '<div class="section-sub" style="max-width:76ch;">'
-        '<b>Unlisted companies</b> are firms in this tracker absent from both '
-        'Crunchbase and PitchBook at match time. Three caveats matter when reading '
+        f'<b>Unlisted companies</b> are firms in this tracker absent from '
+        f'{V.THE_DATASETS} at match time. Three caveats matter when reading '
         'any chart here. Recent founding years are substantially incomplete — young '
         'firms take years to surface — so formation is reported as AI\'s <i>share</i> '
         'of each year rather than as a count. Founding-year charts cover only '
@@ -3229,7 +3231,7 @@ def page_research():
     # ── Section 4: VC Deal Intelligence ─────────────────────────────
     st.markdown(
         '<div class="section-header">VC Deal Intelligence</div>'
-        '<div class="section-sub">268K funding events from PitchBook — deal volume, size trends, and AI vs non-AI first financing</div>',
+        f'<div class="section-sub">268K funding events from {V.A_DATASET} — deal volume, size trends, and AI vs non-AI first financing</div>',
         unsafe_allow_html=True,
     )
 
@@ -3337,8 +3339,8 @@ def page_research():
     st.markdown(
         '<div class="eyebrow">The hidden startup layer</div>'
         '<div class="section-header">Companies commercial databases miss</div>'
-        '<div class="section-sub" style="max-width:76ch;">Firms in this tracker that '
-        'appear in neither Crunchbase nor PitchBook. This is the tracker\'s unique '
+        f'<div class="section-sub" style="max-width:76ch;">Firms in this tracker '
+        f'that {V.ABSENT}. This is the tracker\'s unique '
         'contribution to measuring AI entrepreneurship.</div>',
         unsafe_allow_html=True,
     )
@@ -3351,9 +3353,9 @@ def page_research():
         # split is stated below rather than left for the reader to notice.
         lbl = {
             "hidden": "In no commercial database",
-            "hidden_on_li": "Not in CB/PB, but on LinkedIn",
-            "cb": "Crunchbase",
-            "pb": "PitchBook",
+            "hidden_on_li": "In no private dataset, but on LinkedIn",
+            "cb": V.SOURCE_A,
+            "pb": V.SOURCE_B,
         }
         order = [b for b in ("hidden", "hidden_on_li", "cb", "pb")
                  if b in set(adoption["bucket"])]
@@ -3366,8 +3368,8 @@ def page_research():
         if unlisted:
             st.caption(
                 f"The first two buckets are a split of the same "
-                f"{int(unlisted):,} companies that appear in neither Crunchbase "
-                f"nor PitchBook: those we could not match to LinkedIn either, and "
+                f"{int(unlisted):,} companies that {V.ABSENT}: those we could "
+                f"not match to LinkedIn either, and "
                 f"those we could. AI share is higher in both than in either "
                 f"commercial database, which is the point of the comparison."
             )
@@ -3383,8 +3385,8 @@ def page_research():
     with hc1:
         st.markdown(
             '<div class="section-header" style="margin-top:20px;">When they were founded</div>'
-            '<div class="section-sub">Founding year of companies in neither Crunchbase '
-            'nor PitchBook</div>',
+            f'<div class="section-sub">Founding year of companies '
+            f'{V.ABSENT_SHORT}</div>',
             unsafe_allow_html=True,
         )
         if not h_form.empty:
@@ -3431,7 +3433,7 @@ def page_research():
     if not h_vert.empty:
         st.markdown(
             '<div class="section-header" style="margin-top:20px;">What hidden companies build</div>'
-            '<div class="section-sub">Sector mix vs Crunchbase-registered firms (share of each group)</div>',
+            f'<div class="section-sub">Sector mix vs {V.SOURCE_A}-registered firms (share of each group)</div>',
             unsafe_allow_html=True,
         )
         top_verts = (h_vert[h_vert["bucket"] == "hidden"]
@@ -3439,7 +3441,7 @@ def page_research():
         hv = h_vert[h_vert["vertical"].isin(top_verts) & h_vert["bucket"].isin(["hidden", "cb"])]
         fig = go.Figure()
         for bucket, color, name in [("hidden", ACCENT, "Hidden (this tracker)"),
-                                    ("cb", GRAY_CTX, "Crunchbase")]:
+                                    ("cb", GRAY_CTX, V.SOURCE_A)]:
             s = (hv[hv["bucket"] == bucket].set_index("vertical")
                  .reindex(top_verts)["share_of_bucket_pct"])
             fig.add_trace(go.Bar(
@@ -3949,15 +3951,17 @@ def _info_sources_section():
 
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Total companies", f"{total:,}")
-    m2.metric("Covered by Crunchbase", f"{cb:,}", f"{cb / total:.1%} of total" if total else None, delta_color="off")
-    m3.metric("Covered by PitchBook", f"{pb:,}", f"{pb / total:.1%} of total" if total else None, delta_color="off")
+    m2.metric(f"Covered by {V.SOURCE_A}", f"{cb:,}", f"{cb / total:.1%} of total" if total else None, delta_color="off")
+    m3.metric(f"Covered by {V.SOURCE_B}", f"{pb:,}", f"{pb / total:.1%} of total" if total else None, delta_color="off")
     m4.metric("Only we have", f"{unique_ours:,}", f"{unique_ours / total:.1%} of total" if total else None, delta_color="off")
 
     rows = [
-        ("Crunchbase", cb, "Standard database — bulk import, used as the enrichment layer"),
-        ("PitchBook", pb, "Standard database — bulk import; also the source of all funding-deal records"),
-        ("Our scrapers", scraper, "NOT in CB/PB — found by our own scraping of accelerator, VC and university sites"),
-        ("GitHub discovery", github, "NOT in CB/PB — emerging companies found via GitHub organization scans"),
+        (V.SOURCE_A, cb, "Licensed import — the enrichment layer"),
+        (V.SOURCE_B, pb, "Licensed import; also the source of all funding-deal records"),
+        ("Our scrapers", scraper, f"{V.ABSENT_SHORT.capitalize()} — found by our own "
+                                  "scraping of accelerator, VC and university sites"),
+        ("GitHub discovery", github, f"{V.ABSENT_SHORT.capitalize()} — emerging "
+                                     "companies found via GitHub organization scans"),
     ]
     src_df = pd.DataFrame(rows, columns=["Source", "Companies", "What it is"])
     src_df["Share"] = (src_df["Companies"] / total).map("{:.1%}".format) if total else "—"
@@ -3965,7 +3969,7 @@ def _info_sources_section():
     chart_col, table_col = st.columns([2, 3])
     with chart_col:
         fig = go.Figure()
-        colors = {"Crunchbase": BLUE_RAMP[2], "PitchBook": BLUE_RAMP[0],
+        colors = {V.SOURCE_A: BLUE_RAMP[2], V.SOURCE_B: BLUE_RAMP[0],
                   "Our scrapers": CAT[1], "GitHub discovery": CAT[2]}
         for name, n, _ in rows:
             fig.add_trace(go.Bar(
@@ -3990,16 +3994,16 @@ def _info_sources_section():
     pb_overlap = stats["overlap"].get("verified_pb", 0)
     st.markdown(
         f"**Cross-validation:** our scrapers independently re-discovered "
-        f"**{cb_overlap:,}** Crunchbase and **{pb_overlap:,}** PitchBook companies "
-        f"(counted once, under CB/PB above). Funding data: "
+        f"**{cb_overlap:,}** {V.SOURCE_A} and **{pb_overlap:,}** {V.SOURCE_B} "
+        f"companies (counted once, under those sources above). Funding data: "
         f"**{stats['funding_rows']:,}** deal records covering "
-        f"**{stats['funded_companies']:,}** companies, all from PitchBook."
+        f"**{stats['funded_companies']:,}** companies, all from {V.SOURCE_B}."
     )
 
     with st.expander(f"Where the {scraper:,} scraper-unique companies came from", expanded=False):
         det = pd.DataFrame(
             [(_SCRAPER_SOURCE_LABELS.get(s, s), n) for s, n in stats["scraper_sources"]],
-            columns=["Scraper source", "Unique companies (not in CB/PB)"],
+            columns=["Scraper source", f"Unique companies ({V.NOT_IN_SHORT})"],
         )
         st.dataframe(det, hide_index=True, use_container_width=True)
 
@@ -4173,8 +4177,8 @@ def page_landscape():
         '<div class="section-header">What AI companies do</div>'
         '<div class="section-sub" style="max-width:80ch;">A map of what these AI '
         'companies actually do, grouped from their own descriptions rather than '
-        'assigned to a fixed list of sectors. Companies outside Crunchbase and '
-        'PitchBook are shown alongside the listed ones, so you can see where each '
+        f'assigned to a fixed list of sectors. Companies outside '
+        f'{V.THE_DATASETS} are shown alongside the listed ones, so you can see where each '
         'population sits.</div>',
         unsafe_allow_html=True,
     )
@@ -4192,9 +4196,9 @@ def page_landscape():
 
     doms = _tax_domains()
     fig = go.Figure()
-    fig.add_bar(y=doms["domain"], x=doms["published"], name="Published (CB/PB)",
+    fig.add_bar(y=doms["domain"], x=doms["published"], name=f"Published ({V.IN_SHORT})",
                 orientation="h", marker_color=ACCENT)
-    fig.add_bar(y=doms["domain"], x=doms["hidden"], name="Hidden (not in CB/PB)",
+    fig.add_bar(y=doms["domain"], x=doms["hidden"], name=f"Hidden ({V.NOT_IN_SHORT})",
                 orientation="h", marker_color=YALE_BLUE)
     fig.update_layout(
         barmode="stack", height=520, margin=dict(l=8, r=8, t=8, b=8),
@@ -4223,7 +4227,8 @@ def page_landscape():
         st.caption(f"&ldquo;{c}&rdquo; — {len(comp)} companies shown ({hid} hidden)")
         cv = comp.copy()
         cv["Company"] = cv["id"].map(stealth_label)
-        cv["Source"] = cv["bucket"].map({"hidden": "Not in CB/PB", "published": "CB/PB"})
+        cv["Source"] = cv["bucket"].map({"hidden": V.NOT_IN_SHORT.capitalize(),
+                                         "published": V.IN_SHORT.capitalize()})
         cv["Category (enrichment)"] = (cv["application"] + " / " + cv["subfield"]).str.strip(" /")
         st.dataframe(
             cv[["Company", "Source", "Category (enrichment)"]],

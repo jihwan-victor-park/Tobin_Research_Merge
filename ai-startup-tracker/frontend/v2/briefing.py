@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 
 import pandas as pd
 
+from .. import vocabulary as V
 from . import data as D
 
 # Our own analyses, refreshed quarterly. Keys are the site's own routes, which
@@ -63,11 +64,11 @@ def build(week: D.Activity, snap: D.Snapshot, facts: dict,
                       "Commercial coverage kept pace with this intake"),
             body=(f"<b>{week.total:,}</b> companies entered the dataset in the 30 "
                   f"days to {week.end:%B %d, %Y}, of which "
-                  f"<b>{week.hidden:,} ({share:.1f}%)</b> appear in neither "
-                  f"Crunchbase nor PitchBook — often long before a commercial "
-                  f"database registers them, if it ever does.{reach}"),
+                  f"<b>{week.hidden:,} ({share:.1f}%)</b> {V.ABSENT} — often "
+                  f"long before a commercial database registers them, if it "
+                  f"ever does.{reach}"),
             figure=f"{share:.1f}%",
-            figure_caption="of these arrivals are in neither Crunchbase nor PitchBook",
+            figure_caption=f"of these arrivals are {V.ABSENT_SHORT}",
             sources=_links(("coverage", "formation", "directory")),
         ))
 
@@ -130,10 +131,10 @@ def build(week: D.Activity, snap: D.Snapshot, facts: dict,
         briefs.append(Brief(
             kicker="Coverage",
             headline="A large AI population sits outside the commercial databases",
-            body=(f"<b>{hidden_ai:,}</b> AI companies in this dataset appear in "
-                  f"neither Crunchbase nor PitchBook.{detail}"),
+            body=(f"<b>{hidden_ai:,}</b> AI companies in this dataset "
+                  f"{V.ABSENT}.{detail}"),
             figure=f"{hidden_ai:,}",
-            figure_caption="AI companies in neither Crunchbase nor PitchBook",
+            figure_caption=f"AI companies {V.ABSENT_SHORT}",
             sources=_links(("coverage", "landscape")),
         ))
 

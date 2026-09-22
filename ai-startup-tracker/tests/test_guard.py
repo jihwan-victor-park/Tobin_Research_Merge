@@ -124,11 +124,52 @@ class TestRedact:
         assert G.redact("") == ""
 
 
-class TestCoveragePhrase:
-    def test_tracks_the_dial(self):
-        assert "Crunchbase" in G.coverage_phrase()
-        G.NAME_COVERAGE_VENDORS = False
-        try:
-            assert "Crunchbase" not in G.coverage_phrase()
-        finally:
-            G.NAME_COVERAGE_VENDORS = True
+class TestNoVendorIsNamed:
+    """The site makes its coverage claim without naming who it compares against."""
+
+    def test_coverage_phrase(self):
+        assert "crunchbase" not in G.coverage_phrase().lower()
+        assert "pitchbook" not in G.coverage_phrase().lower()
+
+    def test_no_user_facing_string_in_the_frontend_names_one(self):
+        """No string a visitor could read spells out a vendor.
+
+        Checked over the syntax tree rather than the text, because the names
+        legitimately survive in three places a reader never sees: comments and
+        docstrings explaining lineage to whoever maintains this, the
+        `source_domain` values that drive classification, and the keyword list
+        that routes a visitor's own phrasing to the right scope — we still have
+        to recognise "missing from Crunchbase" as a question about coverage.
+        """
+        import ast
+        from pathlib import Path
+
+        vendor = ("crunchbase", "pitchbook", "cb/pb")
+        source_domains = {"crunchbase.com", "pitchbook.com"}
+        input_vocabularies = {"_HIDDEN_WORDS"}
+        offenders = []
+
+        for path in Path(__file__).resolve().parents[1].joinpath("frontend").rglob("*.py"):
+            tree = ast.parse(path.read_text())
+            exempt = set()
+            for node in ast.walk(tree):
+                if isinstance(node, (ast.Module, ast.ClassDef,
+                                     ast.FunctionDef, ast.AsyncFunctionDef)):
+                    body = getattr(node, "body", [])
+                    if (body and isinstance(body[0], ast.Expr)
+                            and isinstance(body[0].value, ast.Constant)
+                            and isinstance(body[0].value.value, str)):
+                        exempt.add(id(body[0].value))
+                if isinstance(node, ast.Assign) and any(
+                        isinstance(t, ast.Name) and t.id in input_vocabularies
+                        for t in node.targets):
+                    exempt.update(id(n) for n in ast.walk(node.value))
+            for node in ast.walk(tree):
+                if (isinstance(node, ast.Constant) and isinstance(node.value, str)
+                        and id(node) not in exempt
+                        and node.value.lower() not in source_domains
+                        and any(v in node.value.lower() for v in vendor)):
+                    offenders.append(f"{path.name}:{node.lineno}: {node.value[:70]!r}")
+
+        assert not offenders, ("a vendor is named in a user-facing string:\n"
+                               + "\n".join(offenders))
