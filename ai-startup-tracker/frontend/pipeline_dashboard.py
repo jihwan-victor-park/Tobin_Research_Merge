@@ -13,6 +13,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -22,7 +23,7 @@ from sqlalchemy import text
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from frontend import vocabulary as V
+from frontend import atlas, vocabulary as V
 
 from backend.db.connection import get_engine
 from backend.orchestrator.orchestrator import Orchestrator
@@ -4171,6 +4172,45 @@ def _tax_companies(domain: str, cluster: str) -> pd.DataFrame:
     """), get_engine(), params={"d": domain, "c": cluster})
 
 
+@st.cache_data(ttl=300)
+def _tax_points() -> pd.DataFrame:
+    """Every classified company, as one row the map can place.
+
+    Names never leave this function: the hover card gets the same stealth
+    label the tables use, because a map that reveals identities on mouseover
+    would undo the withholding the rest of the site is built on.
+    """
+    df = pd.read_sql("""
+        SELECT company_id, domain_l1 AS domain, cluster_label AS cluster,
+               coalesce(capability, '') AS capability, bucket
+        FROM company_taxonomy
+        WHERE status IN ('mapped', 'category_mapped')
+          AND domain_l1 <> 'Pending enrichment'
+    """, get_engine())
+    if df.empty:
+        return df
+
+    # Past the fifth domain the legend stops being readable, so the tail is
+    # drawn as one grey population rather than as a dozen near-identical hues.
+    ranked = df["domain"].value_counts()
+    named = list(ranked.index[:atlas.NAMED_DOMAINS])
+    df["domain"] = df["domain"].where(df["domain"].isin(named), atlas.OTHER)
+
+    # Stratified by cluster so the long tail still appears: every cluster
+    # keeps at least a few marks however small it is.
+    if len(df) > atlas.MAX_POINTS:
+        frac = atlas.MAX_POINTS / len(df)
+        keep = []
+        for _, g in df.groupby("cluster", sort=False):
+            take = len(g) if len(g) <= 3 else max(3, round(len(g) * frac))
+            keep.append(g.sample(min(take, len(g)), random_state=7).index)
+        df = df.loc[np.concatenate(keep)]
+    df["label"] = df["company_id"].map(stealth_label)
+    df["listing"] = df["bucket"].map({"hidden": V.NOT_IN_SHORT.capitalize(),
+                                      "published": V.IN_SHORT.capitalize()})
+    return df.reset_index(drop=True)
+
+
 def page_landscape():
     ov = _tax_overview().iloc[0]
     st.markdown(
@@ -4194,21 +4234,53 @@ def page_landscape():
               if int(ov.mapped) else None)
     m4.metric("Not yet classified", f"{int(ov.pending):,}")
 
+    pts = _tax_points()
+    if not pts.empty:
+        st.markdown(
+            '<div class="section-header" style="margin-top:14px;">The map</div>'
+            '<div class="section-sub" style="max-width:80ch;">Every classified '
+            'company, one mark each, grouped into the subject its description '
+            'puts it closest to. Hover a mark to see what that company does; '
+            'drag to pan and scroll to zoom.</div>',
+            unsafe_allow_html=True,
+        )
+        placed = atlas.layout(pts)
+        ordered = placed["domain"].value_counts().index.tolist()
+        hue = atlas.assign_hues([d for d in ordered if d != atlas.OTHER],
+                                BG.lower() in ("#0b0d0f",))
+        hue[atlas.OTHER] = GRAY_CTX
+        st.plotly_chart(
+            atlas.figure(placed, hue=hue, ink=TXT, ink_soft=TXT2,
+                         context=BORDER_LIGHT, surface=BG_CARD),
+            use_container_width=True,
+            config={"displayModeBar": False, "scrollZoom": True},
+        )
+        shown, total = len(placed), int(ov.mapped)
+        st.caption(
+            f"{shown:,} of {total:,} classified companies shown"
+            + ("" if shown >= total else ", sampled evenly across clusters")
+            + ". Clusters are discovered by embedding company descriptions, so "
+              "which blob a company sits in is a real result; where it sits "
+              "inside that blob, and the gap between two blobs, are drawn for "
+              "legibility and carry no meaning. Identities are withheld."
+        )
+
     doms = _tax_domains()
-    fig = go.Figure()
-    fig.add_bar(y=doms["domain"], x=doms["published"], name=f"Published ({V.IN_SHORT})",
-                orientation="h", marker_color=ACCENT)
-    fig.add_bar(y=doms["domain"], x=doms["hidden"], name=f"Hidden ({V.NOT_IN_SHORT})",
-                orientation="h", marker_color=YALE_BLUE)
-    fig.update_layout(
-        barmode="stack", height=520, margin=dict(l=8, r=8, t=8, b=8),
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        legend=dict(orientation="h", y=1.05, x=0, font=dict(size=11, color=TXT2)),
-        yaxis=dict(autorange="reversed", tickfont=dict(size=11, color=TXT)),
-        xaxis=dict(title="Companies", gridcolor=BORDER_LIGHT,
-                   tickfont=dict(size=10, color=TXT3)),
-    )
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    with st.expander("Coverage by domain — how much of each is unlisted"):
+        fig = go.Figure()
+        fig.add_bar(y=doms["domain"], x=doms["published"], name=f"Published ({V.IN_SHORT})",
+                    orientation="h", marker_color=ACCENT)
+        fig.add_bar(y=doms["domain"], x=doms["hidden"], name=f"Hidden ({V.NOT_IN_SHORT})",
+                    orientation="h", marker_color=YALE_BLUE)
+        fig.update_layout(
+            barmode="stack", height=520, margin=dict(l=8, r=8, t=8, b=8),
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            legend=dict(orientation="h", y=1.05, x=0, font=dict(size=11, color=TXT2)),
+            yaxis=dict(autorange="reversed", tickfont=dict(size=11, color=TXT)),
+            xaxis=dict(title="Companies", gridcolor=BORDER_LIGHT,
+                       tickfont=dict(size=10, color=TXT3)),
+        )
+        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
     st.markdown('<div class="section-header" style="margin-top:12px;">Explore a domain</div>',
                 unsafe_allow_html=True)
