@@ -1770,11 +1770,12 @@ def page_about():
 
     st.markdown(
         '<div class="section-header">About this tracker</div>'
-        f'<div class="section-sub" style="max-width:76ch;">We measure where and '
-        f'when new AI companies form — including the young firms that commercial '
-        f'databases miss. The tracker currently covers <b>{stats["total"]:,}</b> '
-        f'companies across <b>{stats["countries"]}</b> countries, of which '
-        f'<b>{hidden_total:,}</b> {V.ABSENT}.</div>',
+        f'<div class="section-sub" style="max-width:76ch;">We track where and when '
+        f'new AI companies are founded, including young firms that commercial '
+        f'databases may not yet capture. The tracker currently covers '
+        f'<b>{stats["total"]:,}</b> companies across <b>{stats["countries"]}</b> '
+        f'countries, including <b>{hidden_total:,}</b> that do not appear in any '
+        f'private market dataset.</div>',
         unsafe_allow_html=True,
     )
 
@@ -1783,20 +1784,33 @@ def page_about():
     # needs in order to read a number correctly: what the terms mean and where
     # the coverage is thin. Those are limits, not collection mechanics, and
     # removing them would only make the gaps harder to see.
+    # One caveat per paragraph rather than three inside a single block: a reader
+    # checking whether a number means what they think it means is scanning for
+    # the one caveat that applies to the chart in front of them, and a run-on
+    # paragraph makes them read all three to find it.
     st.markdown(
         '<div style="height:8px"></div>'
         '<div class="section-header">Reading the numbers</div>'
         '<div class="section-sub" style="max-width:76ch;">'
-        f'<b>Unlisted companies</b> are firms in this tracker absent from '
-        f'{V.THE_DATASETS} at match time. Three caveats matter when reading '
-        'any chart here. Recent founding years are substantially incomplete — young '
-        'firms take years to surface — so formation is reported as AI\'s <i>share</i> '
-        'of each year rather than as a count. Founding-year charts cover only '
-        'companies that carry a founding year, which is far more common among listed '
-        'companies than unlisted ones. And geography leans toward the United States '
-        'in the unlisted population by construction. Company-level data from '
-        'commercial databases is not republished here; those sources appear only in '
-        'aggregate comparisons, and company identities are withheld throughout.</div>',
+        f'<b>Unlisted companies</b> are firms included in this tracker that were '
+        f'not found in {V.THE_DATASETS} at the time of matching.</div>'
+        '<div class="section-sub" style="max-width:76ch;">There are three important '
+        'caveats when interpreting the charts. First, recent founding years are '
+        'substantially incomplete because young companies often take several years '
+        'to appear in available data. For this reason, company formation is shown as '
+        'AI\'s <i>share</i> of all companies founded in a given year rather than as '
+        'a raw count.</div>'
+        '<div class="section-sub" style="max-width:76ch;">Second, founding-year '
+        'charts include only companies with a recorded founding year. This '
+        'information is much more commonly available for listed companies than for '
+        'unlisted companies.</div>'
+        '<div class="section-sub" style="max-width:76ch;">Third, the unlisted '
+        'company sample is more heavily weighted toward the United States because of '
+        'how the underlying data was collected.</div>'
+        '<div class="section-sub" style="max-width:76ch;">Company-level data from '
+        'commercial databases is not republished here. These sources are used only '
+        'for aggregate comparisons, and individual company identities are withheld '
+        'throughout.</div>',
         unsafe_allow_html=True,
     )
 
@@ -3160,7 +3174,17 @@ def page_ai_startup():
                 tbl = country_stats.head(30)[["country", "total", "ai", "ai_pct"]].copy()
                 tbl.columns = ["Country", "Total", "AI", "AI %"]
                 tbl["AI %"] = tbl["AI %"].apply(lambda v: f"{v:.1f}%")
-                st.dataframe(tbl, hide_index=True, use_container_width=True, height=680)
+                # table.render, not st.dataframe -- Findings is a public page and
+                # the widget paints to a canvas the stylesheet cannot reach, so it
+                # kept its own greys and rendered a light table on a dark page
+                # while Landscape next door drew the site's own. See table.py.
+                table.render(tbl, height=680,
+                             roles={"Country": table.STRONG,
+                                    "Total": table.NUMBER,
+                                    "AI": table.NUMBER,
+                                    "AI %": table.NUMBER},
+                             widths={"Country": "40%", "Total": "20%",
+                                     "AI": "20%", "AI %": "20%"})
 
     with tab_vert:
         st.caption("AI share of company formation per industry, on one taxonomy "
@@ -3183,7 +3207,16 @@ def page_ai_startup():
                 tbl_v = tbl_v.sort_values("ai_pct", ascending=False)
                 tbl_v.columns = ["Vertical", "Total", "AI", "AI %"]
                 tbl_v["AI %"] = tbl_v["AI %"].apply(lambda v: f"{v:.1f}%")
-                st.dataframe(tbl_v, hide_index=True, use_container_width=True, height=500)
+                # Vertical names run long, so this one gets the wider prose
+                # column Landscape's "What they do" has -- left to itself the
+                # browser gives the text column too little room.
+                table.render(tbl_v, height=500,
+                             roles={"Vertical": table.STRONG,
+                                    "Total": table.NUMBER,
+                                    "AI": table.NUMBER,
+                                    "AI %": table.NUMBER},
+                             widths={"Vertical": "46%", "Total": "18%",
+                                     "AI": "18%", "AI %": "18%"})
 
     with tab_matrix:
         st.caption("AI share per country per founding year, for the 25 largest "

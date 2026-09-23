@@ -116,12 +116,30 @@ def _sunflower(n: int) -> tuple[np.ndarray, np.ndarray]:
     return r * np.cos(theta), r * np.sin(theta)
 
 
+# How far the feathered rim strays past the nominal blob radius, as a fraction
+# of it. The disc is shrunk by the same amount first, so a feathered blob
+# occupies the area an unfeathered one would have and the lobe packing above
+# still holds.
+_FEATHER = 0.055
+
+
 def _scatter_within(n: int, radius: float, seed: int) -> tuple[np.ndarray, np.ndarray]:
-    """n points filling a disc evenly, deterministically."""
+    """n points filling a disc evenly, deterministically, with a soft rim."""
     rng = np.random.default_rng(seed)
     # sqrt of a uniform gives uniform area density; without it every blob is a
     # dense pinprick with a halo, which reads as structure that is not there.
-    r = radius * np.sqrt(rng.random(n))
+    core = radius * (1.0 - 2 * _FEATHER)
+    r = core * np.sqrt(rng.random(n))
+    # Uniform density is right, but stopping it dead at `core` draws every
+    # cluster as a compass-perfect circle, and a field of a hundred identical
+    # discs reads as a diagram of a population rather than the population.
+    # Blurring the radius with a narrow gaussian is exactly an edge blur: it
+    # leaves core density untouched (a uniform field convolved with a narrow
+    # kernel is still uniform away from its boundary) and dissolves the rim,
+    # letting a few marks sit just outside as stragglers. The softness is
+    # decorative in the same way the coordinates already are — see the module
+    # docstring's table; what is real is which blob a mark belongs to.
+    r = np.abs(r + rng.normal(0.0, radius * _FEATHER, n))
     theta = rng.random(n) * 2 * np.pi
     return r * np.cos(theta), r * np.sin(theta)
 
@@ -194,6 +212,23 @@ def label_anchors(points: pd.DataFrame, limit: int = 9,
 # ── Figure ───────────────────────────────────────────────────────────────
 
 
+def _rgba(colour: str, alpha: float) -> str:
+    """`#rrggbb` -> `rgba(r,g,b,alpha)`. Anything else is passed through.
+
+    Plotly has no way to set an annotation's background alpha except through
+    the colour itself — its `opacity` applies to the whole annotation, text
+    and all.
+    """
+    c = (colour or "").strip()
+    if not (c.startswith("#") and len(c) == 7):
+        return c
+    try:
+        r, g, b = (int(c[i:i + 2], 16) for i in (1, 3, 5))
+    except ValueError:
+        return c
+    return f"rgba({r},{g},{b},{alpha})"
+
+
 def figure(points: pd.DataFrame, *, hue: dict[str, str], ink: str, ink_soft: str,
            context: str, surface: str, height: int = 620):
     """The map itself. One trace per domain, so the legend is the domain list.
@@ -205,14 +240,36 @@ def figure(points: pd.DataFrame, *, hue: dict[str, str], ink: str, ink_soft: str
     import plotly.graph_objects as go
 
     fig = go.Figure()
-    order = [d for d in hue if d in set(points["domain"])]
+    present = set(points["domain"])
+    # OTHER first, so the grey tail is painted UNDER the five named domains
+    # rather than over them. `hue` arrives with OTHER appended last, and a
+    # later trace draws on top — which had the largest, least informative
+    # population muting every domain the figure exists to tell apart.
+    order = [d for d in hue if d in present and d == OTHER]
+    order += [d for d in hue if d in present and d != OTHER]
+
+    # The sample shrinks on a smaller book, and marks tuned for eighteen
+    # thousand points read as a sparse dusting at four thousand. Size and
+    # opacity follow the count actually drawn, so the figure carries the same
+    # weight either way.
+    drawn = len(points)
+    size = 3.4 if drawn >= 14_000 else 4.2 if drawn >= 6_000 else 5.2
+    alpha = 0.50 if drawn >= 14_000 else 0.58 if drawn >= 6_000 else 0.66
+
+    # Draw order and legend order are not the same question, and tying them
+    # together is what the OTHER-first fix above would otherwise break: the
+    # tail has to be painted first but still read last. `legendrank` keeps the
+    # list in the order a reader expects — biggest named domain down to the
+    # catch-all — whatever sequence the traces were added in.
+    rank = {d: i for i, d in enumerate(hue) if d != OTHER}
     for domain in order:
         d = points[points["domain"] == domain]
         if d.empty:
             continue
         fig.add_trace(go.Scattergl(
             x=d["x"], y=d["y"], mode="markers", name=f"{domain}  ({len(d):,})",
-            marker=dict(size=3.4, color=hue[domain], opacity=0.5,
+            legendrank=rank.get(domain, 10_000),
+            marker=dict(size=size, color=hue[domain], opacity=alpha,
                         line=dict(width=0)),
             customdata=np.stack([d["label"], d["cluster"], d["capability"],
                                  d["listing"]], axis=-1),
@@ -223,10 +280,21 @@ def figure(points: pd.DataFrame, *, hue: dict[str, str], ink: str, ink_soft: str
                            "<extra></extra>"),
         ))
 
+    # These labels are not decoration. The dark palette's worst adjacent pair
+    # separates by ΔE 6.7 under deuteranopia, which sits in the 6–8 floor band
+    # — legal only where a second encoding carries the same information. The
+    # cluster names ARE that encoding: they say what a blob is about without
+    # reference to its hue. So they have to stay readable.
+    #
+    # `opacity` on an annotation fades the whole thing, text included, which
+    # is what dimmed them before. The plate gets the transparency instead and
+    # the type stays at full ink.
+    plate = _rgba(surface, 0.88)
     for r in label_anchors(points).itertuples():
         fig.add_annotation(
             x=r.x, y=r.y, text=str(r.cluster), showarrow=False,
-            font=dict(size=10.5, color=ink), bgcolor=surface, opacity=0.86,
+            font=dict(size=10.5, color=ink),
+            bgcolor=plate, bordercolor=_rgba(context, 0.55), borderwidth=1,
             borderpad=3,
         )
 
