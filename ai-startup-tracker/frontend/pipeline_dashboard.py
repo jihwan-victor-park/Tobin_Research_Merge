@@ -1800,6 +1800,27 @@ def page_about():
         unsafe_allow_html=True,
     )
 
+    team = [
+        ("Song Ma", "Professor of Finance and Entrepreneurship at the Yale School "
+                    "of Management (SOM) and a Faculty Research Fellow at the "
+                    "National Bureau of Economic Research (NBER)."),
+        ("Xugan Chen", "Ph.D. student in Financial Economics at the Yale School "
+                       "of Management."),
+        ("Alastair Page", "Junior in Yale College studying Economics and History."),
+        ("Victor (Jihwan) Park", "Sophomore at Yale University majoring in "
+                                 "Economics and Electrical Engineering."),
+    ]
+    rows = "".join(
+        f'<div style="margin:0 0 10px;"><b>{name}</b> — {bio}</div>'
+        for name, bio in team
+    )
+    st.markdown(
+        '<div style="height:8px"></div>'
+        '<div class="section-header">Team</div>'
+        f'<div class="section-sub" style="max-width:76ch;">{rows}</div>',
+        unsafe_allow_html=True,
+    )
+
 
 # ── Page: Trends ─────────────────────────────────────────────────────
 
