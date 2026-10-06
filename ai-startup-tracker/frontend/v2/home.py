@@ -1,7 +1,8 @@
 """The V2 homepage — page rhythm and composition.
 
-Order: status rule → hero → ask bar → answer → market strip → weekly brief →
-formation analysis → geography → latest additions → methodology footer. No
+Order: status rule → hero → ask bar → answer → headline figures → formation
+analysis → last-30-days signals (market, country) → latest additions →
+methodology footer. No
 section owns a full screen; the reader should reach real data immediately and
 keep meeting it on the way down.
 
@@ -81,10 +82,24 @@ def render(p: Palette) -> None:
     ])
     C.spacer(44)
 
-    # ── The last 30 days of intake ───────────────────────────────────────
+    # ── Formation analysis ───────────────────────────────────────────────
+    # Directly under the headline figures: it is the site's main finding, and
+    # the reader should meet it before anything about recent intake.
+    f = D.formation()
+    meta = ""
+    if f.recent_range and f.cohort_total:
+        # No "peak year" here. On counts it would read 2018, which is only
+        # where our coverage peaks; on share it would read whatever the last
+        # complete year happens to be, while the series is still climbing past
+        # it. Either way the label asserts a turning point we cannot support.
+        meta = f"{f.cohort_total:,} AI COMPANIES FOUNDED {f.recent_range[0]}–{f.recent_range[1]}"
+    C.section_head("AI share of company formation", meta)
+    C.formation_chart(f, p)
+    C.spacer(46)
+
+    # ── The last 30 days: two signals side by side ───────────────────────
     week = D.recent_activity()
     cats = D.category_momentum(limit=6)
-    geo = D.geographic_momentum(limit=6)
 
     if week.start and week.end:
         window = (f"{week.start.strftime('%b %d')} — {week.end.strftime('%b %d, %Y')}"
@@ -97,20 +112,15 @@ def render(p: Palette) -> None:
     if week.is_stale and week.end:
         C.freshness_notice(week)
 
-    lead, signals = st.columns([1.62, 1], gap="large")
-    with lead:
-        # The briefing read as a news column -- kicker, headline, paragraph --
-        # and the meeting asked for this slot to carry our own quarterly
-        # research signal instead. Same layout, our scrapers as the source.
-        C.quarterly_update(D.quarterly_discovery())
+    signals, countries = st.columns(2, gap="large")
     with signals:
         C.section_head("Market signals", "SHARE Δ", soft=True)
         C.market_signals(cats)
-        # "Where these came from" -- the split by grant portal, portfolio page,
-        # media feed and code host -- was the collection method drawn as a
-        # chart. The geography of the intake is the part a reader can use.
-        if not week.top_countries.empty:
-            C.section_head("By country", "COMPANIES", soft=True, top=36)
+    with countries:
+        C.section_head("By country", "COMPANIES", soft=True)
+        if week.top_countries.empty:
+            st.caption("No companies with a country in this window.")
+        else:
             wk_total = int(week.top_countries["n"].sum()) or 1
             n_countries = len(week.top_countries)
             C.rank_rows(
@@ -124,60 +134,6 @@ def render(p: Palette) -> None:
                       f"carry a country, across {n_countries:,}."),
             )
     C.spacer(46)
-
-    # ── Formation analysis ───────────────────────────────────────────────
-    f = D.formation()
-    meta = ""
-    if f.recent_range and f.cohort_total:
-        # No "peak year" here. On counts it would read 2018, which is only
-        # where our coverage peaks; on share it would read whatever the last
-        # complete year happens to be, while the series is still climbing past
-        # it. Either way the label asserts a turning point we cannot support.
-        meta = f"{f.cohort_total:,} AI COMPANIES FOUNDED {f.recent_range[0]}–{f.recent_range[1]}"
-    C.section_head("AI share of company formation", meta)
-
-    # Chart and the two rankings that read off it, on one row — the analysis
-    # sits together instead of being split across two scrolls.
-    cohort = f"{f.recent_range[0]}–{f.recent_range[1]}" if f.recent_range else ""
-    chart, categories, places = st.columns([1.62, 1, 1], gap="large")
-    with chart:
-        C.formation_chart(f, p)
-    with categories:
-        C.section_head("Fastest-growing categories", "SHARE Δ", soft=True)
-        C.category_ranking(cats)
-    with places:
-        C.section_head("Top headquarters", f"NEW {cohort}".strip(), soft=True)
-        C.headquarters(geo)
-        regions = D.region_totals()
-        if not regions.empty:
-            C.section_head("Hidden companies by region", "SHARE", soft=True, top=36)
-            total = int(regions["n"].sum()) or 1
-            C.rank_rows(
-                regions.head(5).assign(
-                    label=regions["region"],
-                    value=regions["n"] / total * 100,
-                    sub=regions["n"].map(lambda n: f"{int(n):,}"),
-                )[["label", "value", "sub"]],
-                # No bar: narrow column, the label needs the room.
-                unit="%", total=100.0,
-                note=(f"Share of the {total:,} companies outside "
-                      f"{V.THE_DATASETS} that resolve to a region, across "
-                      f"{len(regions):,}."),
-            )
-    C.spacer(46)
-
-    # ── What these companies do ──────────────────────────────────────────
-    # The Landscape page's headline read, brought forward: a reader should meet
-    # the shape of the population here rather than having to go looking for it.
-    domains, mapped_total = D.domain_totals(limit=6)
-    if not domains.empty:
-        C.section_head("What these companies do", f"{mapped_total:,} CLASSIFIED")
-        left, right = st.columns([1.62, 1], gap="large")
-        with left:
-            C.domain_ranking(domains, mapped_total)
-        with right:
-            C.domain_note(domains, mapped_total)
-        C.spacer(46)
 
     # ── Latest additions ─────────────────────────────────────────────────
     C.section_head("Latest discoveries", V.KICKER)

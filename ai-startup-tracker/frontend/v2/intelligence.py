@@ -753,7 +753,7 @@ def _template_narrative(scope: Scope, facts: dict) -> str:
 # research that derives it -- not whatever a newsroom published about the
 # subject, which supports nothing stated above.
 _ANALYSIS = [
-    ("Formation & geography", "?page=Findings"),
+    ("Formation & geography", "?page=AI+Startup"),
     ("What these companies do", "?page=Landscape"),
     ("Company directory", "?page=Companies"),
 ]

@@ -56,6 +56,14 @@ DISCLOSURE = (
 )
 
 
+# What the reader is told, under the ask bar, about what the box can reach.
+# It states the access level up front so nobody has to probe for it: answers
+# are aggregates over the dataset, never the records themselves.
+SECURITY_LEVEL = "Aggregate only"
+SECURITY_NOTE = ("Answers are computed counts and shares. Company identities, "
+                 "raw records and collection methods are not disclosed.")
+
+
 # ── Screening ────────────────────────────────────────────────────────────
 
 @dataclass

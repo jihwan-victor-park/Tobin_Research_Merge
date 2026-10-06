@@ -1024,96 +1024,48 @@ def _load_vertical_ai_stats() -> pd.DataFrame:
 
 
 @st.cache_data(ttl=300)
-def _load_vc_deal_volume() -> pd.DataFrame:
-    """Deal count by stage bucket × year (2010-2024)."""
-    engine = get_engine()
-    query = """
-        SELECT
-            EXTRACT(year FROM deal_date)::int AS year,
-            CASE round_type
-                WHEN 'Accelerator/Incubator' THEN 'Pre-Seed / Accel'
-                WHEN 'Grant'                 THEN 'Pre-Seed / Accel'
-                WHEN 'Seed Round'            THEN 'Seed'
-                WHEN 'Angel (individual)'    THEN 'Seed'
-                WHEN 'Equity Crowdfunding'   THEN 'Seed'
-                WHEN 'Early Stage VC'        THEN 'Early VC'
-                WHEN 'Later Stage VC'        THEN 'Growth'
-                WHEN 'PE Growth/Expansion'   THEN 'Growth'
-                WHEN 'Corporate'             THEN 'Corporate / Other'
-                WHEN 'PIPE'                  THEN 'Corporate / Other'
-            END AS stage_bucket,
-            COUNT(*) AS deals
-        FROM funding_signals
-        WHERE deal_date IS NOT NULL
-          AND EXTRACT(year FROM deal_date) BETWEEN 2010 AND 2024
-          AND round_type IN (
-              'Accelerator/Incubator', 'Grant',
-              'Seed Round', 'Angel (individual)', 'Equity Crowdfunding',
-              'Early Stage VC', 'Later Stage VC', 'PE Growth/Expansion',
-              'Corporate', 'PIPE'
-          )
-        GROUP BY year, stage_bucket
-        ORDER BY year, stage_bucket
+def _load_vc_raise_share() -> pd.DataFrame:
+    """Share of young listed companies that closed a VC round, by year (2010-2024).
+
+    For year Y the denominator is every company in the private market datasets
+    founded in Y-9..Y -- the startup population that could plausibly raise --
+    and the numerator is those with a seed, angel or VC round dated in Y.
+    Unlisted companies are excluded: they have no funding records at all, so
+    including them would only dilute the share by construction.
     """
-    with engine.connect() as conn:
-        rows = conn.execute(text(query)).mappings().all()
-    return pd.DataFrame(rows)
-
-
-@st.cache_data(ttl=300)
-def _load_deal_size_trend() -> pd.DataFrame:
-    """Median deal size ($M) by year and stage bucket (2010-2024)."""
-    engine = get_engine()
-    query = """
-        SELECT
-            EXTRACT(year FROM deal_date)::int AS year,
-            CASE round_type
-                WHEN 'Seed Round'         THEN 'Seed'
-                WHEN 'Angel (individual)' THEN 'Seed'
-                WHEN 'Early Stage VC'     THEN 'Early VC'
-                WHEN 'Later Stage VC'     THEN 'Growth'
-                WHEN 'PE Growth/Expansion' THEN 'Growth'
-            END AS stage_bucket,
-            PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY deal_size / 1e6) AS median_m
-        FROM funding_signals
-        WHERE deal_date IS NOT NULL
-          AND deal_size > 0
-          AND EXTRACT(year FROM deal_date) BETWEEN 2010 AND 2024
-          AND round_type IN (
-              'Seed Round', 'Angel (individual)',
-              'Early Stage VC', 'Later Stage VC', 'PE Growth/Expansion'
-          )
-        GROUP BY year, stage_bucket
-        ORDER BY year, stage_bucket
-    """
-    with engine.connect() as conn:
-        rows = conn.execute(text(query)).mappings().all()
-    return pd.DataFrame(rows)
-
-
-@st.cache_data(ttl=300)
-def _load_ai_first_financing() -> pd.DataFrame:
-    """First financing year distribution for AI vs non-AI companies (2010-2024)."""
     engine = get_engine()
     query = f"""
-        SELECT first_year, company_type, COUNT(*) AS companies
-        FROM (
-            SELECT
-                EXTRACT(year FROM MIN(fs.deal_date))::int AS first_year,
-                CASE WHEN {ai_filter_sql("c")}
-                     THEN 'AI' ELSE 'Non-AI' END AS company_type
+        WITH yrs AS (SELECT generate_series(2010, 2024) AS year),
+        base AS (
+            SELECT c.id, c.founded_year, ({ai_filter_sql("c")}) AS is_ai
+            FROM companies c
+            WHERE c.verification_status IN ('verified_cb', 'verified_pb')
+              AND c.founded_year BETWEEN 2001 AND 2024
+        ),
+        raised AS (
+            SELECT DISTINCT fs.company_id,
+                   EXTRACT(year FROM fs.deal_date)::int AS year
             FROM funding_signals fs
-            JOIN companies c ON c.id = fs.company_id
             WHERE fs.deal_date IS NOT NULL
-            GROUP BY c.id, c.cb_ai_tagged, c.ai_score, c.ai_mentioned, c.llm_ai_verified
-        ) sub
-        WHERE first_year BETWEEN 2010 AND 2024
-        GROUP BY first_year, company_type
-        ORDER BY first_year, company_type
+              AND fs.round_type IN ('Seed Round', 'Angel (individual)',
+                                    'Early Stage VC', 'Later Stage VC')
+        )
+        SELECT y.year,
+               CASE WHEN b.is_ai THEN 'AI' ELSE 'Non-AI' END AS company_type,
+               COUNT(*) AS companies,
+               COUNT(r.company_id) AS raised
+        FROM yrs y
+        JOIN base b ON b.founded_year BETWEEN y.year - 9 AND y.year
+        LEFT JOIN raised r ON r.company_id = b.id AND r.year = y.year
+        GROUP BY y.year, company_type
+        ORDER BY y.year, company_type
     """
     with engine.connect() as conn:
         rows = conn.execute(text(query)).mappings().all()
-    return pd.DataFrame(rows)
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        df["pct"] = (df["raised"] / df["companies"] * 100).round(2)
+    return df
 
 
 @st.cache_data(ttl=300)
@@ -3059,15 +3011,13 @@ def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None,
 
 # ── Page: Research ───────────────────────────────────────────────────
 
-def page_research():
+def page_ai_startup():
     stats = _load_overview_stats()
     curve = _load_ai_adoption_curve()
     country_stats = _load_country_ai_stats(min_companies=100)
     matrix = _load_country_year_matrix(top_n=25)
     vertical_stats = _load_vertical_ai_stats()
-    deal_volume = _load_vc_deal_volume()
-    deal_sizes = _load_deal_size_trend()
-    first_fin = _load_ai_first_financing()
+    vc_share = _load_vc_raise_share()
 
     from frontend.v2 import data as _v2data
     _h = _v2data.headline_counts()
@@ -3082,7 +3032,7 @@ def page_research():
     # 13,696, because one used the narrow AI filter and the other included the
     # data vertical. A reader moving between tabs saw two different datasets.
     st.markdown(
-        f'<div class="eyebrow">Findings</div>'
+        f'<div class="eyebrow">AI Startup</div>'
         f'<h1>Global AI startup formation</h1>'
         f'<div class="section-sub">{total_ai:,} AI companies across {countries_n} '
         f'countries — including the layer commercial databases miss</div>',
@@ -3238,122 +3188,143 @@ def page_research():
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
-    # ── Section 4: VC Deal Intelligence ─────────────────────────────
+    # ── Section 3: Who raises venture capital ───────────────────────
+    # Deal volume and deal size described the venture market, not AI company
+    # formation, and the funding records cover only listed companies. What the
+    # records can support is narrower: of the young listed companies in a year,
+    # how many closed a VC round that year -- AI against everything else.
     st.markdown(
-        '<div class="section-header">VC Deal Intelligence</div>'
-        f'<div class="section-sub">268K funding events from {V.A_DATASET} — deal volume, size trends, and AI vs non-AI first financing</div>',
+        '<div class="section-header">Share of AI companies raising venture capital</div>'
+        f'<div class="section-sub" style="max-width:76ch;">Of the companies in '
+        f'{V.THE_DATASETS} aged ten years or less, the share that closed a seed, '
+        f'angel or venture round in each year</div>',
         unsafe_allow_html=True,
     )
-
-    if not deal_volume.empty:
-        col_vol, col_size = st.columns(2)
-
-        with col_vol:
-            st.markdown("**Deal volume by stage (2010–2024)**")
-            # Ordered stages take the single-hue ordinal ramp (light→dark);
-            # the unordered catch-all bucket stays neutral gray.
-            STAGE_COLORS = {
-                "Pre-Seed / Accel": BLUE_RAMP[0],
-                "Seed":             BLUE_RAMP[1],
-                "Early VC":         BLUE_RAMP[2],
-                "Growth":           BLUE_RAMP[3],
-                "Corporate / Other":"#9aa5b3",
-            }
-            bucket_order = ["Pre-Seed / Accel", "Seed", "Early VC", "Growth", "Corporate / Other"]
-            fig_vol = go.Figure()
-            for bucket in bucket_order:
-                sub = deal_volume[deal_volume["stage_bucket"] == bucket]
-                if sub.empty:
-                    continue
-                fig_vol.add_trace(go.Bar(
-                    x=sub["year"], y=sub["deals"],
-                    name=bucket,
-                    marker_color=STAGE_COLORS.get(bucket, "#999"),
-                ))
-            fig_vol.update_layout(
-                **_layout(
-                    height=340,
-                    xaxis=dict(title="", tickformat="d", showgrid=False, zeroline=False,
-                               linecolor=BORDER, ticks="outside", tickcolor=BORDER, ticklen=4),
-                    yaxis=dict(title="Deals", gridcolor=BORDER_LIGHT),
-                    legend=dict(orientation="h", y=1.08, font=dict(size=11, color=TXT2),
-                                bgcolor="rgba(0,0,0,0)"),
-                ),
-                barmode="stack",
-                hovermode="x unified",
-            )
-            st.plotly_chart(fig_vol, use_container_width=True, config=_PLOT_CFG)
-
-        with col_size:
-            st.markdown("**Median deal size by stage ($M, 2010–2024)**")
-            SIZE_COLORS = {"Seed": GOLD, "Early VC": TEAL, "Growth": ACCENT}
-            fig_size = go.Figure()
-            for bucket, color in SIZE_COLORS.items():
-                sub = deal_sizes[deal_sizes["stage_bucket"] == bucket]
-                if sub.empty:
-                    continue
-                fig_size.add_trace(go.Scatter(
-                    x=sub["year"], y=sub["median_m"].round(1),
-                    name=bucket, mode="lines+markers",
-                    line=dict(color=color, width=2),
-                    marker=dict(size=6),
-                ))
-            fig_size.update_layout(
-                **_layout(
-                    height=340,
-                    xaxis=dict(title="", tickformat="d", showgrid=False, zeroline=False,
-                               linecolor=BORDER, ticks="outside", tickcolor=BORDER, ticklen=4),
-                    yaxis=dict(title="Median deal size ($M)", gridcolor=BORDER_LIGHT),
-                    legend=dict(orientation="h", y=1.08, font=dict(size=11, color=TXT2),
-                                bgcolor="rgba(0,0,0,0)"),
-                ),
-                hovermode="x unified",
-            )
-            st.plotly_chart(fig_size, use_container_width=True, config=_PLOT_CFG)
-
-    if not first_fin.empty:
-        st.markdown("**First financing year: AI vs non-AI companies**")
-        ai_df = first_fin[first_fin["company_type"] == "AI"]
-        non_df = first_fin[first_fin["company_type"] == "Non-AI"]
-        # Normalise to % within each group so scale difference doesn't dominate
-        ai_total = ai_df["companies"].sum()
-        non_total = non_df["companies"].sum()
-        fig_ff = go.Figure()
-        fig_ff.add_trace(go.Scatter(
-            x=ai_df["first_year"], y=(ai_df["companies"] / ai_total * 100).round(2),
-            name="AI companies", mode="lines+markers",
-            line=dict(color=ACCENT, width=2.5), marker=dict(size=6),
-        ))
-        fig_ff.add_trace(go.Scatter(
-            x=non_df["first_year"], y=(non_df["companies"] / non_total * 100).round(2),
-            name="Non-AI companies", mode="lines+markers",
-            line=dict(color=TXT3, width=2, dash="dot"), marker=dict(size=5),
-        ))
-        fig_ff.update_layout(
+    if not vc_share.empty:
+        fig_vc = go.Figure()
+        styles = {"AI": dict(color=ACCENT, width=2.5),
+                  "Non-AI": dict(color=TXT3, width=2, dash="dot")}
+        for kind, line in styles.items():
+            sub = vc_share[vc_share["company_type"] == kind]
+            if sub.empty:
+                continue
+            fig_vc.add_trace(go.Scatter(
+                x=sub["year"], y=sub["pct"],
+                name=f"{kind} companies", mode="lines+markers",
+                line=line, marker=dict(size=6 if kind == "AI" else 5),
+                customdata=sub[["raised", "companies"]],
+                hovertemplate=("%{y:.1f}% — %{customdata[0]:,} of "
+                               "%{customdata[1]:,}<extra></extra>"),
+            ))
+        fig_vc.update_layout(
             **_layout(
-                height=300,
-                xaxis=dict(title="Year of first financing", tickformat="d", showgrid=False,
-                           zeroline=False, linecolor=BORDER, ticks="outside",
-                           tickcolor=BORDER, ticklen=4),
-                yaxis=dict(title="Share of cohort (%)", ticksuffix="%", gridcolor=BORDER_LIGHT),
+                height=320,
+                xaxis=dict(title="", tickformat="d", showgrid=False, zeroline=False,
+                           linecolor=BORDER, ticks="outside", tickcolor=BORDER, ticklen=4),
+                yaxis=dict(title="Raised VC that year", ticksuffix="%",
+                           rangemode="tozero", gridcolor=BORDER_LIGHT),
                 legend=dict(orientation="h", y=1.08, font=dict(size=11, color=TXT2),
                             bgcolor="rgba(0,0,0,0)"),
             ),
             hovermode="x unified",
         )
-        st.plotly_chart(fig_ff, use_container_width=True, config=_PLOT_CFG)
+        st.plotly_chart(fig_vc, use_container_width=True, config=_PLOT_CFG)
+        st.caption("Funding records exist only for listed companies, so companies "
+                   f"{V.ABSENT_SHORT} are outside this chart by construction.")
+    else:
+        st.caption("No funding records available.")
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
-    # ── Section 5: The hidden startup layer ──────────────────────────
+    # ── Section: Who founds AI companies (Revelio founder aggregates) ─
+    fg = _read_output_csv("15_founder_gender_prestige.csv")
+    fu = _read_output_csv("18_founder_top_universities.csv")
+    if not fg.empty and {"cohort", "prestige_mean", "pct_female"}.issubset(fg.columns):
+        st.markdown(
+            '<div class="section-header">Who founds AI companies</div>'
+            '<div class="section-sub">AI-company vs other founders — school prestige, '
+            'advanced degrees, gender (LinkedIn/Revelio, aggregates only)</div>',
+            unsafe_allow_html=True,
+        )
+        g = fg.set_index("cohort")
+        m1, m2, m3 = st.columns(3)
+        try:
+            ai_p, non_p = g.loc["AI", "prestige_mean"], g.loc["non-AI", "prestige_mean"]
+            ai_f, non_f = g.loc["AI", "pct_female"], g.loc["non-AI", "pct_female"]
+            m1.metric("AI-founder school prestige", f"{ai_p:.2f}", f"{ai_p-non_p:+.2f} vs other")
+            m2.metric("AI founders female", f"{ai_f:.0f}%", f"{ai_f-non_f:+.0f} pts vs other")
+        except Exception:
+            pass
+        fd = _read_output_csv("16_founder_degree.csv")
+        if not fd.empty and "Doctor" in fd.columns:
+            try:
+                d = fd.set_index("cohort")["Doctor"]
+                m3.metric("AI founders with PhD", f"{d.loc['AI']:.0f}%",
+                          f"{d.loc['AI']-d.loc['non-AI']:+.0f} pts vs other")
+            except Exception:
+                pass
+        if not fu.empty and {"university", "ai_founders"}.issubset(fu.columns):
+            top = fu.nlargest(10, "ai_founders")[::-1]
+            fig = go.Figure(go.Bar(
+                y=top["university"], x=top["ai_founders"], orientation="h",
+                marker=dict(color=ACCENT),
+                text=top["ai_founders"], textposition="outside",
+                textfont=dict(size=10.5, color=TXT2),
+                hovertemplate="%{y}: %{x} AI founders<extra></extra>",
+            ))
+            fig.update_layout(**_layout(
+                height=360, xaxis=dict(showgrid=False, zeroline=False, linecolor=BORDER),
+                yaxis=dict(gridcolor="rgba(0,0,0,0)", tickfont=dict(size=10.5, color=TXT2)),
+                margin=dict(l=0, r=30, t=8, b=0),
+            ))
+            st.markdown('<div class="section-sub" style="margin-top:14px;">Top schools of '
+                        'AI-company founders</div>', unsafe_allow_html=True)
+            st.plotly_chart(fig, use_container_width=True, config=_PLOT_CFG)
+        st.caption("AI founders skew more elite/technical (higher prestige, more PhDs) "
+                   "but show no gender difference. Role = Revelio 'Executive Founder'/CEO.")
+        st.markdown("<hr/>", unsafe_allow_html=True)
+
+    # ── Section 6: Download aggregates ───────────────────────────────
     st.markdown(
-        '<div class="eyebrow">The hidden startup layer</div>'
-        '<div class="section-header">Companies commercial databases miss</div>'
+        '<div class="section-header">Download the data</div>'
+        '<div class="section-sub">Aggregate statistics only — company-level rows from '
+        'commercial databases are not redistributed</div>',
+        unsafe_allow_html=True,
+    )
+
+    dl1, dl2, dl3 = st.columns(3)
+    with dl1:
+        if not curve.empty:
+            st.download_button(
+                "Formation by year (CSV)", curve.to_csv(index=False),
+                file_name="ai_formation_by_year.csv", mime="text/csv",
+            )
+    with dl2:
+        if not country_stats.empty:
+            st.download_button(
+                "Country AI stats (CSV)", country_stats.to_csv(index=False),
+                file_name="ai_concentration_by_country.csv", mime="text/csv",
+            )
+    with dl3:
+        if not vc_share.empty:
+            st.download_button(
+                "VC raise share by year (CSV)", vc_share.to_csv(index=False),
+                file_name="ai_vc_raise_share_by_year.csv", mime="text/csv",
+            )
+
+
+def page_hidden_startups():
+    # Its own page: the layer the datasets miss is the tracker's distinct
+    # contribution, and inside the formation findings it read as an appendix.
+    st.markdown(
+        '<div class="eyebrow">Hidden Startups</div>'
+        '<h1>The hidden startup layer</h1>'
         f'<div class="section-sub" style="max-width:76ch;">Firms in this tracker '
         f'that {V.ABSENT}. This is the tracker\'s unique '
         'contribution to measuring AI entrepreneurship.</div>',
         unsafe_allow_html=True,
     )
+    st.markdown("<hr/>", unsafe_allow_html=True)
 
     adoption = _read_output_csv("13_hidden_vs_institutional_ai_adoption.csv")
     if not adoption.empty:
@@ -3481,110 +3452,11 @@ def page_research():
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
-    # ── Section: Who founds AI companies (Revelio founder aggregates) ─
-    fg = _read_output_csv("15_founder_gender_prestige.csv")
-    fu = _read_output_csv("18_founder_top_universities.csv")
-    if not fg.empty and {"cohort", "prestige_mean", "pct_female"}.issubset(fg.columns):
-        st.markdown(
-            '<div class="section-header">Who founds AI companies</div>'
-            '<div class="section-sub">AI-company vs other founders — school prestige, '
-            'advanced degrees, gender (LinkedIn/Revelio, aggregates only)</div>',
-            unsafe_allow_html=True,
+    if not adoption.empty:
+        st.download_button(
+            "Hidden vs institutional (CSV)", adoption.to_csv(index=False),
+            file_name="hidden_vs_institutional_ai.csv", mime="text/csv",
         )
-        g = fg.set_index("cohort")
-        m1, m2, m3 = st.columns(3)
-        try:
-            ai_p, non_p = g.loc["AI", "prestige_mean"], g.loc["non-AI", "prestige_mean"]
-            ai_f, non_f = g.loc["AI", "pct_female"], g.loc["non-AI", "pct_female"]
-            m1.metric("AI-founder school prestige", f"{ai_p:.2f}", f"{ai_p-non_p:+.2f} vs other")
-            m2.metric("AI founders female", f"{ai_f:.0f}%", f"{ai_f-non_f:+.0f} pts vs other")
-        except Exception:
-            pass
-        fd = _read_output_csv("16_founder_degree.csv")
-        if not fd.empty and "Doctor" in fd.columns:
-            try:
-                d = fd.set_index("cohort")["Doctor"]
-                m3.metric("AI founders with PhD", f"{d.loc['AI']:.0f}%",
-                          f"{d.loc['AI']-d.loc['non-AI']:+.0f} pts vs other")
-            except Exception:
-                pass
-        if not fu.empty and {"university", "ai_founders"}.issubset(fu.columns):
-            top = fu.nlargest(10, "ai_founders")[::-1]
-            fig = go.Figure(go.Bar(
-                y=top["university"], x=top["ai_founders"], orientation="h",
-                marker=dict(color=ACCENT),
-                text=top["ai_founders"], textposition="outside",
-                textfont=dict(size=10.5, color=TXT2),
-                hovertemplate="%{y}: %{x} AI founders<extra></extra>",
-            ))
-            fig.update_layout(**_layout(
-                height=360, xaxis=dict(showgrid=False, zeroline=False, linecolor=BORDER),
-                yaxis=dict(gridcolor="rgba(0,0,0,0)", tickfont=dict(size=10.5, color=TXT2)),
-                margin=dict(l=0, r=30, t=8, b=0),
-            ))
-            st.markdown('<div class="section-sub" style="margin-top:14px;">Top schools of '
-                        'AI-company founders</div>', unsafe_allow_html=True)
-            st.plotly_chart(fig, use_container_width=True, config=_PLOT_CFG)
-        st.caption("AI founders skew more elite/technical (higher prestige, more PhDs) "
-                   "but show no gender difference. Role = Revelio 'Executive Founder'/CEO.")
-        st.markdown("<hr/>", unsafe_allow_html=True)
-
-    # ── Section: What AI companies are doing (enrichment classify) ────
-    app = _read_output_csv("19a_ai_application.csv")
-    if not app.empty and {"bucket", "value", "n"}.issubset(app.columns):
-        hid = app[app["bucket"] == "hidden"].copy()
-        if not hid.empty and hid["n"].sum() > 0:
-            hid["share"] = (100.0 * hid["n"] / hid["n"].sum()).round(1)
-            hid = hid.sort_values("share")
-            st.markdown(
-                '<div class="section-header">What the hidden AI companies are doing</div>'
-                '<div class="section-sub">AI-application mix (share of enriched hidden AI '
-                'companies) — LLM-classified from descriptions</div>',
-                unsafe_allow_html=True,
-            )
-            fig = go.Figure(go.Bar(
-                y=hid["value"], x=hid["share"], orientation="h",
-                marker=dict(color=ACCENT),
-                text=[f"{v:.0f}%" for v in hid["share"]], textposition="outside",
-                textfont=dict(size=10.5, color=TXT2),
-                hovertemplate="%{y}: %{x:.1f}%<extra></extra>",
-            ))
-            fig.update_layout(**_layout(
-                height=300, xaxis=dict(ticksuffix="%", showgrid=False, zeroline=False, linecolor=BORDER),
-                yaxis=dict(gridcolor="rgba(0,0,0,0)", tickfont=dict(size=11, color=TXT2)),
-                margin=dict(l=0, r=30, t=8, b=0),
-            ))
-            st.plotly_chart(fig, use_container_width=True, config=_PLOT_CFG)
-            st.caption("Enrichment in progress — shares firm up as more companies are classified.")
-            st.markdown("<hr/>", unsafe_allow_html=True)
-
-    # ── Section 6: Download aggregates ───────────────────────────────
-    st.markdown(
-        '<div class="section-header">Download the data</div>'
-        '<div class="section-sub">Aggregate statistics only — company-level rows from '
-        'commercial databases are not redistributed</div>',
-        unsafe_allow_html=True,
-    )
-
-    dl1, dl2, dl3 = st.columns(3)
-    with dl1:
-        if not curve.empty:
-            st.download_button(
-                "Formation by year (CSV)", curve.to_csv(index=False),
-                file_name="ai_formation_by_year.csv", mime="text/csv",
-            )
-    with dl2:
-        if not country_stats.empty:
-            st.download_button(
-                "Country AI stats (CSV)", country_stats.to_csv(index=False),
-                file_name="ai_concentration_by_country.csv", mime="text/csv",
-            )
-    with dl3:
-        if not adoption.empty:
-            st.download_button(
-                "Hidden vs institutional (CSV)", adoption.to_csv(index=False),
-                file_name="hidden_vs_institutional_ai.csv", mime="text/csv",
-            )
 
 
 # ── Info Sheet ───────────────────────────────────────────────────────
@@ -4221,32 +4093,14 @@ def _tax_points() -> pd.DataFrame:
 
 
 def page_landscape():
+    # No "What AI companies do" header or count tiles: the homepage and the
+    # AI Startup page already carry those figures, and the map is the point.
     ov = _tax_overview().iloc[0]
-    st.markdown(
-        '<div class="section-header">What AI companies do</div>'
-        '<div class="section-sub" style="max-width:80ch;">A map of what these AI '
-        'companies actually do, grouped from their own descriptions rather than '
-        f'assigned to a fixed list of sectors. Companies outside '
-        f'{V.THE_DATASETS} are shown alongside the listed ones, so you can see where each '
-        'population sits.</div>',
-        unsafe_allow_html=True,
-    )
-
-    # Every figure here is a share of what has been classified, not of the
-    # whole dataset -- "Hidden AI 12,215" beside the 13,579 quoted elsewhere
-    # read as a contradiction rather than a narrower denominator.
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("AI companies mapped", f"{int(ov.mapped):,}")
-    m2.metric("Activity domains", int(ov.domains))
-    m3.metric("Of those, unlisted", f"{int(ov.hidden):,}",
-              f"{100 * int(ov.hidden) / int(ov.mapped):.1f}% of mapped"
-              if int(ov.mapped) else None)
-    m4.metric("Not yet classified", f"{int(ov.pending):,}")
 
     pts = _tax_points()
     if not pts.empty:
         st.markdown(
-            '<div class="section-header" style="margin-top:14px;">The map</div>'
+            '<div class="section-header">The AI landscape</div>'
             '<div class="section-sub" style="max-width:80ch;">Every classified '
             'company, one mark each, grouped into the subject its description '
             'puts it closest to. Hover a mark to see what that company does; '
@@ -4333,7 +4187,8 @@ def page_landscape():
 # GitHub Discovery is internal: it is a view of repository activity -- stars,
 # forks, owner and repo names -- which is operational signal for us and an
 # identity leak on a site that withholds company identities everywhere else.
-_PUBLIC_PAGES = ["Overview", "Findings", "Landscape", "Companies", "About"]
+_PUBLIC_PAGES = ["Overview", "AI Startup", "Hidden Startups", "Landscape",
+                 "Companies", "About"]
 _INTERNAL_PAGES = ["AI Analysis", "Trends", "Pipeline Health", "Inventory",
                    "Scraper", "GitHub Discovery"]
 _V2_PAGE = "Home V2"
@@ -4364,6 +4219,7 @@ def main():
                 nav_items = _PUBLIC_PAGES + ["Internal", _V2_PAGE]
                 # ?page=X lets V2 hand a route back to this shell.
                 requested = st.query_params.get("page")
+                requested = {"Findings": "AI Startup"}.get(requested, requested)
                 default = (nav_items.index(requested)
                            if requested in nav_items else 0)
                 section = st.radio("Navigation", nav_items, index=default,
@@ -4384,8 +4240,10 @@ def main():
     with st.container(key="page"):
         if page == "Overview":
             page_home()
-        elif page == "Findings":
-            page_research()
+        elif page == "AI Startup":
+            page_ai_startup()
+        elif page == "Hidden Startups":
+            page_hidden_startups()
         elif page == "Landscape":
             page_landscape()
         elif page == "Companies":

@@ -19,6 +19,7 @@ import streamlit as st
 from backend.utils.anonymize import stealth_label, strip_provenance
 
 from . import data as D
+from . import guard as G
 from .. import vocabulary as V
 from .intelligence import Answer
 from .theme import PLOT_CONFIG, Palette, plot_layout
@@ -202,6 +203,9 @@ def ask_panel(examples: list[str]) -> str | None:
                 )
             with button:
                 clicked = st.button("Ask →", key="v2_ask_go", use_container_width=True)
+        _md(f'<p class="v2-small v2-security" style="margin-top:8px">'
+            f'<b>Data security: {escape(G.SECURITY_LEVEL)}</b> · '
+            f'{escape(G.SECURITY_NOTE)}</p>')
 
         # Enter in the field and the button both submit; a queued example wins once.
         queued = st.session_state.pop("v2_queued_question", None)

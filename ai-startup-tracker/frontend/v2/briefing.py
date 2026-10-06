@@ -23,11 +23,11 @@ from . import data as D
 # Our own analyses, refreshed quarterly. Keys are the site's own routes, which
 # the shell reads back off `?page=`.
 _SIGNALS = {
-    "formation": ("Formation timeline", "?page=Findings"),
-    "geography": ("Geographic concentration", "?page=Findings"),
-    "sectors": ("Sector adoption", "?page=Findings"),
+    "formation": ("Formation timeline", "?page=AI+Startup"),
+    "geography": ("Geographic concentration", "?page=AI+Startup"),
+    "sectors": ("Sector adoption", "?page=AI+Startup"),
     "landscape": ("What these companies do", "?page=Landscape"),
-    "coverage": ("Companies commercial databases miss", "?page=Findings"),
+    "coverage": ("Companies commercial databases miss", "?page=Hidden+Startups"),
     "directory": ("Company directory", "?page=Companies"),
 }
 

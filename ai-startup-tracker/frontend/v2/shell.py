@@ -2,7 +2,7 @@
 
 The host script hands control here when `?v=2` is set, and from that point V2
 owns the whole shell. Every route renders inside it — the homepage from this
-package, and the existing Companies / Findings / Landscape / About / Internal
+package, and the existing AI Startup / Hidden Startups / Landscape / Companies / About / Internal
 pages by calling the very functions the V1 shell calls. Those pages
 keep their own logic and queries untouched; only the surface they are drawn on
 changes.
@@ -18,7 +18,10 @@ from . import home, theme
 from .theme import Palette
 
 # Mirrors the host script's public routes.
-NAV = ["Home", "Findings", "Landscape", "Companies", "About", "Internal"]
+NAV = ["Home", "AI Startup", "Hidden Startups", "Landscape", "Companies",
+       "About", "Internal"]
+# Routes that were renamed, so old links still land somewhere sensible.
+ALIASES = {"Findings": "AI Startup"}
 INTERNAL = ["AI Analysis", "Trends", "Pipeline Health", "Inventory", "Scraper",
             "GitHub Discovery"]
 
@@ -100,8 +103,10 @@ def _render_v1_page(page: str, p: Palette) -> None:
     with _v1_chart_palette(v1, p):
         if page == "Companies":
             v1.page_companies()
-        elif page == "Findings":
-            v1.page_research()
+        elif page == "AI Startup":
+            v1.page_ai_startup()
+        elif page == "Hidden Startups":
+            v1.page_hidden_startups()
         elif page == "Landscape":
             v1.page_landscape()
         elif page == "About":
@@ -145,6 +150,16 @@ def _render_internal(v1) -> None:
 def render() -> None:
     p = theme.palette()
     theme.inject_css(p)
+
+    # `?page=X` links (the briefing and answer panels use them) pick the tab
+    # once, then leave the URL so the nav works normally afterwards. Writing
+    # the radio's key is legal here because the radio has not been drawn yet.
+    requested = st.query_params.get("page")
+    if requested:
+        requested = ALIASES.get(requested, requested)
+        if requested in NAV:
+            st.session_state["v2_nav_choice"] = requested
+        del st.query_params["page"]
 
     with st.container(key="v2root"):
         selected, picked_mode = C.topbar(NAV, theme.current_mode())
