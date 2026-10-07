@@ -14,6 +14,24 @@ subject shades into its neighbours, islands where something stands apart.
                       ──SVD 60──▶  dense semantic vector
                       ──t-SNE───▶  (x, y)
 
+**Two things were tried and rejected, so they are not tried again.**
+
+*Feeding the sector in with the text* (`--sector-weight`, off by default). The
+idea was that position should reflect the classification as well as the prose.
+It does not survive contact: repeating a sector term makes every company in it
+a near-duplicate signature, and the projection answers correctly by collapsing
+each one into its own tight island on an empty field. Faithful, and unreadable
+as a map. Sector already reaches the picture twice over — companies in a sector
+share vocabulary, and the colour is the sector.
+
+*UMAP instead of t-SNE* (`--umap`, off by default). The usual argument is that
+UMAP keeps more global structure. On this corpus it does the opposite of what
+is wanted: it finds the clusters and then pushes them apart, so the figure
+becomes a scatter of specks with black between them. t-SNE gives the connected
+mass with filaments and outlying islands that actually reads as a landscape.
+Both switches remain, because the right answer may change as the descriptions
+do — but the default is what was measured to look like the data.
+
 TF-IDF and SVD rather than a neural embedding on purpose: the pipeline that
 built `company_taxonomy` used sentence-transformers, which drags in torch and
 2GB of wheels. This needs scikit-learn alone, runs on a laptop CPU, and for
@@ -23,7 +41,7 @@ were already assigned.
 Run it when descriptions have changed materially; the map is static between
 runs, which is also what makes it trustworthy to look at twice.
 
-    pip install scikit-learn
+    pip install scikit-learn        # umap-learn only for --umap
     python3 scripts/landscape_atlas.py                 # against $DATABASE_URL
     python3 scripts/landscape_atlas.py --limit 20000   # a faster dry run
 
@@ -95,15 +113,52 @@ def preflight(engine) -> None:
     )
 
 
-def compute(descriptions: pd.Series, *, seed: int = 7) -> np.ndarray:
-    """(n, 2) coordinates for a series of description text.
+# Only the broad domain rides along, not the cluster label. Repeating one of
+# ~200 cluster names makes every cluster a near-duplicate signature, and the
+# projection answers by scattering them as a few hundred islands on an empty
+# field — technically faithful, unreadable as a map. The handful of domains
+# gives the sectors enough pull to hold regions together without that.
+SECTOR_WEIGHT = 0
+
+
+def documents(descriptions: pd.Series, sectors: pd.Series | None = None) -> pd.Series:
+    """What actually gets vectorised: the description, plus its sector terms.
+
+    The sector is repeated a few times so that TF-IDF gives it the weight of a
+    recurring theme rather than of one passing word in a 60-word paragraph.
+    """
+    text = descriptions.fillna("")
+    if sectors is None:
+        return text
+    tag = (sectors.fillna("").astype(str)
+                  .str.replace(r"[^A-Za-z0-9 ]", " ", regex=True)
+                  .str.strip() + " ")
+    return text + " " + tag.str.repeat(SECTOR_WEIGHT)
+
+
+def _project(Z: np.ndarray, seed: int, use_umap: bool = False) -> np.ndarray:
+    """Sixty dimensions down to two."""
+    if use_umap:
+        import umap
+        return umap.UMAP(n_components=2, n_neighbors=50, min_dist=0.35,
+                         metric="cosine", random_state=seed).fit_transform(Z)
+
+    from sklearn.manifold import TSNE
+    return TSNE(n_components=2, perplexity=min(PERPLEXITY, max(5, len(Z) // 4)),
+                init="pca", random_state=seed, max_iter=750,
+                angle=0.6).fit_transform(Z)
+
+
+def compute(descriptions: pd.Series, sectors: pd.Series | None = None, *,
+            seed: int = 7, use_umap: bool = False) -> np.ndarray:
+    """(n, 2) coordinates for description text, optionally weighted by sector.
 
     Importable on its own so the layout can be exercised without a database.
     """
     from sklearn.decomposition import TruncatedSVD
     from sklearn.feature_extraction.text import TfidfVectorizer
-    from sklearn.manifold import TSNE
 
+    descriptions = documents(descriptions, sectors)
     t0 = time.time()
     # Bigrams matter here: "computer vision" and "language model" are the units
     # people actually describe themselves in, and unigrams alone put every firm
@@ -122,21 +177,35 @@ def compute(descriptions: pd.Series, *, seed: int = 7) -> np.ndarray:
     log(f"svd → {Z.shape[1]} dims  ({time.time() - t0:.0f}s)")
 
     t0 = time.time()
-    xy = TSNE(n_components=2, perplexity=min(PERPLEXITY, max(5, len(Z) // 4)),
-              init="pca", random_state=seed, max_iter=750, angle=0.6).fit_transform(Z)
-    log(f"t-sne  ({time.time() - t0:.0f}s)")
+    xy = _project(Z, seed, use_umap)
+    log(f"projected to 2d  ({time.time() - t0:.0f}s)")
 
-    # Normalise into a unit square so the figure does not have to rescale and
-    # a re-run cannot silently change the zoom level.
-    xy = xy - xy.mean(axis=0)
-    xy = xy / (np.abs(xy).max() + 1e-9)
-    return xy
+    return _normalise(xy)
+
+
+def _normalise(xy: np.ndarray) -> np.ndarray:
+    """Into a unit square, robustly.
+
+    Scaling by the furthest point lets a dozen strays decide the zoom: the
+    projection throws off a few far outliers, and dividing by their distance
+    shrinks the hundred thousand companies that matter into a thumbnail in one
+    corner. The 99th percentile sets the frame instead, and the strays are
+    pulled to the edge rather than allowed to define it.
+    """
+    xy = xy - np.median(xy, axis=0)
+    radius = np.quantile(np.hypot(xy[:, 0], xy[:, 1]), 0.99)
+    xy = xy / (radius + 1e-9)
+    return np.clip(xy, -1.0, 1.0)
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=0, help="cap rows, for a dry run")
     ap.add_argument("--dry-run", action="store_true", help="compute but do not write")
+    ap.add_argument("--umap", action="store_true",
+                    help="project with UMAP instead of t-SNE (see the note above)")
+    ap.add_argument("--sector-weight", type=int, default=0,
+                    help="fold the sector into the text this many times (see above)")
     args = ap.parse_args()
 
     from dotenv import load_dotenv
@@ -154,10 +223,12 @@ def main() -> None:
     cap = f"LIMIT {int(args.limit)}" if args.limit else ""
     log("reading descriptions")
     df = pd.read_sql(f"""
-        SELECT t.company_id, LEFT(c.description, 420) AS description
+        SELECT t.company_id, LEFT(c.description, 420) AS description,
+               t.domain_l1 AS sector
         FROM company_taxonomy t
         JOIN companies c ON c.id = t.company_id
         WHERE t.status IN ('mapped', 'category_mapped')
+          AND t.domain_l1 <> 'Pending enrichment'
           AND c.description IS NOT NULL AND length(c.description) > 60
         ORDER BY t.company_id {cap}
     """, engine)
@@ -165,7 +236,10 @@ def main() -> None:
         sys.exit("no classified companies with a usable description")
     log(f"{len(df):,} companies")
 
-    xy = compute(df["description"])
+    global SECTOR_WEIGHT
+    SECTOR_WEIGHT = args.sector_weight
+    xy = compute(df["description"], df["sector"] if args.sector_weight else None,
+                 use_umap=args.umap)
     out = pd.DataFrame({"company_id": df["company_id"].astype(int),
                         "x": xy[:, 0], "y": xy[:, 1]})
 
