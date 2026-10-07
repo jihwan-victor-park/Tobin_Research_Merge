@@ -211,29 +211,51 @@ def _arrange(companies: pd.DataFrame) -> pd.DataFrame:
     return pd.concat(out, ignore_index=True) if out else companies.assign(x=[], y=[])
 
 
-def label_anchors(points: pd.DataFrame, limit: int = 9,
-                  clearance: float = 0.17) -> pd.DataFrame:
+# A label is a horizontal object, so whether two of them collide depends on
+# how long the words are, not on how far apart the blobs are. At the figure's
+# usual width one character of the label font covers roughly this much of the
+# coordinate space, which runs -1..1 on both axes.
+_CHAR_WIDTH = 0.0125
+_LINE_HEIGHT = 0.045
+MAX_LABEL_CHARS = 30
+
+
+def _clip_label(text: str) -> str:
+    t = " ".join(str(text).split())
+    return t if len(t) <= MAX_LABEL_CHARS else t[:MAX_LABEL_CHARS - 1].rstrip() + "…"
+
+
+def label_anchors(points: pd.DataFrame, limit: int = 9) -> pd.DataFrame:
     """The clusters worth naming on the figure itself.
 
-    Only the largest few, and only where a label will not land on top of one
-    already placed — an atlas whose labels overlap is harder to read than one
-    with no labels at all. Candidates are considered biggest-first, so the
-    ones that survive are the ones carrying the most companies.
+    Only the largest few, and only where the words will not land on top of
+    words already placed. The first version compared centre points against a
+    fixed radius, which is the wrong test for a label: "Data Analytics &
+    Business Intelligence" is three times the width of "Robotics" and overlaps
+    a neighbour the short one clears easily. So each candidate is treated as
+    the box it actually occupies — width from its character count — and
+    rejected when that box would overlap one already on the figure.
+
+    Candidates are considered biggest-first, so what survives is what carries
+    the most companies.
     """
     if points.empty:
         return points
     cand = (points.groupby(["domain", "cluster"], sort=False)
                   .agg(x=("x", "mean"), y=("y", "mean"), n=("x", "size"))
                   .reset_index().sort_values("n", ascending=False))
+
     kept: list[dict] = []
     for r in cand.itertuples():
         if len(kept) >= limit:
             break
-        if any(abs(r.x - k["x"]) < clearance and abs(r.y - k["y"]) < clearance * 0.42
-               for k in kept):
+        text = _clip_label(r.cluster)
+        half = len(text) * _CHAR_WIDTH / 2
+        if any(abs(r.x - k["x"]) < (half + k["half"])
+               and abs(r.y - k["y"]) < _LINE_HEIGHT for k in kept):
             continue
-        kept.append({"domain": r.domain, "cluster": r.cluster,
-                     "x": r.x, "y": r.y, "n": r.n})
+        kept.append({"domain": r.domain, "cluster": text,
+                     "x": r.x, "y": r.y, "n": r.n, "half": half})
     return pd.DataFrame(kept)
 
 

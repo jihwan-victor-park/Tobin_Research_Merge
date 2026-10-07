@@ -59,12 +59,26 @@ class TestLayout:
 
 class TestLabels:
     def test_labels_do_not_collide(self):
+        """Two labels overlap when their boxes do, not when their centres are near."""
         anchors = atlas.label_anchors(atlas.layout(_frame()))
-        pts = anchors[["x", "y"]].to_numpy()
-        for i in range(len(pts)):
-            for j in range(i + 1, len(pts)):
-                assert not (abs(pts[i][0] - pts[j][0]) < 0.17
-                            and abs(pts[i][1] - pts[j][1]) < 0.17 * 0.42)
+        rows = list(anchors.itertuples())
+        for i, a in enumerate(rows):
+            for b in rows[i + 1:]:
+                assert not (abs(a.x - b.x) < (a.half + b.half)
+                            and abs(a.y - b.y) < atlas._LINE_HEIGHT)
+
+    def test_a_long_name_claims_more_room_than_a_short_one(self):
+        df = _frame(n_domains=2, clusters=2, per=30)
+        df["cluster"] = df["cluster"].str.replace(
+            "D0 c0", "Enterprise AI Development and Business Solutions", regex=False)
+        anchors = atlas.label_anchors(atlas.layout(df))
+        widths = dict(zip(anchors["cluster"], anchors["half"]))
+        longest = max(widths, key=lambda t: len(t))
+        assert widths[longest] == max(widths.values())
+
+    def test_overlong_names_are_clipped(self):
+        assert len(atlas._clip_label("x" * 80)) == atlas.MAX_LABEL_CHARS
+        assert atlas._clip_label("short") == "short"
 
     def test_labels_are_the_biggest_clusters(self):
         out = atlas.layout(_frame())
