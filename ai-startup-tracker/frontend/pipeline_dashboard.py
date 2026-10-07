@@ -4115,12 +4115,17 @@ def _tax_points() -> pd.DataFrame:
     label the tables use, because a map that reveals identities on mouseover
     would undo the withholding the rest of the site is built on.
     """
+    # LEFT JOIN rather than JOIN: company_atlas only exists once
+    # scripts/landscape_atlas.py has been run, and the page has to draw
+    # something before then. atlas.layout decides which geometry it got.
     df = pd.read_sql("""
-        SELECT company_id, domain_l1 AS domain, cluster_label AS cluster,
-               coalesce(capability, '') AS capability, bucket
-        FROM company_taxonomy
-        WHERE status IN ('mapped', 'category_mapped')
-          AND domain_l1 <> 'Pending enrichment'
+        SELECT t.company_id, t.domain_l1 AS domain, t.cluster_label AS cluster,
+               coalesce(t.capability, '') AS capability, t.bucket,
+               a.x, a.y
+        FROM company_taxonomy t
+        LEFT JOIN company_atlas a ON a.company_id = t.company_id
+        WHERE t.status IN ('mapped', 'category_mapped')
+          AND t.domain_l1 <> 'Pending enrichment'
     """, get_engine())
     if df.empty:
         return df
@@ -4135,10 +4140,13 @@ def _tax_points() -> pd.DataFrame:
     # keeps at least a few marks however small it is.
     if len(df) > atlas.MAX_POINTS:
         frac = atlas.MAX_POINTS / len(df)
+        placed = df["x"].notna() if "x" in df.columns else pd.Series(False, index=df.index)
         keep = []
         for _, g in df.groupby("cluster", sort=False):
             take = len(g) if len(g) <= 3 else max(3, round(len(g) * frac))
-            keep.append(g.sample(min(take, len(g)), random_state=7).index)
+            g = g.loc[placed.reindex(g.index, fill_value=False).sort_values(
+                ascending=False).index]              # measured rows first
+            keep.append(g.head(max(take, 3)).index)
         df = df.loc[np.concatenate(keep)]
     df["label"] = df["company_id"].map(stealth_label)
     df["listing"] = df["bucket"].map({"hidden": V.NOT_IN_SHORT.capitalize(),
@@ -4173,13 +4181,24 @@ def page_landscape():
             config={"displayModeBar": False, "scrollZoom": True},
         )
         shown, total = len(placed), int(ov.mapped)
+        # The figure is allowed to claim more when the coordinates were
+        # measured from the text than when they were arranged for legibility,
+        # so the caption is not the same sentence in both cases.
+        if atlas.source_of(placed) == "measured":
+            claim = (" Position is computed from each company's own description: "
+                     "near means described alike, so the shape of the cloud is "
+                     "the shape of the industry. Distances are relative — the "
+                     "map has no scale and no north.")
+        else:
+            claim = (" Clusters are discovered by embedding company "
+                     "descriptions, so which blob a company sits in is a real "
+                     "result; where it sits inside that blob, and the gap "
+                     "between two blobs, are drawn for legibility and carry no "
+                     "meaning.")
         st.caption(
             f"{shown:,} of {total:,} classified companies shown"
             + ("" if shown >= total else ", sampled evenly across clusters")
-            + ". Clusters are discovered by embedding company descriptions, so "
-              "which blob a company sits in is a real result; where it sits "
-              "inside that blob, and the gap between two blobs, are drawn for "
-              "legibility and carry no meaning. Identities are withheld."
+            + "." + claim + " Identities are withheld."
         )
 
     doms = _tax_domains()

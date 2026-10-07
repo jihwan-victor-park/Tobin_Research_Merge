@@ -84,3 +84,41 @@ class TestHues:
 
     def test_each_mode_has_its_own_steps(self):
         assert set(atlas.hues(True)).isdisjoint(atlas.hues(False))
+
+
+class TestMeasuredCoordinates:
+    """When scripts/landscape_atlas.py has run, the stored positions win."""
+
+    def _with_xy(self, df, missing=0):
+        rng = np.random.default_rng(3)
+        df = df.copy()
+        df["x"] = rng.normal(size=len(df))
+        df["y"] = rng.normal(size=len(df))
+        if missing:
+            df.loc[df.index[:missing], ["x", "y"]] = np.nan
+        return df
+
+    def test_stored_positions_are_used_as_they_are(self):
+        df = self._with_xy(_frame())
+        out = atlas.layout(df).sort_values("company_id")
+        want = df.sort_values("company_id")
+        assert np.allclose(out["x"].to_numpy(), want["x"].to_numpy())
+        assert np.allclose(out["y"].to_numpy(), want["y"].to_numpy())
+
+    def test_it_says_the_positions_were_measured(self):
+        assert atlas.source_of(atlas.layout(self._with_xy(_frame()))) == "measured"
+        assert atlas.source_of(atlas.layout(_frame())) == "arranged"
+
+    def test_rows_without_a_position_are_dropped_not_invented(self):
+        df = self._with_xy(_frame(), missing=10)
+        out = atlas.layout(df)
+        assert len(out) == len(df) - 10
+        assert out[["x", "y"]].notna().all().all()
+
+    def test_a_half_finished_run_falls_back_rather_than_mixing(self):
+        """Half measured, half arranged is a figure no reader could interpret."""
+        df = _frame()
+        df = self._with_xy(df, missing=int(len(df) * 0.7))
+        out = atlas.layout(df)
+        assert atlas.source_of(out) == "arranged"
+        assert len(out) == len(df)

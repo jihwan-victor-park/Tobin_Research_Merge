@@ -9,17 +9,21 @@ while another is a dozen loosely related ones.
 So the page draws the population: one mark per company, grouped into its
 cluster, clusters grouped into their domain.
 
-    What is real here          What is decorative
-    ─────────────────────      ─────────────────────────────────
-    which cluster a dot is in  where the dot sits inside it
-    which domain a cluster is  the distance between two clusters
-    how big each blob is       the rotation of the whole figure
+There are two ways it can get the coordinates, and they differ in what the
+picture is allowed to claim.
 
-The clusters themselves were discovered by embedding company descriptions and
-clustering them (`scripts/taxonomy_build.py`), so the *grouping* carries real
-meaning even though these coordinates are not the embedding's own. The page
-says so under the figure. When per-company coordinates are eventually stored,
-`_layout` is the only function that has to change.
+**Measured** — `scripts/landscape_atlas.py` has run and `company_atlas` holds
+an (x, y) per company, derived from the description text itself. Then distance
+means similarity: near things read alike, the shape of the cloud is the shape
+of the industry, and the figure is a map in the ordinary sense.
+
+**Arranged** — no coordinates stored, so `_arrange` lays domains out as discs
+and seats clusters inside them. The grouping is still real (the clusters came
+from embedding descriptions in `scripts/taxonomy_build.py`) but the geometry
+is furniture: distance means nothing and the caption says so.
+
+`source_of(points)` reports which one is on screen, and the page captions
+itself accordingly. Everything downstream is identical.
 
 Positions are deterministic: the same company lands in the same place on every
 render, seeded from its cluster and id. A map that reshuffles on each page load
@@ -56,7 +60,7 @@ OTHER = "Other domains"
 # Drawing every mapped company sends megabytes of coordinates to the browser
 # for a picture whose shape is settled long before that. The sample is
 # stratified by cluster, so every cluster that exists is visible.
-MAX_POINTS = 18_000
+MAX_POINTS = 42_000
 
 
 def hues(is_dark: bool) -> tuple[str, ...]:
@@ -144,18 +148,42 @@ def _scatter_within(n: int, radius: float, seed: int) -> tuple[np.ndarray, np.nd
     return r * np.cos(theta), r * np.sin(theta)
 
 
+def source_of(points: pd.DataFrame) -> str:
+    """"measured" when the coordinates came from the descriptions."""
+    return "measured" if points.attrs.get("measured") else "arranged"
+
+
 def layout(companies: pd.DataFrame) -> pd.DataFrame:
-    """Give every company an (x, y).
+    """Give every company an (x, y), measuring where possible.
 
     `companies` needs: company_id, domain, cluster, and whatever extra columns
-    the hover card wants to carry through.
+    the hover card wants to carry through. If it also carries non-null x and
+    y — `scripts/landscape_atlas.py` has run — those are used as they are and
+    nothing is invented.
+    """
+    if companies.empty:
+        return companies.assign(x=[], y=[])
+
+    if {"x", "y"} <= set(companies.columns):
+        placed = companies[companies["x"].notna() & companies["y"].notna()].copy()
+        # A partial run would mix measured and arranged points in one picture,
+        # where no reader could tell which half meant anything. All or none.
+        if len(placed) >= 0.6 * len(companies):
+            placed[["x", "y"]] = placed[["x", "y"]].astype(float)
+            placed.attrs["measured"] = True
+            return placed.reset_index(drop=True)
+        companies = companies.drop(columns=["x", "y"])
+
+    return _arrange(companies)
+
+
+def _arrange(companies: pd.DataFrame) -> pd.DataFrame:
+    """The fallback geometry, used until the coordinates are computed.
 
     Three nested discs: the figure holds domain lobes, a lobe holds its
     clusters, a cluster holds its companies. Every radius goes as the square
     root of a count, so area reads as quantity at all three levels.
     """
-    if companies.empty:
-        return companies.assign(x=[], y=[])
 
     sizes = companies.groupby("domain", sort=False).size().sort_values(ascending=False)
     radii = _lobe_radii(sizes)
@@ -253,8 +281,14 @@ def figure(points: pd.DataFrame, *, hue: dict[str, str], ink: str, ink_soft: str
     # opacity follow the count actually drawn, so the figure carries the same
     # weight either way.
     drawn = len(points)
-    size = 3.4 if drawn >= 14_000 else 4.2 if drawn >= 6_000 else 5.2
-    alpha = 0.50 if drawn >= 14_000 else 0.58 if drawn >= 6_000 else 0.66
+    if drawn >= 30_000:
+        size, alpha = 2.3, 0.55
+    elif drawn >= 14_000:
+        size, alpha = 3.4, 0.50
+    elif drawn >= 6_000:
+        size, alpha = 4.2, 0.58
+    else:
+        size, alpha = 5.2, 0.66
 
     # Draw order and legend order are not the same question, and tying them
     # together is what the OTHER-first fix above would otherwise break: the
@@ -289,13 +323,11 @@ def figure(points: pd.DataFrame, *, hue: dict[str, str], ink: str, ink_soft: str
     # `opacity` on an annotation fades the whole thing, text included, which
     # is what dimmed them before. The plate gets the transparency instead and
     # the type stays at full ink.
-    plate = _rgba(surface, 0.88)
+    plate = _rgba(surface, 0.70)
     for r in label_anchors(points).itertuples():
         fig.add_annotation(
             x=r.x, y=r.y, text=str(r.cluster), showarrow=False,
-            font=dict(size=10.5, color=ink),
-            bgcolor=plate, bordercolor=_rgba(context, 0.55), borderwidth=1,
-            borderpad=3,
+            font=dict(size=10.5, color=ink), bgcolor=plate, borderpad=3,
         )
 
     fig.update_layout(
