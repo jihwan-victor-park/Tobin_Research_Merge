@@ -52,6 +52,49 @@ def log(msg: str) -> None:
     print(f"[atlas] {msg}", flush=True)
 
 
+def _where(url: str) -> str:
+    """The host this is about to talk to, without the password."""
+    tail = url.split("@")[-1]
+    return tail.split("?")[0] or "unknown host"
+
+
+def preflight(engine) -> None:
+    """Say plainly which database this is and what it is missing.
+
+    Worth the twenty lines: the natural failure here is a raw SQLAlchemy
+    traceback ending in `relation "company_taxonomy" does not exist`, which
+    does not tell you the one thing you need to know — that you are pointed at
+    the wrong database.
+    """
+    from sqlalchemy import text
+
+    with engine.connect() as conn:
+        present = {r[0] for r in conn.execute(text(
+            "SELECT table_name FROM information_schema.tables "
+            "WHERE table_schema = 'public'"))}
+
+    missing = [t for t in ("companies", "company_taxonomy") if t not in present]
+    if not missing:
+        return
+
+    log(f"this database has {len(present)} tables and none of them are {missing}")
+    sys.exit(
+        "\n".join([
+            "",
+            "Pointed at the wrong database.",
+            "",
+            "  The classified companies live on Railway, not locally. Pass that",
+            "  connection string in front of the command — it wins over the",
+            "  DATABASE_URL in .env:",
+            "",
+            "    DATABASE_PUBLIC_URL='postgresql://...' python3 scripts/landscape_atlas.py",
+            "",
+            "  Railway dashboard -> your Postgres service -> Variables ->",
+            "  DATABASE_PUBLIC_URL (the proxy.rlwy.net one, not the internal host).",
+        ])
+    )
+
+
 def compute(descriptions: pd.Series, *, seed: int = 7) -> np.ndarray:
     """(n, 2) coordinates for a series of description text.
 
@@ -105,6 +148,8 @@ def main() -> None:
     if not url:
         sys.exit("set DATABASE_URL (or DATABASE_PUBLIC_URL) first")
     engine = create_engine(url.replace("postgres://", "postgresql://"))
+    log(f"connecting to {_where(url)}")
+    preflight(engine)
 
     cap = f"LIMIT {int(args.limit)}" if args.limit else ""
     log("reading descriptions")
