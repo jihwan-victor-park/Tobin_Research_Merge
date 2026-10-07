@@ -61,6 +61,11 @@ class Palette:
     pos: str           # status: rising  (always with ↑ + signed number)
     neg: str           # status: falling (always with ↓ + signed number)
     context: str       # "everything else" marks — never carries identity
+    # Chart fills, kept apart from `accent`. An accent has to win attention on
+    # a link or an active tab; a bar is a large area, and the same hue over
+    # that much surface shouts. Both clear 3:1 on their own ground.
+    series: str        # primary data series
+    series_alt: str    # second series, where two are shown together
     # Chrome
     ink_button: str    # near-black / near-white primary button
     ink_button_text: str
@@ -89,6 +94,8 @@ LIGHT = Palette(
     pos="#0f6b48",
     neg="#a51f18",
     context="#adaca0",
+    series="#4f8ad2",
+    series_alt="#3a9a7e",
     ink_button="#0e1012",
     ink_button_text="#f7f7f4",
 )
@@ -108,6 +115,8 @@ DARK = Palette(
     pos="#35986b",
     neg="#cf5b4e",
     context="#3a4147",
+    series="#6fa3e0",
+    series_alt="#4fb79a",
     ink_button="#f1f1ed",
     ink_button_text="#0b0d0f",
 )

@@ -46,7 +46,16 @@ load_dotenv()
 YALE_BLUE = "#14325e"   # brand ink: lockup, primary buttons, active nav
 YALE_MID = "#1d4379"
 YALE_LIGHT = "#2a5c9e"
-ACCENT = "#2a78d6"      # primary data series + interactive accent (validated)
+ACCENT = "#2a78d6"      # interactive accent: links, active tab, focus ring
+
+# Filling a bar is not the same job as marking a link. The accent has to win
+# attention on a small interactive target; a bar is a large area, and the same
+# hue spread over that much surface reads as shouting — more so inside the V2
+# shell, which swaps ACCENT for its deeper link blue (6.4:1 on the ground).
+# These sit softer and still clear the 3:1 a chart mark needs: #4f8ad2 at
+# 3.44:1, #3a9a7e at 3.32:1. The teal they replace was at 2.72:1 and failed.
+SERIES = "#4f8ad2"      # primary data series
+SERIES_ALT = "#3a9a7e"  # second series, where two are shown side by side
 BG = "#fafbfc"          # app ground
 BG_OFF = "#f2f4f7"      # wells, filter strips, table heads
 BG_CARD = "#ffffff"     # cards, inputs, chart surfaces
@@ -1440,14 +1449,14 @@ def page_home():
             fig = go.Figure()
             fig.add_trace(go.Scatter(
                 x=c["founded_year"], y=c["ai_pct"], mode="lines",
-                line=dict(color=ACCENT, width=2.5),
+                line=dict(color=SERIES, width=2.5),
                 fill="tozeroy", fillcolor="rgba(42,120,214,0.08)",
                 hovertemplate="%{x}: %{y:.1f}%<extra></extra>", name="AI share",
             ))
             last = c.iloc[-1]
             fig.add_trace(go.Scatter(
                 x=[last["founded_year"]], y=[last["ai_pct"]], mode="markers+text",
-                marker=dict(color=ACCENT, size=9),
+                marker=dict(color=SERIES, size=9),
                 text=[f"{last['ai_pct']:.0f}%"], textposition="top left",
                 textfont=dict(color=TXT, size=12), showlegend=False,
                 hoverinfo="skip",
@@ -1638,13 +1647,13 @@ def _render_enrichment_section() -> None:
         with a1:
             st.markdown('<div class="section-header" style="font-size:0.92rem;">'
                         'Application area</div>', unsafe_allow_html=True)
-            st.plotly_chart(bar(app, ACCENT), use_container_width=True, config=_PLOT_CFG)
+            st.plotly_chart(bar(app, SERIES), use_container_width=True, config=_PLOT_CFG)
     sub = _load_enrichment("ai_subfield")
     if not sub.empty:
         with a2:
             st.markdown('<div class="section-header" style="font-size:0.92rem;">'
                         'Underlying AI technology</div>', unsafe_allow_html=True)
-            st.plotly_chart(bar(sub, TEAL), use_container_width=True, config=_PLOT_CFG)
+            st.plotly_chart(bar(sub, SERIES_ALT), use_container_width=True, config=_PLOT_CFG)
 
     # Formation curve from the WHOIS proxy — the reason we collected it.
     curve = _load_domain_year_curve()
@@ -1658,7 +1667,7 @@ def _render_enrichment_section() -> None:
             unsafe_allow_html=True,
         )
         fig = go.Figure(go.Bar(
-            x=curve["year"], y=curve["n"], marker=dict(color=ACCENT),
+            x=curve["year"], y=curve["n"], marker=dict(color=SERIES),
             hovertemplate="%{x}: %{y:,} companies<extra></extra>",
         ))
         fig.update_layout(**_layout(
@@ -1871,7 +1880,7 @@ def page_trends(df: pd.DataFrame):
         daily.columns = ["date", "count"]
         fig = px.bar(daily, x="date", y="count",
                      labels={"count": "Companies", "date": "Date"})
-        fig.update_traces(marker_color=ACCENT)
+        fig.update_traces(marker_color=SERIES)
         fig.update_layout(**_layout(height=260))
         st.plotly_chart(fig, width="stretch", config=_PLOT_CFG)
 
@@ -1926,7 +1935,7 @@ def page_trends(df: pd.DataFrame):
         fig1 = px.bar(mg, x="new_30d", y="subdomain", orientation="h",
                       title="New companies (last 30 days)",
                       labels={"new_30d": "Companies", "subdomain": ""})
-        fig1.update_traces(marker_color=ACCENT)
+        fig1.update_traces(marker_color=SERIES)
         fig1.update_layout(**_layout(height=420,
             xaxis=dict(showgrid=True, gridcolor=BORDER_LIGHT, zeroline=False,
                        linecolor="rgba(0,0,0,0)", tickfont=dict(size=11)),
@@ -1939,7 +1948,7 @@ def page_trends(df: pd.DataFrame):
         fig2 = px.bar(gs, x="growth_pct", y="subdomain", orientation="h",
                       title="Growth rate (vs prior 30d)",
                       labels={"growth_pct": "% Growth", "subdomain": ""})
-        fig2.update_traces(marker_color=TEAL)
+        fig2.update_traces(marker_color=SERIES_ALT)
         fig2.update_layout(**_layout(height=420,
             xaxis=dict(showgrid=True, gridcolor=BORDER_LIGHT, zeroline=False,
                        linecolor="rgba(0,0,0,0)", tickfont=dict(size=11)),
@@ -2973,7 +2982,7 @@ def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None,
         fig_d = go.Figure(go.Pie(
             labels=["AI-focused", "Non-AI"],
             values=[ai_cos, non_ai],
-            marker_colors=[ACCENT, GRAY_CTX],
+            marker_colors=[SERIES, GRAY_CTX],
             hole=0.55,
             textinfo="label+percent",
             hovertemplate="%{label}: %{value:,}<extra></extra>",
@@ -3013,7 +3022,7 @@ def page_ai_analysis(df: pd.DataFrame, stats: dict | None = None,
         )
         fig_time = go.Figure()
         fig_time.add_bar(x=monthly["month"], y=monthly["total"], name="All", marker_color=GRAY_CTX)
-        fig_time.add_bar(x=monthly["month"], y=monthly["ai"], name="AI", marker_color=ACCENT)
+        fig_time.add_bar(x=monthly["month"], y=monthly["ai"], name="AI", marker_color=SERIES)
         fig_time.update_layout(
             barmode="overlay",
             title_text="Monthly Company Discovery (AI in blue, all in grey)",
@@ -3111,7 +3120,7 @@ def page_ai_startup():
             x=curve["founded_year"], y=curve["ai_pct"],
             name="AI share (%)",
             mode="lines+markers",
-            line=dict(color=TEAL, width=2.5),
+            line=dict(color=SERIES_ALT, width=2.5),
             marker=dict(size=6),
         ))
         fig.update_layout(
@@ -3256,7 +3265,7 @@ def page_ai_startup():
     )
     if not vc_share.empty:
         fig_vc = go.Figure()
-        styles = {"AI": dict(color=ACCENT, width=2.5),
+        styles = {"AI": dict(color=SERIES, width=2.5),
                   "Non-AI": dict(color=TXT3, width=2, dash="dot")}
         for kind, line in styles.items():
             sub = vc_share[vc_share["company_type"] == kind]
@@ -3321,7 +3330,7 @@ def page_ai_startup():
             top = fu.nlargest(10, "ai_founders")[::-1]
             fig = go.Figure(go.Bar(
                 y=top["university"], x=top["ai_founders"], orientation="h",
-                marker=dict(color=ACCENT),
+                marker=dict(color=SERIES),
                 text=top["ai_founders"], textposition="outside",
                 textfont=dict(size=10.5, color=TXT2),
                 hovertemplate="%{y}: %{x} AI founders<extra></extra>",
@@ -3428,7 +3437,7 @@ def page_hidden_startups():
             hf = (h_form[h_form["founded_year"].between(2010, 2025)]
                   .groupby("founded_year", as_index=False)["total"].sum())
             fig = go.Figure(go.Bar(
-                x=hf["founded_year"], y=hf["total"], marker=dict(color=ACCENT),
+                x=hf["founded_year"], y=hf["total"], marker=dict(color=SERIES),
                 hovertemplate="%{x}: %{y:,} companies<extra></extra>",
             ))
             fig.update_layout(**_layout(
@@ -3448,7 +3457,7 @@ def page_hidden_startups():
             hs = h_surv[h_surv["founded_year"].between(2010, 2024)]
             fig = go.Figure(go.Scatter(
                 x=hs["founded_year"], y=hs["live_pct"], mode="lines+markers",
-                line=dict(color=ACCENT, width=2.5), marker=dict(size=7),
+                line=dict(color=SERIES, width=2.5), marker=dict(size=7),
                 customdata=hs["total_checked"],
                 hovertemplate="%{x}: %{y:.1f}% live · n=%{customdata:,}<extra></extra>",
             ))
@@ -4205,7 +4214,7 @@ def page_landscape():
     with st.expander("Coverage by domain — how much of each is unlisted"):
         fig = go.Figure()
         fig.add_bar(y=doms["domain"], x=doms["published"], name=f"Published ({V.IN_SHORT})",
-                    orientation="h", marker_color=ACCENT)
+                    orientation="h", marker_color=SERIES)
         fig.add_bar(y=doms["domain"], x=doms["hidden"], name=f"Hidden ({V.NOT_IN_SHORT})",
                     orientation="h", marker_color=YALE_BLUE)
         fig.update_layout(

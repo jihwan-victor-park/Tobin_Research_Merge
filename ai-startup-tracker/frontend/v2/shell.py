@@ -83,6 +83,7 @@ def _v1_chart_palette(mod, p: Palette):
         "BORDER": p.border, "BORDER_LIGHT": p.border_soft,
         "TXT": p.text, "TXT2": p.text2, "TXT3": p.text3,
         "ACCENT": p.accent, "GRAY_CTX": p.context,
+        "SERIES": p.series, "SERIES_ALT": p.series_alt,
         "GREEN": p.pos, "RED": p.neg,
     }
     saved = {k: getattr(mod, k) for k in swap if hasattr(mod, k)}

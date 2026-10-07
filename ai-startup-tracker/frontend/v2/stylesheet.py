@@ -879,6 +879,23 @@ html, body, .stApp,
   color: var(--v2-accent) !important; border-bottom-color: var(--v2-accent);
 }}
 
+/* Streamlit paints a metric's delta as a green or red chip. On a page whose
+   palette is one blue and two inks, that chip is the loudest thing on screen,
+   and it is decorating a figure that already carries its own sign. The
+   direction stays in the arrow and in the +/- ; the colour goes quiet. */
+.stApp [data-testid="stMetricDelta"] {{
+  background: transparent !important;
+  color: var(--v2-text2) !important;
+  font-size: 0.78rem !important;
+  padding: 0 !important;
+  gap: 4px;
+}}
+/* The arrow goes with it. This slot is used across the site for a caption
+   under the figure — "7.2% of the companies tracked", "(WHOIS proxy)" — and
+   an up arrow in front of a denominator claims a direction the number is not
+   reporting. Where a real change is shown, the sign is already in the text. */
+.stApp [data-testid="stMetricDelta"] svg {{ display: none !important; }}
+
 /* ── States ────────────────────────────────────────────────────────── */
 /* Collection paused: stated in the context colour, not an alarm colour --
    it is a fact about the window, not an error. */
