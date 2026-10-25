@@ -121,3 +121,8 @@ results/52_name_variant_pairs.csv
 results/54_er_adjudication_sample.csv
 results/60_ai_label_sample.csv
 results/64_ai_gold_set_for_authors.csv
+
+# Teaching extracts (e.g. the Entrepreneurial Finance hidden-AI set). The
+# originals are row-level company records and the re-identification key; the
+# anonymized copy is shared with students directly, not through this repo.
+data/private/
